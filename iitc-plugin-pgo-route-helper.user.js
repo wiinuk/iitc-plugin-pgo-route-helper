@@ -1,3 +1,27 @@
+// ==UserScript==
+// @id           iitc-plugin-pgo-route-helper
+// @name         IITC plugin: Pgo Route Helper
+// @category     Controls
+// @namespace    https://github.com/IITC-CE/ingress-intel-total-conversion
+// @downloadURL  https://github.com/wiinuk/iitc-plugin-pgo-route-helper/raw/master/iitc-plugin-pgo-route-helper.user.js
+// @updateURL    https://github.com/wiinuk/iitc-plugin-pgo-route-helper/raw/master/iitc-plugin-pgo-route-helper.user.js
+// @homepageURL  https://github.com/wiinuk/iitc-plugin-pgo-route-helper
+// @version      0.3.0
+// @description  IITC plugin to assist in Pokémon GO route creation, supporting import and export of Google My Map format.
+// @author       Wiinuk
+// @include      https://*.ingress.com/intel*
+// @include      http://*.ingress.com/intel*
+// @match        https://*.ingress.com/intel*
+// @match        http://*.ingress.com/intel*
+// @include      https://*.ingress.com/mission/*
+// @include      http://*.ingress.com/mission/*
+// @match        https://*.ingress.com/mission/*
+// @match        http://*.ingress.com/mission/*
+// @icon         https://www.google.com/s2/favicons?domain=iitc.me
+// @grant        GM_info
+// @grant        GM_xmlhttpRequest
+// ==/UserScript==
+
 /******/ (() => { // webpackBootstrap
 /******/ 	"use strict";
 /******/ 	// The require scope
@@ -384,130 +408,8 @@ function parseCssColor(cssColor, result = { r: 0, g: 0, b: 0, a: 0 }) {
     result.a = a === undefined ? 1 : parseFloat(a);
     return result;
 }
-const getXPathOfRootElementBuffer = (/* unused pure expression or super */ null && ([]));
-function getXPathOfRootElement(element) {
-    function getIndex(node, parentNode) {
-        const nodeName = node.nodeName.toLowerCase();
-        const siblings = parentNode.children;
-        let nth = null;
-        let count = 0;
-        for (let i = 0; i < siblings.length; i++) {
-            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-            const sibling = siblings[i];
-            if (sibling.nodeName.toLowerCase() === nodeName) {
-                count++;
-                if (sibling === node) {
-                    nth = count;
-                }
-                if (1 < count) {
-                    return nth;
-                }
-            }
-        }
-        return null;
-    }
-    const buffer = getXPathOfRootElementBuffer;
-    try {
-        let node = element;
-        while (node.parentNode != null &&
-            node.parentNode.nodeType === Node.ELEMENT_NODE) {
-            const index = getIndex(node, node.parentNode);
-            if (index != null) {
-                buffer.push("]", index, "[");
-            }
-            buffer.push(node.nodeName.toLowerCase(), "/");
-            node = node.parentNode;
-        }
-        return buffer.reverse().join("");
-    }
-    finally {
-        buffer.length = 0;
-    }
-}
-class Query {
-    constructor(_values) {
-        this._values = _values;
-    }
-    forEach(action) {
-        for (const value of this._values()) {
-            action(value);
-        }
-    }
-    firstOrNull() {
-        for (const value of this._values()) {
-            return value;
-        }
-        return null;
-    }
-    tagName(qualifiedName) {
-        // eslint-disable-next-line @typescript-eslint/no-this-alias
-        const self = this;
-        return new Query(function* () {
-            for (const value of self._values()) {
-                for (const e of value.getElementsByTagName(qualifiedName)) {
-                    yield e;
-                }
-            }
-        });
-    }
-    and(next) {
-        // eslint-disable-next-line @typescript-eslint/no-this-alias
-        const self = this;
-        return new Query(function* () {
-            yield* self._values();
-            yield* next._values();
-        });
-    }
-    children(tagName) {
-        // eslint-disable-next-line @typescript-eslint/no-this-alias
-        const self = this;
-        return new Query(function* () {
-            for (const value of self._values()) {
-                for (const child of value.children) {
-                    if (child.tagName === tagName) {
-                        yield child;
-                    }
-                }
-            }
-        });
-    }
-    first() {
-        // eslint-disable-next-line @typescript-eslint/no-this-alias
-        const self = this;
-        return new Query(function* () {
-            for (const value of self._values()) {
-                yield value;
-                return;
-            }
-        });
-    }
-    filter(predicate) {
-        // eslint-disable-next-line @typescript-eslint/no-this-alias
-        const self = this;
-        return new Query(function* () {
-            for (const value of self._values()) {
-                if (predicate(value)) {
-                    yield value;
-                }
-            }
-        });
-    }
-}
-function dQuery(element) {
-    return new Query(function* () {
-        if (element instanceof Document) {
-            if (element.firstElementChild) {
-                yield element.firstElementChild;
-            }
-        }
-        else {
-            yield element;
-        }
-    });
-}
 
 ;// CONCATENATED MODULE: ./source/kml.ts
-
 function parseCoordinates(kmlCoordinatesText) {
     const tokens = kmlCoordinatesText.split(",");
     const result = [];
@@ -833,7 +735,6 @@ var iitc_plugin_pgo_route_helper_awaiter = (undefined && undefined.__awaiter) ||
 
 
 
-
 function handleAsyncError(promise) {
     promise.catch((error) => console.error(error));
 }
@@ -938,31 +839,11 @@ function asyncMain() {
 }
 
 ;// CONCATENATED MODULE: ./source/iitc-plugin-pgo-route-helper.user.ts
-// ==UserScript==
-// @id           iitc-plugin-pgo-route-helper
-// @name         IITC plugin: Pgo Route Helper
-// @category     Controls
-// @namespace    https://github.com/IITC-CE/ingress-intel-total-conversion
-// @downloadURL  https://github.com/wiinuk/iitc-plugin-pgo-route-helper/raw/master/iitc-plugin-pgo-route-helper.user.js
-// @updateURL    https://github.com/wiinuk/iitc-plugin-pgo-route-helper/raw/master/iitc-plugin-pgo-route-helper.user.js
-// @homepageURL  https://github.com/wiinuk/iitc-plugin-pgo-route-helper
-// @version      0.3.0
-// @description  IITC plugin to assist in Pokémon GO route creation, supporting import and export of Google My Map format.
-// @author       Wiinuk
-// @include      https://*.ingress.com/intel*
-// @include      http://*.ingress.com/intel*
-// @match        https://*.ingress.com/intel*
-// @match        http://*.ingress.com/intel*
-// @include      https://*.ingress.com/mission/*
-// @include      http://*.ingress.com/mission/*
-// @match        https://*.ingress.com/mission/*
-// @match        http://*.ingress.com/mission/*
-// @icon         https://www.google.com/s2/favicons?domain=iitc.me
-// @grant        GM_info
-// @grant        GM_xmlhttpRequest
-// ==/UserScript==
-
-unsafeWindow["_iitc-plugin-pgo-route-helper-3798db47-5fe8-4307-a1e0-8092c04133b1"] = iitc_plugin_pgo_route_helper_namespaceObject;
+(typeof unsafeWindow !== undefined
+    ? unsafeWindow
+    : // IITC Mobile では unsafeWindow が定義されていない
+        globalThis)["_iitc-plugin-pgo-route-helper-3798db47-5fe8-4307-a1e0-8092c04133b1"] =
+    iitc_plugin_pgo_route_helper_namespaceObject;
 // 文字列化され、ドキュメントに注入されるラッパー関数
 // このため、通常のクロージャーのルールはここでは適用されない
 function wrapper(plugin_info) {
