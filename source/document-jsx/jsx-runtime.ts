@@ -1,76 +1,4 @@
-import { assertTrue, equals } from "../standard-extensions";
-
 type KnownElementTagNameMap = HTMLElementTagNameMap & SVGElementTagNameMap;
-const knownSvgTagNames = [
-    "a",
-    "animate",
-    "animateMotion",
-    "animateTransform",
-    "circle",
-    "clipPath",
-    "defs",
-    "desc",
-    "ellipse",
-    "feBlend",
-    "feColorMatrix",
-    "feComponentTransfer",
-    "feComposite",
-    "feConvolveMatrix",
-    "feDiffuseLighting",
-    "feDisplacementMap",
-    "feDistantLight",
-    "feDropShadow",
-    "feFlood",
-    "feFuncA",
-    "feFuncB",
-    "feFuncG",
-    "feFuncR",
-    "feGaussianBlur",
-    "feImage",
-    "feMerge",
-    "feMergeNode",
-    "feMorphology",
-    "feOffset",
-    "fePointLight",
-    "feSpecularLighting",
-    "feSpotLight",
-    "feTile",
-    "feTurbulence",
-    "filter",
-    "foreignObject",
-    "g",
-    "image",
-    "line",
-    "linearGradient",
-    "marker",
-    "mask",
-    "metadata",
-    "mpath",
-    "path",
-    "pattern",
-    "polygon",
-    "polyline",
-    "radialGradient",
-    "rect",
-    "script",
-    "set",
-    "stop",
-    "style",
-    "svg",
-    "switch",
-    "symbol",
-    "text",
-    "textPath",
-    "title",
-    "tspan",
-    "use",
-    "view",
-] as const;
-const knownSvgTagNamesSet = new Set<string>(knownSvgTagNames);
-
-assertTrue<
-    equals<(typeof knownSvgTagNames)[number], keyof SVGElementTagNameMap>
->();
 
 type KnownAttributeNameAndType<
     TTagName extends keyof KnownElementTagNameMap,
@@ -147,9 +75,7 @@ export function jsxs<TName extends keyof KnownElementTagNameMap>(
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     _option?: JsxOption
 ): KnownElementTagNameMap[TName] {
-    const element = knownSvgTagNamesSet.has(name)
-        ? document.createElementNS("http://www.w3.org/2000/svg", name)
-        : document.createElement(name);
+    const element = document.createElement(name);
     for (const [key, value] of Object.entries(properties ?? {})) {
         if (key === "children") continue;
         if (key === "style" && typeof value === "function") {
