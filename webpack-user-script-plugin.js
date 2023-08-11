@@ -4,7 +4,7 @@ const webpack = require("webpack");
 
 const PluginName = "WebpackUserScriptPlugin";
 const headerPattern =
-    /(?=(^|\n))\s*\/\/\s*==UserScript==[^\n]\n((.|\r\n)*?)\r\n\s*\/\/\s*==\/UserScript==[^\n]*(\n|$)/i;
+    /(?=(^|\n))\s*\/\/\s*==UserScript==[^\n]*\n(?:(.|\n)*?)\n\s*\/\/\s*==\/UserScript==[^\n]*(\n|$)/i;
 const indentedSingleLineCommentStartPattern = /(?<=(^|\n))\s+\/\//g;
 
 /** @type {import("webpack").WebpackPluginFunction} */
@@ -25,6 +25,14 @@ module.exports = (compiler) =>
                     .toString();
                 const headerMatch = contents.match(headerPattern);
                 if (headerMatch == null) {
+                    if (fileName.endsWith(".user.js")) {
+                        const error = new webpack.WebpackError(
+                            `UserScript header not found in '${fileName}'.`
+                        );
+                        compilation.errors.push(error);
+                        compilation.bail = true;
+                        return;
+                    }
                     continue;
                 }
 
