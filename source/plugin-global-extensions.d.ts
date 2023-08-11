@@ -7,8 +7,17 @@ interface WindowForContentScope extends Window {
     bootPlugins?: SetupHook[];
     iitcLoaded?: boolean;
     L?: typeof L;
+    $?: JQueryStatic;
     map?: L.Map;
+    dialog?(
+        options: JQueryUI.DialogOptions & {
+            html?: string;
+        }
+    ): JQuery;
 }
+
+// IITC mobile
+var android: { readonly addPane?: unknown } | undefined;
 
 function plugin(): void;
 var bootPlugins: SetupHook[];
