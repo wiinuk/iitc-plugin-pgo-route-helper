@@ -29,7 +29,7 @@ const config = {
         extensions: [".ts", ".tsx", ".js", ".jsx", ".json"],
     },
     optimization: {
-        minimize: true,
+        minimize: false,
     },
     devtool: "nosources-source-map",
     output: {
