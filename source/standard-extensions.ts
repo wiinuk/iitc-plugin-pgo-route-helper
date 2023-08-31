@@ -26,7 +26,7 @@ export function ignore(..._args: unknown[]): void {
     /* 引数を無視する関数 */
 }
 
-export interface Progress<TArgs extends unknown[]> {
+export interface Progress<TArgs extends readonly unknown[]> {
     (...args: TArgs): void;
 }
 interface ProgressReporter {

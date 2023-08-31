@@ -6,8 +6,8 @@
 // @downloadURL  https://github.com/wiinuk/iitc-plugin-pgo-route-helper/raw/master/iitc-plugin-pgo-route-helper.user.js
 // @updateURL    https://github.com/wiinuk/iitc-plugin-pgo-route-helper/raw/master/iitc-plugin-pgo-route-helper.user.js
 // @homepageURL  https://github.com/wiinuk/iitc-plugin-pgo-route-helper
-// @version      0.3.0
-// @description  IITC plugin to assist in Pokémon GO route creation, supporting import and export of Google My Map format.
+// @version      0.4.0
+// @description  IITC plugin to assist in Pokémon GO route creation.
 // @author       Wiinuk
 // @include      https://*.ingress.com/intel*
 // @include      http://*.ingress.com/intel*
@@ -21,9 +21,10 @@
 // @grant        GM_info
 // ==/UserScript==
 
+import { isIITCMobile } from "./environment";
 import * as MainModule from "./iitc-plugin-pgo-route-helper";
 
-(unsafeWindow as WindowForContentScope)[
+((isIITCMobile ? globalThis : unsafeWindow) as WindowForContentScope)[
     "_iitc-plugin-pgo-route-helper-3798db47-5fe8-4307-a1e0-8092c04133b1"
 ] = MainModule;
 

@@ -12,6 +12,7 @@ interface WindowForContentScope extends Window {
     dialog?(
         options: JQueryUI.DialogOptions & {
             html?: string;
+            id?: string;
         }
     ): JQuery;
 }
@@ -32,6 +33,17 @@ function addLayerGroup<Layer extends L.ILayer>(
     defaultDisplay?: boolean
 ): unknown;
 
+interface IITCSearchResult {
+    description?: string;
+    icon?: string;
+    title?: string;
+    layer?: L.ILayer;
+    bounds?: L.LatLngBounds;
+}
+interface IITCSearchQuery {
+    readonly term: string;
+    addResult(result: IITCSearchResult): unknown;
+}
 type IITCHookEventNameDataMap = {
     portalSelected: unknown;
     portalDetailsUpdated: unknown;
@@ -50,7 +62,7 @@ type IITCHookEventNameDataMap = {
     requestFinished: unknown;
     nicknameClicked: unknown;
     geoSearch: unknown;
-    search: unknown;
+    search: IITCSearchQuery;
     iitcLoaded: unknown;
     portalDetailLoaded: unknown;
     paneChanged: unknown;
