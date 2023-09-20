@@ -13,9 +13,20 @@ import classNames, { cssText } from "./styles.module.css";
 import * as remote from "./remote";
 import { isIITCMobile } from "./environment";
 import { createPolylineEditorPlugin } from "./polyline-editor";
+import jqueryUIPolyfillTouchEvents from "./jquery-ui-polyfill-touch-events";
 
 function handleAsyncError(promise: Promise<void>) {
-    promise.catch((error) => console.error(error));
+    promise.catch((error: unknown) => {
+        console.error(error);
+        if (
+            error != null &&
+            typeof error === "object" &&
+            "stack" in error &&
+            typeof error.stack === "string"
+        ) {
+            console.error(error.stack);
+        }
+    });
 }
 
 export function main() {
@@ -94,11 +105,15 @@ async function asyncMain() {
         $ = error`JQuery を先に読み込んでください`,
     } = window;
 
+    jqueryUIPolyfillTouchEvents($);
     const { polylineEditor } = createPolylineEditorPlugin({ L });
 
     await waitElementLoaded();
 
-    L.Icon.Default.imagePath = `https://unpkg.com/leaflet@${L.version}/dist/images/`;
+    // TODO:
+    if (!isIITCMobile) {
+        L.Icon.Default.imagePath = `https://unpkg.com/leaflet@${L.version}/dist/images/`;
+    }
     addStyle(cssText);
 
     const config = loadConfig();

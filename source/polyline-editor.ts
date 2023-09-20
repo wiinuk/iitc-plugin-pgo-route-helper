@@ -52,13 +52,14 @@ const selectedOpacity = 1;
 const removeDistancePx = 48;
 const hiddenDistancePx = removeDistancePx * 2;
 
-export function createPolylineEditorPlugin(options?: { L: typeof L }) {
-    const L = options?.L ?? globalThis.L;
-
+function decrementIfEven(n: number) {
+    return Math.ceil(n / 2) * 2 - 1;
+}
+export function createPolylineEditorPlugin({ L }: { L: typeof globalThis.L }) {
     function createIcon(...args: Parameters<typeof createIconSvg>) {
         const iconSvg = createIconSvg(...args).documentElement;
-        iconSvg.setAttribute("width", "48");
-        iconSvg.setAttribute("height", "48");
+        iconSvg.setAttribute("width", String(48));
+        iconSvg.setAttribute("height", String(48));
 
         // サイズを正確に計るため一旦 document.body に追加する
         document.body.append(iconSvg);
@@ -67,8 +68,9 @@ export function createPolylineEditorPlugin(options?: { L: typeof L }) {
 
         return L.divIcon({
             html: iconSvg.outerHTML,
-            iconSize: [0, 0],
+            iconSize: [decrementIfEven(width), decrementIfEven(height)],
             iconAnchor: [Math.floor(width / 2), Math.floor(height / 2)],
+            className: "polyline-editor-icon",
         });
     }
     function getMiddleCoordinate(
@@ -124,16 +126,30 @@ export function createPolylineEditorPlugin(options?: { L: typeof L }) {
         return L.marker(insertCoordinate, options);
     }
 
+    type OmitInstanceMembers<
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        Class extends abstract new (...args: any) => any,
+        Keys extends string | number | symbol
+    > = { [k in keyof Class]: Class[k] } & (Class extends abstract new (
+        ...args: infer P
+    ) => infer Instance
+        ? new (...args: P) => Omit<Instance, Keys>
+        : never);
+
     type PolylineEditorOptions = L.PolylineOptions;
-    class PolylineEditor extends L.Polyline {
+    class PolylineEditor extends (L.Polyline as OmitInstanceMembers<
+        typeof L.Polyline,
+        // NOTE: spliceLatLngs は iitc-mobile が依存する leaflet@1.7.1 には存在しない
+        "spliceLatLngs"
+    >) {
         // NOTE: leaflet 0.7.3 には存在するが他のバージョンでは不明
         protected readonly _map?: L.Map;
         private readonly _markers: VertexMarker[] = [];
         private _selectedVertexIndex: number | null = null;
 
-        private _vertexIcon = createIcon("vertex icon");
-        private _removeIcon = createIcon("remove icon");
-        private _insertIcon = createIcon("insert icon");
+        private readonly _vertexIcon = createIcon("vertex icon");
+        private readonly _removeIcon = createIcon("remove icon");
+        private readonly _insertIcon = createIcon("insert icon");
 
         constructor(
             latlngs: L.LatLngBoundsExpression,
@@ -204,14 +220,28 @@ export function createPolylineEditorPlugin(options?: { L: typeof L }) {
                 (marker) => marker && this._map?.addLayer(marker)
             );
         }
+        private _spliceLatLngs(
+            start: number,
+            deleteCount: number,
+            ...items: L.LatLng[]
+        ) {
+            const coordinates = this.getLatLngs();
+            const deletedCoordinates = coordinates.splice(
+                start,
+                deleteCount,
+                ...items
+            );
+            this.setLatLngs(coordinates);
+            return deletedCoordinates;
+        }
         private _insert(index: number, coordinate: L.LatLng) {
-            this.spliceLatLngs(index, 0, coordinate);
+            this._spliceLatLngs(index, 0, coordinate);
             this._refreshMarkers();
         }
         private _remove(index: number) {
             if (this._markers.length <= 2) return;
 
-            this.spliceLatLngs(index, 1);
+            this._spliceLatLngs(index, 1);
             this._refreshMarkers();
         }
 
@@ -255,7 +285,7 @@ export function createPolylineEditorPlugin(options?: { L: typeof L }) {
             });
             vertexMarker.on("drag", () => {
                 this._updateVertex(vertexMarker.index);
-                this.spliceLatLngs(
+                this._spliceLatLngs(
                     vertexMarker.index,
                     1,
                     vertexMarker.getLatLng()
@@ -329,14 +359,21 @@ export function createPolylineEditorPlugin(options?: { L: typeof L }) {
             const vertexMarker = this._markers[index];
             if (!vertexMarker) return;
 
-            vertexMarker.setIcon(
-                this._inRemoveArea(vertexMarker.index)
-                    ? this._removeIcon
-                    : this._vertexIcon
-            );
+            // TODO:
+            // leaflet 1.7 でドラッグ中に setIcon するとドラッグが中断される
+            if (!L.version.startsWith("1.7")) {
+                vertexMarker.setIcon(
+                    this._inRemoveArea(vertexMarker.index)
+                        ? this._removeIcon
+                        : this._vertexIcon
+                );
+            }
         }
         /** 座標列からマーカーを生成しマップに追加する */
         private _refreshMarkers() {
+            const map = this._map;
+            if (!map) return;
+
             this._markers.forEach((marker) => marker._removeLayers(map));
             this._markers.length = 0;
             const coordinates = this.getLatLngs();
