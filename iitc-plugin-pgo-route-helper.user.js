@@ -6,7 +6,7 @@
 // @downloadURL  https://github.com/wiinuk/iitc-plugin-pgo-route-helper/raw/master/iitc-plugin-pgo-route-helper.user.js
 // @updateURL    https://github.com/wiinuk/iitc-plugin-pgo-route-helper/raw/master/iitc-plugin-pgo-route-helper.user.js
 // @homepageURL  https://github.com/wiinuk/iitc-plugin-pgo-route-helper
-// @version      0.4.0
+// @version      0.5.0
 // @description  IITC plugin to assist in Pokémon GO route creation.
 // @author       Wiinuk
 // @include      https://*.ingress.com/intel*
@@ -547,11 +547,12 @@ function assertTrue() {
 }
 
 ;// CONCATENATED MODULE: ./source/styles.module.css
-const cssText = ".import-text-input-b2c4eb2b252429e03bb53e6c7bf3427c9a377002 {\r\n    position: fixed;\r\n    top: 0;\r\n    left: 0;\r\n    width: 100%;\r\n    height: 100%;\r\n    z-index: 10000;\r\n\r\n    display: flex;\r\n    justify-content: center;\r\n    align-items: center;\r\n}\r\n.import-text-input-b2c4eb2b252429e03bb53e6c7bf3427c9a377002.hidden-179f4ccc628f58fd404eed6dac90b9254ad32976 {\r\n    display: none;\r\n}\r\ninput.editable-text-37211a6268c18b074c34d3721915cd1559d983bd {\r\n    border: none;\r\n    background: none;\r\n    font-size: 16px;\r\n    color: black;\r\n}\r\n";
+const cssText = ".import-text-input-192acc323af649b92f7b9e44f61dad9cea31a812 {\r\n    position: fixed;\r\n    top: 0;\r\n    left: 0;\r\n    width: 100%;\r\n    height: 100%;\r\n    z-index: 10000;\r\n\r\n    display: flex;\r\n    justify-content: center;\r\n    align-items: center;\r\n}\r\n.import-text-input-192acc323af649b92f7b9e44f61dad9cea31a812.hidden-87edaeeea8646089801a79f360a9012f7281e77d {\r\n    display: none;\r\n}\r\ninput.editable-text-43fdd4e9d6887c6c74f0cf85190c532388dbe2cb {\r\n    border: none;\r\n    background: none;\r\n    font-size: 16px;\r\n    color: black;\r\n}\r\n.poly-line-editor-vertex-icon-27197baa0089fafced355c804c1f19b0a37bf595::before {\r\n    content: \"\";\r\n    filter: hue-rotate(var(--main-hue-angle, 0));\r\n    display: inline-block;\r\n    width: 16px;\r\n    height: 16px;\r\n    background-image: url(\"data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxNiIgaGVpZ2h0PSIxNiI+PGNpcmNsZSBjeD0iOCIgY3k9IjgiIHI9IjgiIGZpbGw9IiNGRjAwMDAiLz48L3N2Zz4=\");\r\n}\r\n";
 /* harmony default export */ const styles_module = ({
-    "import-text-input": "import-text-input-b2c4eb2b252429e03bb53e6c7bf3427c9a377002",
-    hidden: "hidden-179f4ccc628f58fd404eed6dac90b9254ad32976",
-    "editable-text": "editable-text-37211a6268c18b074c34d3721915cd1559d983bd",
+    "import-text-input": "import-text-input-192acc323af649b92f7b9e44f61dad9cea31a812",
+    hidden: "hidden-87edaeeea8646089801a79f360a9012f7281e77d",
+    "editable-text": "editable-text-43fdd4e9d6887c6c74f0cf85190c532388dbe2cb",
+    "poly-line-editor-vertex-icon": "poly-line-editor-vertex-icon-27197baa0089fafced355c804c1f19b0a37bf595",
 });
 
 ;// CONCATENATED MODULE: ../gas-drivetunnel/source/schemas.ts
@@ -766,21 +767,23 @@ const unselectedOpacity = 0.5;
 const selectedOpacity = 1;
 const removeDistancePx = 48;
 const hiddenDistancePx = removeDistancePx * 2;
-function createPolylineEditorPlugin(options) {
-    var _a;
-    const L = (_a = options === null || options === void 0 ? void 0 : options.L) !== null && _a !== void 0 ? _a : globalThis.L;
+function decrementIfEven(n) {
+    return Math.ceil(n / 2) * 2 - 1;
+}
+function createPolylineEditorPlugin({ L }) {
     function createIcon(...args) {
         const iconSvg = createIconSvg(...args).documentElement;
-        iconSvg.setAttribute("width", "48");
-        iconSvg.setAttribute("height", "48");
+        iconSvg.setAttribute("width", String(48));
+        iconSvg.setAttribute("height", String(48));
         // サイズを正確に計るため一旦 document.body に追加する
         document.body.append(iconSvg);
         const { width, height } = iconSvg.getBoundingClientRect();
         iconSvg.remove();
         return L.divIcon({
             html: iconSvg.outerHTML,
-            iconSize: [0, 0],
+            iconSize: [decrementIfEven(width), decrementIfEven(height)],
             iconAnchor: [Math.floor(width / 2), Math.floor(height / 2)],
+            className: "polyline-editor-icon",
         });
     }
     function getMiddleCoordinate(p1, p2) {
@@ -878,14 +881,20 @@ function createPolylineEditorPlugin(options) {
             // 挿入マーカーを表示する
             this._getInsertMarkers(index).forEach((marker) => { var _a; return marker && ((_a = this._map) === null || _a === void 0 ? void 0 : _a.addLayer(marker)); });
         }
+        _spliceLatLngs(start, deleteCount, ...items) {
+            const coordinates = this.getLatLngs();
+            const deletedCoordinates = coordinates.splice(start, deleteCount, ...items);
+            this.setLatLngs(coordinates);
+            return deletedCoordinates;
+        }
         _insert(index, coordinate) {
-            this.spliceLatLngs(index, 0, coordinate);
+            this._spliceLatLngs(index, 0, coordinate);
             this._refreshMarkers();
         }
         _remove(index) {
             if (this._markers.length <= 2)
                 return;
-            this.spliceLatLngs(index, 1);
+            this._spliceLatLngs(index, 1);
             this._refreshMarkers();
         }
         _createVertexMarker(coordinates, initialIndex) {
@@ -919,7 +928,7 @@ function createPolylineEditorPlugin(options) {
             });
             vertexMarker.on("drag", () => {
                 this._updateVertex(vertexMarker.index);
-                this.spliceLatLngs(vertexMarker.index, 1, vertexMarker.getLatLng());
+                this._spliceLatLngs(vertexMarker.index, 1, vertexMarker.getLatLng());
             });
             vertexMarker.on("dragend", () => {
                 if (this._inRemoveArea(vertexMarker.index)) {
@@ -982,12 +991,19 @@ function createPolylineEditorPlugin(options) {
             const vertexMarker = this._markers[index];
             if (!vertexMarker)
                 return;
-            vertexMarker.setIcon(this._inRemoveArea(vertexMarker.index)
-                ? this._removeIcon
-                : this._vertexIcon);
+            // TODO:
+            // leaflet 1.7 でドラッグ中に setIcon するとドラッグが中断される
+            if (!L.version.startsWith("1.7")) {
+                vertexMarker.setIcon(this._inRemoveArea(vertexMarker.index)
+                    ? this._removeIcon
+                    : this._vertexIcon);
+            }
         }
         /** 座標列からマーカーを生成しマップに追加する */
         _refreshMarkers() {
+            const map = this._map;
+            if (!map)
+                return;
             this._markers.forEach((marker) => marker._removeLayers(map));
             this._markers.length = 0;
             const coordinates = this.getLatLngs();
@@ -1007,6 +1023,84 @@ function createPolylineEditorPlugin(options) {
     return {
         polylineEditor,
         PolylineEditor,
+    };
+}
+
+;// CONCATENATED MODULE: ./source/jquery-ui-polyfill-touch-events.ts
+function polyfill($) {
+    if ("touch" in $.support)
+        return;
+    if (!($.support.touch = "ontouchend" in document))
+        return;
+    const mousePrototype = $.ui.mouse.prototype;
+    const { _mouseInit, _mouseDestroy } = mousePrototype;
+    let touching;
+    function dispatchMouseEventOfTouchEvent(touchEvent, mouseEventType) {
+        // シングルタッチのみを変換する
+        if (1 < touchEvent.originalEvent.touches.length)
+            return;
+        touchEvent.preventDefault();
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        const touch = touchEvent.originalEvent.changedTouches[0];
+        const mouseEvent = new MouseEvent(mouseEventType, {
+            bubbles: true,
+            cancelable: true,
+            view: window,
+            detail: 1,
+            screenX: touch.screenX,
+            screenY: touch.screenY,
+            clientX: touch.clientX,
+            clientY: touch.clientY,
+            ctrlKey: false,
+            altKey: false,
+            shiftKey: false,
+            metaKey: false,
+            button: 0,
+            relatedTarget: null,
+        });
+        touchEvent.target.dispatchEvent(mouseEvent);
+    }
+    mousePrototype._touchStart = function (e) {
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        if (touching || !this._mouseCapture(e.originalEvent.changedTouches[0]))
+            return;
+        touching = true;
+        this._touchMoved = false;
+        dispatchMouseEventOfTouchEvent(e, "mouseover");
+        dispatchMouseEventOfTouchEvent(e, "mousemove");
+        dispatchMouseEventOfTouchEvent(e, "mousedown");
+    };
+    mousePrototype._touchMove = function (e) {
+        if (!touching)
+            return;
+        this._touchMoved = true;
+        dispatchMouseEventOfTouchEvent(e, "mousemove");
+    };
+    mousePrototype._touchEnd = function (e) {
+        if (!touching)
+            return;
+        dispatchMouseEventOfTouchEvent(e, "mouseup");
+        dispatchMouseEventOfTouchEvent(e, "mouseout");
+        if (!this._touchMoved) {
+            dispatchMouseEventOfTouchEvent(e, "click");
+        }
+        touching = false;
+    };
+    mousePrototype._mouseInit = function () {
+        this.element.bind({
+            touchstart: $.proxy(this, "_touchStart"),
+            touchmove: $.proxy(this, "_touchMove"),
+            touchend: $.proxy(this, "_touchEnd"),
+        });
+        _mouseInit.call(this);
+    };
+    mousePrototype._mouseDestroy = function () {
+        this.element.unbind({
+            touchstart: $.proxy(this, "_touchStart"),
+            touchmove: $.proxy(this, "_touchMove"),
+            touchend: $.proxy(this, "_touchEnd"),
+        });
+        _mouseDestroy.call(this);
     };
 }
 
@@ -1030,8 +1124,17 @@ var iitc_plugin_pgo_route_helper_awaiter = (undefined && undefined.__awaiter) ||
 
 
 
+
 function handleAsyncError(promise) {
-    promise.catch((error) => console.error(error));
+    promise.catch((error) => {
+        console.error(error);
+        if (error != null &&
+            typeof error === "object" &&
+            "stack" in error &&
+            typeof error.stack === "string") {
+            console.error(error.stack);
+        }
+    });
 }
 function main() {
     handleAsyncError(asyncMain());
@@ -1086,9 +1189,13 @@ function asyncMain() {
     return iitc_plugin_pgo_route_helper_awaiter(this, void 0, void 0, function* () {
         const window = (isIITCMobile ? globalThis : unsafeWindow);
         const { L = standard_extensions_error `leaflet を先に読み込んでください`, map = standard_extensions_error `デフォルトマップがありません`, document, $ = standard_extensions_error `JQuery を先に読み込んでください`, } = window;
+        polyfill($);
         const { polylineEditor } = createPolylineEditorPlugin({ L });
         yield waitElementLoaded();
-        L.Icon.Default.imagePath = `https://unpkg.com/leaflet@${L.version}/dist/images/`;
+        // TODO:
+        if (!isIITCMobile) {
+            L.Icon.Default.imagePath = `https://unpkg.com/leaflet@${L.version}/dist/images/`;
+        }
         addStyle(cssText);
         const config = loadConfig();
         if (config.userId == null) {
