@@ -6,7 +6,7 @@
 // @downloadURL  https://github.com/wiinuk/iitc-plugin-pgo-route-helper/raw/master/iitc-plugin-pgo-route-helper.user.js
 // @updateURL    https://github.com/wiinuk/iitc-plugin-pgo-route-helper/raw/master/iitc-plugin-pgo-route-helper.user.js
 // @homepageURL  https://github.com/wiinuk/iitc-plugin-pgo-route-helper
-// @version      0.5.0
+// @version      0.5.1
 // @description  IITC plugin to assist in Pokémon GO route creation.
 // @author       Wiinuk
 // @include      https://*.ingress.com/intel*
@@ -547,12 +547,11 @@ function assertTrue() {
 }
 
 ;// CONCATENATED MODULE: ./source/styles.module.css
-const cssText = ".import-text-input-192acc323af649b92f7b9e44f61dad9cea31a812 {\r\n    position: fixed;\r\n    top: 0;\r\n    left: 0;\r\n    width: 100%;\r\n    height: 100%;\r\n    z-index: 10000;\r\n\r\n    display: flex;\r\n    justify-content: center;\r\n    align-items: center;\r\n}\r\n.import-text-input-192acc323af649b92f7b9e44f61dad9cea31a812.hidden-87edaeeea8646089801a79f360a9012f7281e77d {\r\n    display: none;\r\n}\r\ninput.editable-text-43fdd4e9d6887c6c74f0cf85190c532388dbe2cb {\r\n    border: none;\r\n    background: none;\r\n    font-size: 16px;\r\n    color: black;\r\n}\r\n.poly-line-editor-vertex-icon-27197baa0089fafced355c804c1f19b0a37bf595::before {\r\n    content: \"\";\r\n    filter: hue-rotate(var(--main-hue-angle, 0));\r\n    display: inline-block;\r\n    width: 16px;\r\n    height: 16px;\r\n    background-image: url(\"data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxNiIgaGVpZ2h0PSIxNiI+PGNpcmNsZSBjeD0iOCIgY3k9IjgiIHI9IjgiIGZpbGw9IiNGRjAwMDAiLz48L3N2Zz4=\");\r\n}\r\n";
+const cssText = ".import-text-input-b2c4eb2b252429e03bb53e6c7bf3427c9a377002 {\r\n    position: fixed;\r\n    top: 0;\r\n    left: 0;\r\n    width: 100%;\r\n    height: 100%;\r\n    z-index: 10000;\r\n\r\n    display: flex;\r\n    justify-content: center;\r\n    align-items: center;\r\n}\r\n.import-text-input-b2c4eb2b252429e03bb53e6c7bf3427c9a377002.hidden-179f4ccc628f58fd404eed6dac90b9254ad32976 {\r\n    display: none;\r\n}\r\ninput.editable-text-37211a6268c18b074c34d3721915cd1559d983bd {\r\n    border: none;\r\n    background: none;\r\n    font-size: 16px;\r\n    color: black;\r\n}\r\n";
 /* harmony default export */ const styles_module = ({
-    "import-text-input": "import-text-input-192acc323af649b92f7b9e44f61dad9cea31a812",
-    hidden: "hidden-87edaeeea8646089801a79f360a9012f7281e77d",
-    "editable-text": "editable-text-43fdd4e9d6887c6c74f0cf85190c532388dbe2cb",
-    "poly-line-editor-vertex-icon": "poly-line-editor-vertex-icon-27197baa0089fafced355c804c1f19b0a37bf595",
+    "import-text-input": "import-text-input-b2c4eb2b252429e03bb53e6c7bf3427c9a377002",
+    hidden: "hidden-179f4ccc628f58fd404eed6dac90b9254ad32976",
+    "editable-text": "editable-text-37211a6268c18b074c34d3721915cd1559d983bd",
 });
 
 ;// CONCATENATED MODULE: ../gas-drivetunnel/source/schemas.ts
@@ -758,6 +757,20 @@ function createIconSvg(idOrLayerName) {
     }
     return iconsSvg;
 }
+function createIconHtmlTextWithSize(...args) {
+    const iconSvg = createIconSvg(...args).documentElement;
+    iconSvg.setAttribute("width", String(48));
+    iconSvg.setAttribute("height", String(48));
+    // サイズを正確に計るため一旦 document.body に追加する
+    document.body.append(iconSvg);
+    const { width, height } = iconSvg.getBoundingClientRect();
+    iconSvg.remove();
+    return {
+        html: iconSvg.outerHTML,
+        width,
+        height,
+    };
+}
 function getPixelDistanceIn(map, coordinate1, coordinate2) {
     return map
         .latLngToContainerPoint(coordinate1)
@@ -772,15 +785,9 @@ function decrementIfEven(n) {
 }
 function createPolylineEditorPlugin({ L }) {
     function createIcon(...args) {
-        const iconSvg = createIconSvg(...args).documentElement;
-        iconSvg.setAttribute("width", String(48));
-        iconSvg.setAttribute("height", String(48));
-        // サイズを正確に計るため一旦 document.body に追加する
-        document.body.append(iconSvg);
-        const { width, height } = iconSvg.getBoundingClientRect();
-        iconSvg.remove();
+        const { html, width, height } = createIconHtmlTextWithSize(...args);
         return L.divIcon({
-            html: iconSvg.outerHTML,
+            html,
             iconSize: [decrementIfEven(width), decrementIfEven(height)],
             iconAnchor: [Math.floor(width / 2), Math.floor(height / 2)],
             className: "polyline-editor-icon",
@@ -795,11 +802,10 @@ function createPolylineEditorPlugin({ L }) {
             this.index = index;
             this.previousInsertMarker = previousInsertMarker;
         }
-        /** このマーカーと関連するレイヤーをマップから削除する */
-        _removeLayers(map) {
-            map.removeLayer(this);
+        *getLayers() {
+            yield this;
             if (this.previousInsertMarker != null) {
-                map.removeLayer(this.previousInsertMarker);
+                yield this.previousInsertMarker;
             }
         }
     }
@@ -815,37 +821,51 @@ function createPolylineEditorPlugin({ L }) {
         const insertCoordinate = getMiddleCoordinate(previousCoordinate, coordinate);
         return L.marker(insertCoordinate, options);
     }
-    class PolylineEditor extends L.Polyline {
+    // NOTE: spliceLatLngs は iitc-mobile が依存する leaflet@1.7.1 には存在しない
+    function spliceLatLngs(polyline, start, deleteCount, ...items) {
+        const coordinates = polyline.getLatLngs();
+        const deletedCoordinates = coordinates.splice(start, deleteCount, ...items);
+        polyline.setLatLngs(coordinates);
+        return deletedCoordinates;
+    }
+    class PolylineEditor extends L.FeatureGroup {
         constructor(latlngs, options) {
-            super(latlngs, options);
+            super();
             this._markers = [];
             this._selectedVertexIndex = null;
             this._vertexIcon = createIcon("vertex icon");
             this._removeIcon = createIcon("remove icon");
             this._insertIcon = createIcon("insert icon");
-            const unselectIfMapOnClick = (e) => {
+            this._unselectIfMapOnClick = (e) => {
                 if (this._markers.includes(e.target))
                     return;
                 this._unselect();
             };
-            const mapOnZoomEnd = () => {
+            this._mapOnZoomEnd = () => {
                 this._refreshMarkers();
             };
-            this.on("add", () => {
-                var _a, _b;
-                (_a = this._map) === null || _a === void 0 ? void 0 : _a.on("click", unselectIfMapOnClick);
-                (_b = this._map) === null || _b === void 0 ? void 0 : _b.on("zoomend", mapOnZoomEnd);
-                this._refreshMarkers();
-                this._select(0);
-            });
-            this.on("remove", () => {
-                var _a, _b;
-                this._unselect();
-                this.setLatLngs([]);
-                this._refreshMarkers();
-                (_a = this._map) === null || _a === void 0 ? void 0 : _a.off("click", unselectIfMapOnClick);
-                (_b = this._map) === null || _b === void 0 ? void 0 : _b.off("zoomend", mapOnZoomEnd);
-            });
+            this._polyline = L.polyline(latlngs, options);
+            this.addLayer(this._polyline);
+        }
+        onAdd(map) {
+            var _a, _b;
+            super.onAdd(map);
+            (_a = this._map) === null || _a === void 0 ? void 0 : _a.on("click", this._unselectIfMapOnClick);
+            (_b = this._map) === null || _b === void 0 ? void 0 : _b.on("zoomend", this._mapOnZoomEnd);
+            this._refreshMarkers();
+            this._select(0);
+        }
+        onRemove(map) {
+            var _a, _b;
+            this._unselect();
+            this._polyline.setLatLngs([]);
+            this._refreshMarkers();
+            (_a = this._map) === null || _a === void 0 ? void 0 : _a.off("click", this._unselectIfMapOnClick);
+            (_b = this._map) === null || _b === void 0 ? void 0 : _b.off("zoomend", this._mapOnZoomEnd);
+            super.onRemove(map);
+        }
+        getLatLngs() {
+            return this._polyline.getLatLngs();
         }
         _getInsertMarkers(index) {
             var _a, _b;
@@ -866,7 +886,7 @@ function createPolylineEditorPlugin({ L }) {
             // 頂点マーカーを半透明にする
             selectedMarker.setOpacity(unselectedOpacity);
             // 挿入マーカーを非表示にする
-            this._getInsertMarkers(this._selectedVertexIndex).forEach((marker) => { var _a; return marker && ((_a = this._map) === null || _a === void 0 ? void 0 : _a.removeLayer(marker)); });
+            this._getInsertMarkers(this._selectedVertexIndex).forEach((marker) => marker && this.removeLayer(marker));
             this._selectedVertexIndex = null;
         }
         /** 指定されたインデックスの頂点マーカーを選択状態にする */
@@ -879,22 +899,16 @@ function createPolylineEditorPlugin({ L }) {
             // 頂点マーカーを不透明にする
             selectedMarker.setOpacity(selectedOpacity);
             // 挿入マーカーを表示する
-            this._getInsertMarkers(index).forEach((marker) => { var _a; return marker && ((_a = this._map) === null || _a === void 0 ? void 0 : _a.addLayer(marker)); });
-        }
-        _spliceLatLngs(start, deleteCount, ...items) {
-            const coordinates = this.getLatLngs();
-            const deletedCoordinates = coordinates.splice(start, deleteCount, ...items);
-            this.setLatLngs(coordinates);
-            return deletedCoordinates;
+            this._getInsertMarkers(index).forEach((marker) => marker && this.addLayer(marker));
         }
         _insert(index, coordinate) {
-            this._spliceLatLngs(index, 0, coordinate);
+            spliceLatLngs(this._polyline, index, 0, coordinate);
             this._refreshMarkers();
         }
         _remove(index) {
             if (this._markers.length <= 2)
                 return;
-            this._spliceLatLngs(index, 1);
+            spliceLatLngs(this._polyline, index, 1);
             this._refreshMarkers();
         }
         _createVertexMarker(coordinates, initialIndex) {
@@ -928,7 +942,7 @@ function createPolylineEditorPlugin({ L }) {
             });
             vertexMarker.on("drag", () => {
                 this._updateVertex(vertexMarker.index);
-                this._spliceLatLngs(vertexMarker.index, 1, vertexMarker.getLatLng());
+                spliceLatLngs(this._polyline, vertexMarker.index, 1, vertexMarker.getLatLng());
             });
             vertexMarker.on("dragend", () => {
                 if (this._inRemoveArea(vertexMarker.index)) {
@@ -957,10 +971,10 @@ function createPolylineEditorPlugin({ L }) {
             if (map) {
                 if (getMarkerPixelDistanceIn(map, marker1, marker2) <=
                     hiddenDistancePx) {
-                    map.removeLayer(insertMarker);
+                    this.removeLayer(insertMarker);
                 }
                 else {
-                    map.addLayer(insertMarker);
+                    this.addLayer(insertMarker);
                 }
             }
             insertMarker.setLatLng(getMiddleCoordinate(marker1.getLatLng(), marker2.getLatLng()));
@@ -1004,13 +1018,17 @@ function createPolylineEditorPlugin({ L }) {
             const map = this._map;
             if (!map)
                 return;
-            this._markers.forEach((marker) => marker._removeLayers(map));
+            this._markers.forEach((marker) => {
+                for (const m of marker.getLayers()) {
+                    this.removeLayer(m);
+                }
+            });
             this._markers.length = 0;
-            const coordinates = this.getLatLngs();
+            const coordinates = this._polyline.getLatLngs();
             coordinates.forEach((_, initialIndex) => {
                 const vertexMarker = this._createVertexMarker(coordinates, initialIndex);
                 this._markers.push(vertexMarker);
-                map.addLayer(vertexMarker);
+                this.addLayer(vertexMarker);
             });
             this._markers.forEach((vertexMarker) => {
                 this._updateVertex(vertexMarker.index);
@@ -1243,7 +1261,7 @@ function asyncMain() {
             }
         };
         const remoteCommandCancelScope = createAsyncCancelScope(handleAsyncError);
-        const remoteRouteCommandBuffer = new Map();
+        const uncompletedRemoteCommands = new Map();
         function routeIdAndName(command) {
             switch (command.type) {
                 case "set":
@@ -1255,15 +1273,15 @@ function asyncMain() {
         function queueRemoteCommandDelayed(waitMilliseconds, command) {
             remoteCommandCancelScope((signal) => iitc_plugin_pgo_route_helper_awaiter(this, void 0, void 0, function* () {
                 const { routeId, routeName } = routeIdAndName(command);
-                remoteRouteCommandBuffer.set(routeId, command);
+                uncompletedRemoteCommands.set(routeId, command);
                 progress({
                     type: "upload-waiting",
                     routeName,
                     milliseconds: waitMilliseconds,
-                    queueCount: remoteRouteCommandBuffer.size,
+                    queueCount: uncompletedRemoteCommands.size,
                 });
                 yield sleep(waitMilliseconds, { signal });
-                const entries = [...remoteRouteCommandBuffer.entries()];
+                const entries = [...uncompletedRemoteCommands.entries()];
                 for (const [routeId, command] of entries) {
                     const { routeName } = routeIdAndName(command);
                     progress({
@@ -1294,11 +1312,11 @@ function asyncMain() {
                             throw new Error(`Unknown command: ${command}`);
                         }
                     }
-                    remoteRouteCommandBuffer.delete(routeId);
+                    uncompletedRemoteCommands.delete(routeId);
                     progress({
                         type: "uploaded",
                         routeName,
-                        queueCount: remoteRouteCommandBuffer.size,
+                        queueCount: uncompletedRemoteCommands.size,
                     });
                 }
             }));

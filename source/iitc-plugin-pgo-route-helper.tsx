@@ -126,7 +126,11 @@ async function asyncMain() {
     type PolylineEditor = InstanceType<
         ReturnType<typeof createPolylineEditorPlugin>["PolylineEditor"]
     >;
-    type RouteWithView = { route: Route; editor: PolylineEditor };
+    type Editor = PolylineEditor;
+    type RouteWithView = {
+        route: Route;
+        editor: Editor;
+    };
     const state: {
         /** null: 選択されていない */
         selectedRouteId: null | string;
@@ -203,7 +207,7 @@ async function asyncMain() {
         | { type: "delete"; routeId: string; routeName: string };
 
     const remoteCommandCancelScope = createAsyncCancelScope(handleAsyncError);
-    const remoteRouteCommandBuffer = new Map<string, RemoteCommand>();
+    const uncompletedRemoteCommands = new Map<string, RemoteCommand>();
     function routeIdAndName(command: RemoteCommand) {
         switch (command.type) {
             case "set":
@@ -219,16 +223,16 @@ async function asyncMain() {
     ) {
         remoteCommandCancelScope(async (signal) => {
             const { routeId, routeName } = routeIdAndName(command);
-            remoteRouteCommandBuffer.set(routeId, command);
+            uncompletedRemoteCommands.set(routeId, command);
             progress({
                 type: "upload-waiting",
                 routeName,
                 milliseconds: waitMilliseconds,
-                queueCount: remoteRouteCommandBuffer.size,
+                queueCount: uncompletedRemoteCommands.size,
             });
             await sleep(waitMilliseconds, { signal });
 
-            const entries = [...remoteRouteCommandBuffer.entries()];
+            const entries = [...uncompletedRemoteCommands.entries()];
             for (const [routeId, command] of entries) {
                 const { routeName } = routeIdAndName(command);
                 progress({
@@ -275,11 +279,11 @@ async function asyncMain() {
                         );
                     }
                 }
-                remoteRouteCommandBuffer.delete(routeId);
+                uncompletedRemoteCommands.delete(routeId);
                 progress({
                     type: "uploaded",
                     routeName,
-                    queueCount: remoteRouteCommandBuffer.size,
+                    queueCount: uncompletedRemoteCommands.size,
                 });
             }
         });
@@ -518,7 +522,7 @@ async function asyncMain() {
         setEditorElements(selectedRoute.route);
     }
     function addRouteView(
-        routeMap: Map<string, { route: Route; editor: PolylineEditor }>,
+        routeMap: Map<string, { route: Route; editor: Editor }>,
         route: Route
     ) {
         const { routeId } = route;
