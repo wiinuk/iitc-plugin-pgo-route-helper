@@ -37,6 +37,22 @@ function createIconSvg(
     }
     return iconsSvg;
 }
+function createIconHtmlTextWithSize(...args: Parameters<typeof createIconSvg>) {
+    const iconSvg = createIconSvg(...args).documentElement;
+    iconSvg.setAttribute("width", String(48));
+    iconSvg.setAttribute("height", String(48));
+
+    // サイズを正確に計るため一旦 document.body に追加する
+    document.body.append(iconSvg);
+    const { width, height } = iconSvg.getBoundingClientRect();
+    iconSvg.remove();
+
+    return {
+        html: iconSvg.outerHTML,
+        width,
+        height,
+    };
+}
 
 function getPixelDistanceIn(
     map: L.Map,
@@ -57,17 +73,9 @@ function decrementIfEven(n: number) {
 }
 export function createPolylineEditorPlugin({ L }: { L: typeof globalThis.L }) {
     function createIcon(...args: Parameters<typeof createIconSvg>) {
-        const iconSvg = createIconSvg(...args).documentElement;
-        iconSvg.setAttribute("width", String(48));
-        iconSvg.setAttribute("height", String(48));
-
-        // サイズを正確に計るため一旦 document.body に追加する
-        document.body.append(iconSvg);
-        const { width, height } = iconSvg.getBoundingClientRect();
-        iconSvg.remove();
-
+        const { html, width, height } = createIconHtmlTextWithSize(...args);
         return L.divIcon({
-            html: iconSvg.outerHTML,
+            html,
             iconSize: [decrementIfEven(width), decrementIfEven(height)],
             iconAnchor: [Math.floor(width / 2), Math.floor(height / 2)],
             className: "polyline-editor-icon",
@@ -89,11 +97,10 @@ export function createPolylineEditorPlugin({ L }: { L: typeof globalThis.L }) {
         ) {
             super(coordinate, options);
         }
-        /** このマーカーと関連するレイヤーをマップから削除する */
-        _removeLayers(map: L.Map) {
-            map.removeLayer(this);
+        *getLayers() {
+            yield this;
             if (this.previousInsertMarker != null) {
-                map.removeLayer(this.previousInsertMarker);
+                yield this.previousInsertMarker;
             }
         }
     }
@@ -125,58 +132,66 @@ export function createPolylineEditorPlugin({ L }: { L: typeof globalThis.L }) {
         );
         return L.marker(insertCoordinate, options);
     }
-
-    type OmitInstanceMembers<
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        Class extends abstract new (...args: any) => any,
-        Keys extends string | number | symbol
-    > = { [k in keyof Class]: Class[k] } & (Class extends abstract new (
-        ...args: infer P
-    ) => infer Instance
-        ? new (...args: P) => Omit<Instance, Keys>
-        : never);
-
+    // NOTE: spliceLatLngs は iitc-mobile が依存する leaflet@1.7.1 には存在しない
+    function spliceLatLngs(
+        polyline: Omit<L.Polyline, "spliceLatLngs">,
+        start: number,
+        deleteCount: number,
+        ...items: L.LatLng[]
+    ) {
+        const coordinates = polyline.getLatLngs();
+        const deletedCoordinates = coordinates.splice(
+            start,
+            deleteCount,
+            ...items
+        );
+        polyline.setLatLngs(coordinates);
+        return deletedCoordinates;
+    }
     type PolylineEditorOptions = L.PolylineOptions;
-    class PolylineEditor extends (L.Polyline as OmitInstanceMembers<
-        typeof L.Polyline,
-        // NOTE: spliceLatLngs は iitc-mobile が依存する leaflet@1.7.1 には存在しない
-        "spliceLatLngs"
-    >) {
+    class PolylineEditor extends L.FeatureGroup<L.ILayer> {
         // NOTE: leaflet 0.7.3 には存在するが他のバージョンでは不明
         protected readonly _map?: L.Map;
         private readonly _markers: VertexMarker[] = [];
         private _selectedVertexIndex: number | null = null;
+        private readonly _polyline: L.Polyline;
 
         private readonly _vertexIcon = createIcon("vertex icon");
         private readonly _removeIcon = createIcon("remove icon");
         private readonly _insertIcon = createIcon("insert icon");
 
+        private _unselectIfMapOnClick = (e: L.LeafletMouseEvent) => {
+            if (this._markers.includes(e.target)) return;
+            this._unselect();
+        };
+        private _mapOnZoomEnd = () => {
+            this._refreshMarkers();
+        };
         constructor(
             latlngs: L.LatLngBoundsExpression,
             options?: PolylineEditorOptions
         ) {
-            super(latlngs, options);
-
-            const unselectIfMapOnClick = (e: L.LeafletMouseEvent) => {
-                if (this._markers.includes(e.target)) return;
-                this._unselect();
-            };
-            const mapOnZoomEnd = () => {
-                this._refreshMarkers();
-            };
-            this.on("add", () => {
-                this._map?.on("click", unselectIfMapOnClick);
-                this._map?.on("zoomend", mapOnZoomEnd);
-                this._refreshMarkers();
-                this._select(0);
-            });
-            this.on("remove", () => {
-                this._unselect();
-                this.setLatLngs([]);
-                this._refreshMarkers();
-                this._map?.off("click", unselectIfMapOnClick);
-                this._map?.off("zoomend", mapOnZoomEnd);
-            });
+            super();
+            this._polyline = L.polyline(latlngs, options);
+            this.addLayer(this._polyline);
+        }
+        override onAdd(map: L.Map) {
+            super.onAdd(map);
+            this._map?.on("click", this._unselectIfMapOnClick);
+            this._map?.on("zoomend", this._mapOnZoomEnd);
+            this._refreshMarkers();
+            this._select(0);
+        }
+        override onRemove(map: L.Map): void {
+            this._unselect();
+            this._polyline.setLatLngs([]);
+            this._refreshMarkers();
+            this._map?.off("click", this._unselectIfMapOnClick);
+            this._map?.off("zoomend", this._mapOnZoomEnd);
+            super.onRemove(map);
+        }
+        getLatLngs() {
+            return this._polyline.getLatLngs();
         }
         private _getInsertMarkers(index: number) {
             return [
@@ -199,7 +214,7 @@ export function createPolylineEditorPlugin({ L }: { L: typeof globalThis.L }) {
 
             // 挿入マーカーを非表示にする
             this._getInsertMarkers(this._selectedVertexIndex).forEach(
-                (marker) => marker && this._map?.removeLayer(marker)
+                (marker) => marker && this.removeLayer(marker)
             );
 
             this._selectedVertexIndex = null;
@@ -217,31 +232,17 @@ export function createPolylineEditorPlugin({ L }: { L: typeof globalThis.L }) {
 
             // 挿入マーカーを表示する
             this._getInsertMarkers(index).forEach(
-                (marker) => marker && this._map?.addLayer(marker)
+                (marker) => marker && this.addLayer(marker)
             );
-        }
-        private _spliceLatLngs(
-            start: number,
-            deleteCount: number,
-            ...items: L.LatLng[]
-        ) {
-            const coordinates = this.getLatLngs();
-            const deletedCoordinates = coordinates.splice(
-                start,
-                deleteCount,
-                ...items
-            );
-            this.setLatLngs(coordinates);
-            return deletedCoordinates;
         }
         private _insert(index: number, coordinate: L.LatLng) {
-            this._spliceLatLngs(index, 0, coordinate);
+            spliceLatLngs(this._polyline, index, 0, coordinate);
             this._refreshMarkers();
         }
         private _remove(index: number) {
             if (this._markers.length <= 2) return;
 
-            this._spliceLatLngs(index, 1);
+            spliceLatLngs(this._polyline, index, 1);
             this._refreshMarkers();
         }
 
@@ -285,7 +286,8 @@ export function createPolylineEditorPlugin({ L }: { L: typeof globalThis.L }) {
             });
             vertexMarker.on("drag", () => {
                 this._updateVertex(vertexMarker.index);
-                this._spliceLatLngs(
+                spliceLatLngs(
+                    this._polyline,
                     vertexMarker.index,
                     1,
                     vertexMarker.getLatLng()
@@ -321,9 +323,9 @@ export function createPolylineEditorPlugin({ L }: { L: typeof globalThis.L }) {
                     getMarkerPixelDistanceIn(map, marker1, marker2) <=
                     hiddenDistancePx
                 ) {
-                    map.removeLayer(insertMarker);
+                    this.removeLayer(insertMarker);
                 } else {
-                    map.addLayer(insertMarker);
+                    this.addLayer(insertMarker);
                 }
             }
             insertMarker.setLatLng(
@@ -374,16 +376,20 @@ export function createPolylineEditorPlugin({ L }: { L: typeof globalThis.L }) {
             const map = this._map;
             if (!map) return;
 
-            this._markers.forEach((marker) => marker._removeLayers(map));
+            this._markers.forEach((marker) => {
+                for (const m of marker.getLayers()) {
+                    this.removeLayer(m);
+                }
+            });
             this._markers.length = 0;
-            const coordinates = this.getLatLngs();
+            const coordinates = this._polyline.getLatLngs();
             coordinates.forEach((_, initialIndex) => {
                 const vertexMarker = this._createVertexMarker(
                     coordinates,
                     initialIndex
                 );
                 this._markers.push(vertexMarker);
-                map.addLayer(vertexMarker);
+                this.addLayer(vertexMarker);
             });
             this._markers.forEach((vertexMarker) => {
                 this._updateVertex(vertexMarker.index);
