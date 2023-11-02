@@ -6,7 +6,7 @@
 // @downloadURL  https://github.com/wiinuk/iitc-plugin-pgo-route-helper/raw/master/iitc-plugin-pgo-route-helper.user.js
 // @updateURL    https://github.com/wiinuk/iitc-plugin-pgo-route-helper/raw/master/iitc-plugin-pgo-route-helper.user.js
 // @homepageURL  https://github.com/wiinuk/iitc-plugin-pgo-route-helper
-// @version      0.5.1
+// @version      0.5.2
 // @description  IITC plugin to assist in Pokémon GO route creation.
 // @author       Wiinuk
 // @include      https://*.ingress.com/intel*
@@ -647,7 +647,6 @@ var remote_awaiter = (undefined && undefined.__awaiter) || function (thisArg, _a
 };
 
 
-const apiRoot = "https://script.google.com/macros/s/AKfycbymnZYJfD-GsF78ft8lG2l4Xpw8GogTSOP929rRQMzrwWLBuQqrXtwUn00xMKXYllRa/exec";
 class RemoteError extends Error {
     constructor(response) {
         super();
@@ -677,8 +676,9 @@ function bindSignalToRequest(request, signal) {
 }
 function fetchGet(schema, parameters, options) {
     return remote_awaiter(this, void 0, void 0, function* () {
+        const rootUrl = options === null || options === void 0 ? void 0 : options.rootUrl;
         const method = "GET";
-        const url = `${apiRoot}/${schema.path}`;
+        const url = `${rootUrl}/${schema.path}`;
         console.debug(`-> ${JSON.stringify([method, url, JSON.stringify(parameters)])}`);
         const request = $.ajax({
             type: method,
@@ -1163,23 +1163,37 @@ function addListeners(element, eventListenerMap) {
     }
     return element;
 }
-const configV1Schema = strictObject({
+const configV1Properties = {
     version: literal("1"),
     userId: string().optional(),
-});
+};
+const configV1Schema = strictObject(configV1Properties);
+const configV2Properties = Object.assign(Object.assign({}, configV1Properties), { version: literal("2"), apiRoot: string().optional() });
+const configV2Schema = strictObject(configV2Properties);
+const configSchemas = [configV1Schema, configV2Schema];
+const configVAnySchema = union(configSchemas);
+const apiRoot = "https://script.google.com/macros/s/AKfycbymnZYJfD-GsF78ft8lG2l4Xpw8GogTSOP929rRQMzrwWLBuQqrXtwUn00xMKXYllRa/exec";
 const storageConfigKey = "pgo-route-helper-config";
+function upgradeConfig(config) {
+    switch (config.version) {
+        case "1":
+            return Object.assign(Object.assign({}, config), { version: "2" });
+        case "2":
+            return config;
+    }
+}
 function loadConfig() {
     const json = localStorage.getItem(storageConfigKey);
     try {
         if (json != null) {
-            return configV1Schema.parse(JSON.parse(json));
+            return upgradeConfig(configVAnySchema.parse(JSON.parse(json)));
         }
     }
     catch (e) {
         console.error(e);
     }
     return {
-        version: "1",
+        version: "2",
     };
 }
 function saveConfig(config) {
@@ -1272,6 +1286,7 @@ function asyncMain() {
         }
         function queueRemoteCommandDelayed(waitMilliseconds, command) {
             remoteCommandCancelScope((signal) => iitc_plugin_pgo_route_helper_awaiter(this, void 0, void 0, function* () {
+                var _a, _b;
                 const { routeId, routeName } = routeIdAndName(command);
                 uncompletedRemoteCommands.set(routeId, command);
                 progress({
@@ -1301,11 +1316,12 @@ function asyncMain() {
                                 note,
                             }, {
                                 signal,
+                                rootUrl: (_a = config.apiRoot) !== null && _a !== void 0 ? _a : apiRoot,
                             });
                             break;
                         }
                         case "delete": {
-                            yield deleteRoute({ "route-id": command.routeId }, { signal });
+                            yield deleteRoute({ "route-id": command.routeId }, { signal, rootUrl: (_b = config.apiRoot) !== null && _b !== void 0 ? _b : apiRoot });
                             break;
                         }
                         default: {

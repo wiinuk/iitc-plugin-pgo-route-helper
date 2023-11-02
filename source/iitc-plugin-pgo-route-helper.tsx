@@ -14,6 +14,7 @@ import * as remote from "./remote";
 import { isIITCMobile } from "./environment";
 import { createPolylineEditorPlugin } from "./polyline-editor";
 import jqueryUIPolyfillTouchEvents from "./jquery-ui-polyfill-touch-events";
+import type { LastOfArray } from "./type-level";
 
 function handleAsyncError(promise: Promise<void>) {
     promise.catch((error: unknown) => {
@@ -49,27 +50,52 @@ function addListeners<E extends HTMLElement>(
     return element;
 }
 
-const configV1Schema = z.strictObject({
+const configV1Properties = {
     version: z.literal("1"),
     userId: z.string().optional(),
-});
-type ConfigV1 = z.infer<typeof configV1Schema>;
+};
+const configV1Schema = z.strictObject(configV1Properties);
+const configV2Properties = {
+    ...configV1Properties,
+    version: z.literal("2"),
+    apiRoot: z.string().optional(),
+};
+const configV2Schema = z.strictObject(configV2Properties);
+const configSchemas = [configV1Schema, configV2Schema] as const;
+
+const configVAnySchema = z.union(configSchemas);
+type ConfigVAny = z.infer<typeof configVAnySchema>;
+type Config = z.infer<LastOfArray<typeof configSchemas>>;
+
+const apiRoot =
+    "https://script.google.com/macros/s/AKfycbymnZYJfD-GsF78ft8lG2l4Xpw8GogTSOP929rRQMzrwWLBuQqrXtwUn00xMKXYllRa/exec";
 
 const storageConfigKey = "pgo-route-helper-config";
-function loadConfig(): ConfigV1 {
+function upgradeConfig(config: ConfigVAny): Config {
+    switch (config.version) {
+        case "1":
+            return {
+                ...config,
+                version: "2",
+            };
+        case "2":
+            return config;
+    }
+}
+function loadConfig(): Config {
     const json = localStorage.getItem(storageConfigKey);
     try {
         if (json != null) {
-            return configV1Schema.parse(JSON.parse(json));
+            return upgradeConfig(configVAnySchema.parse(JSON.parse(json)));
         }
     } catch (e) {
         console.error(e);
     }
     return {
-        version: "1",
+        version: "2",
     };
 }
-function saveConfig(config: ConfigV1) {
+function saveConfig(config: Config) {
     localStorage.setItem(storageConfigKey, JSON.stringify(config));
 }
 function waitLayerAdded(map: L.Map, layer: L.ILayer) {
@@ -262,6 +288,7 @@ async function asyncMain() {
                             },
                             {
                                 signal,
+                                rootUrl: config.apiRoot ?? apiRoot,
                             }
                         );
                         break;
@@ -269,7 +296,7 @@ async function asyncMain() {
                     case "delete": {
                         await remote.deleteRoute(
                             { "route-id": command.routeId },
-                            { signal }
+                            { signal, rootUrl: config.apiRoot ?? apiRoot }
                         );
                         break;
                     }

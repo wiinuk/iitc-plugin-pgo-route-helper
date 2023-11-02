@@ -8,9 +8,6 @@ import {
 } from "../../gas-drivetunnel/source/schemas";
 import { newAbortError } from "./standard-extensions";
 
-const apiRoot =
-    "https://script.google.com/macros/s/AKfycbymnZYJfD-GsF78ft8lG2l4Xpw8GogTSOP929rRQMzrwWLBuQqrXtwUn00xMKXYllRa/exec";
-
 class RemoteError extends Error {
     constructor(public readonly response: ErrorResponse) {
         super();
@@ -40,14 +37,16 @@ async function bindSignalToRequest(
 
 interface RemoteOptions {
     signal?: AbortSignal;
+    rootUrl: string;
 }
 async function fetchGet<T extends GetApiSchema>(
     schema: T,
     parameters: z.infer<T["parameter"]>,
     options?: RemoteOptions
 ): Promise<z.infer<T["result"]>> {
+    const rootUrl = options?.rootUrl;
     const method = "GET";
-    const url = `${apiRoot}/${schema.path}`;
+    const url = `${rootUrl}/${schema.path}`;
 
     console.debug(
         `-> ${JSON.stringify([method, url, JSON.stringify(parameters)])}`
@@ -79,7 +78,7 @@ async function fetchGet<T extends GetApiSchema>(
 }
 export async function getRoutes(
     parameter: z.infer<typeof interfaces.getRoutes.parameter>,
-    options?: { signal?: AbortSignal }
+    options?: RemoteOptions
 ) {
     return await fetchGet(interfaces.getRoutes, parameter, options);
 }
