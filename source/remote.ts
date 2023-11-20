@@ -42,9 +42,9 @@ interface RemoteOptions {
 async function fetchGet<T extends GetApiSchema>(
     schema: T,
     parameters: z.infer<T["parameter"]>,
-    options?: RemoteOptions
+    options: RemoteOptions
 ): Promise<z.infer<T["result"]>> {
-    const rootUrl = options?.rootUrl;
+    const rootUrl = options.rootUrl;
     const method = "GET";
     const url = `${rootUrl}/${schema.path}`;
 
@@ -58,7 +58,7 @@ async function fetchGet<T extends GetApiSchema>(
         data: parameters,
         jsonp: "jsonp-callback",
     });
-    const resultData = await bindSignalToRequest(request, options?.signal);
+    const resultData = await bindSignalToRequest(request, options.signal);
 
     console.debug(`<- ${JSON.stringify([method, url, resultData])}`);
 
@@ -78,25 +78,25 @@ async function fetchGet<T extends GetApiSchema>(
 }
 export async function getRoutes(
     parameter: z.infer<typeof interfaces.getRoutes.parameter>,
-    options?: RemoteOptions
+    options: RemoteOptions
 ) {
     return await fetchGet(interfaces.getRoutes, parameter, options);
 }
 export async function setRoute(
     parameter: z.infer<typeof interfaces.setRoute.parameter>,
-    options?: RemoteOptions
+    options: RemoteOptions
 ) {
     return await fetchGet(interfaces.setRoute, parameter, options);
 }
 export async function deleteRoute(
     parameter: z.infer<typeof interfaces.deleteRoute.parameter>,
-    options?: RemoteOptions
+    options: RemoteOptions
 ) {
     return await fetchGet(interfaces.deleteRoute, parameter, options);
 }
 export async function clearRoutes(
     parameter: z.infer<typeof interfaces.clearRoutes.parameter>,
-    options?: RemoteOptions
+    options: RemoteOptions
 ) {
     return await fetchGet(interfaces.clearRoutes, parameter, options);
 }

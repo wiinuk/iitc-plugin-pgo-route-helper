@@ -6,7 +6,7 @@
 // @downloadURL  https://github.com/wiinuk/iitc-plugin-pgo-route-helper/raw/master/iitc-plugin-pgo-route-helper.user.js
 // @updateURL    https://github.com/wiinuk/iitc-plugin-pgo-route-helper/raw/master/iitc-plugin-pgo-route-helper.user.js
 // @homepageURL  https://github.com/wiinuk/iitc-plugin-pgo-route-helper
-// @version      0.5.2
+// @version      0.6.0
 // @description  IITC plugin to assist in Pokémon GO route creation.
 // @author       Wiinuk
 // @include      https://*.ingress.com/intel*
@@ -201,6 +201,15 @@ function string() {
         return target;
     })));
 }
+let numberSchema;
+function number() {
+    return (numberSchema !== null && numberSchema !== void 0 ? numberSchema : (numberSchema = wrap((target, path) => {
+        if (typeof target !== "number") {
+            throw validationError(path, "number", typeof target);
+        }
+        return target;
+    })));
+}
 function tuple(schemas) {
     const anyTupleName = `[${schemas.map(() => "any").join(", ")}]`;
     return wrap((target, path, seen) => {
@@ -299,12 +308,21 @@ function never() {
 }
 let anySchemaCache;
 function any() {
-    return (anySchemaCache !== null && anySchemaCache !== void 0 ? anySchemaCache : (anySchemaCache = wrap((target) => {
-        return target;
-    })));
+    return (anySchemaCache !== null && anySchemaCache !== void 0 ? anySchemaCache : (anySchemaCache = wrap((target) => target)));
 }
 function optional(schema) {
     return new Schema(schema._validate, true);
+}
+function regexp(pattern) {
+    return wrap((target, path) => {
+        if (typeof target !== "string") {
+            throw validationError(path, pattern.toString(), typeof target);
+        }
+        if (!pattern.test(target)) {
+            throw validationError(path, pattern.toString(), target);
+        }
+        return target;
+    });
 }
 
 ;// CONCATENATED MODULE: ./package.json
@@ -557,8 +575,9 @@ const cssText = ".import-text-input-b2c4eb2b252429e03bb53e6c7bf3427c9a377002 {\r
 ;// CONCATENATED MODULE: ../gas-drivetunnel/source/schemas.ts
 
 
+const iso8601DateTimeSchema = regexp(/\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[-+]\d{2}:\d{2})?/);
 const routeDataSchema = strictObject({});
-const routeSchema = strictObject({
+const routePropertySchemas = {
     type: literal("route"),
     userId: string(),
     routeId: string(),
@@ -567,8 +586,10 @@ const routeSchema = strictObject({
     note: string(),
     data: routeDataSchema,
     coordinates: string(),
-});
-const routeRowSchema = tuple([
+};
+const serverRouteSchema = strictObject(Object.assign(Object.assign({}, routePropertySchemas), { updatedAt: iso8601DateTimeSchema }));
+const routeSchema = strictObject(routePropertySchemas);
+const routeColumns = [
     literal("route"),
     string(),
     string(),
@@ -577,7 +598,10 @@ const routeRowSchema = tuple([
     string(),
     string(),
     string(),
-]);
+    number(),
+];
+const routeRowSchema = tuple(routeColumns);
+const queryRowSchema = tuple([number(), ...routeColumns]);
 const errorResponseSchema = strictObject({
     type: literal("error"),
     name: string(),
@@ -597,8 +621,11 @@ const schemas_interfaces = {
         path: "get-routes",
         parameter: strictObject({
             "user-id": string(),
+            since: iso8601DateTimeSchema.optional(),
         }),
-        result: array(routeSchema),
+        result: strictObject({
+            routes: array(serverRouteSchema),
+        }),
     },
     setRoute: {
         path: "set-route",
@@ -611,21 +638,30 @@ const schemas_interfaces = {
             note: string(),
             coordinates: string(),
         }),
-        result: null_(),
+        result: strictObject({
+            /** ISO8601 */
+            updatedAt: iso8601DateTimeSchema,
+        }),
     },
     deleteRoute: {
         path: "delete-route",
         parameter: strictObject({
             "route-id": string(),
         }),
-        result: null_(),
+        result: strictObject({
+            /** ISO8601 */
+            updatedAt: iso8601DateTimeSchema,
+        }),
     },
     clearRoutes: {
         path: "clear-routes",
         parameter: strictObject({
             "user-id": string(),
         }),
-        result: null_(),
+        result: strictObject({
+            /** ISO8601 */
+            updatedAt: iso8601DateTimeSchema,
+        }),
     },
 };
 const requestPathSchema = union([
@@ -676,7 +712,7 @@ function bindSignalToRequest(request, signal) {
 }
 function fetchGet(schema, parameters, options) {
     return remote_awaiter(this, void 0, void 0, function* () {
-        const rootUrl = options === null || options === void 0 ? void 0 : options.rootUrl;
+        const rootUrl = options.rootUrl;
         const method = "GET";
         const url = `${rootUrl}/${schema.path}`;
         console.debug(`-> ${JSON.stringify([method, url, JSON.stringify(parameters)])}`);
@@ -687,7 +723,7 @@ function fetchGet(schema, parameters, options) {
             data: parameters,
             jsonp: "jsonp-callback",
         });
-        const resultData = yield bindSignalToRequest(request, options === null || options === void 0 ? void 0 : options.signal);
+        const resultData = yield bindSignalToRequest(request, options.signal);
         console.debug(`<- ${JSON.stringify([method, url, resultData])}`);
         const result = jsonResponseSchema.parse(resultData);
         const { type } = result;
@@ -1172,7 +1208,7 @@ const configV2Properties = Object.assign(Object.assign({}, configV1Properties), 
 const configV2Schema = strictObject(configV2Properties);
 const configSchemas = [configV1Schema, configV2Schema];
 const configVAnySchema = union(configSchemas);
-const apiRoot = "https://script.google.com/macros/s/AKfycbymnZYJfD-GsF78ft8lG2l4Xpw8GogTSOP929rRQMzrwWLBuQqrXtwUn00xMKXYllRa/exec";
+const apiRoot = "https://script.google.com/macros/s/AKfycbx_E1nHPWlUKz6f23nxINetyaartn3Lj1M2htYA4xBK75jpsfKWVzXVFoEqfo_wJBDN/exec";
 const storageConfigKey = "pgo-route-helper-config";
 function upgradeConfig(config) {
     switch (config.version) {
@@ -1217,7 +1253,7 @@ function getMiddleCoordinate(p1, p2) {
     return L.latLngBounds(p1, p2).getCenter();
 }
 function asyncMain() {
-    var _a;
+    var _a, _b;
     return iitc_plugin_pgo_route_helper_awaiter(this, void 0, void 0, function* () {
         const window = (isIITCMobile ? globalThis : unsafeWindow);
         const { L = standard_extensions_error `leaflet を先に読み込んでください`, map = standard_extensions_error `デフォルトマップがありません`, document, $ = standard_extensions_error `JQuery を先に読み込んでください`, } = window;
@@ -1544,9 +1580,9 @@ function asyncMain() {
             progress({
                 type: "downloading",
             });
-            const routeList = yield getRoutes({
+            const { routes: routeList } = yield getRoutes({
                 "user-id": config.userId,
-            });
+            }, { rootUrl: (_b = config.apiRoot) !== null && _b !== void 0 ? _b : apiRoot });
             progress({
                 type: "downloaded",
                 routeCount: routeList.length,

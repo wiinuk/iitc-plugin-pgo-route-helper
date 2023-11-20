@@ -68,7 +68,7 @@ type ConfigVAny = z.infer<typeof configVAnySchema>;
 type Config = z.infer<LastOfArray<typeof configSchemas>>;
 
 const apiRoot =
-    "https://script.google.com/macros/s/AKfycbymnZYJfD-GsF78ft8lG2l4Xpw8GogTSOP929rRQMzrwWLBuQqrXtwUn00xMKXYllRa/exec";
+    "https://script.google.com/macros/s/AKfycbx_E1nHPWlUKz6f23nxINetyaartn3Lj1M2htYA4xBK75jpsfKWVzXVFoEqfo_wJBDN/exec";
 
 const storageConfigKey = "pgo-route-helper-config";
 function upgradeConfig(config: ConfigVAny): Config {
@@ -589,9 +589,12 @@ async function asyncMain() {
         progress({
             type: "downloading",
         });
-        const routeList = await remote.getRoutes({
-            "user-id": config.userId,
-        });
+        const { routes: routeList } = await remote.getRoutes(
+            {
+                "user-id": config.userId,
+            },
+            { rootUrl: config.apiRoot ?? apiRoot }
+        );
         progress({
             type: "downloaded",
             routeCount: routeList.length,
