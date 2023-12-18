@@ -19,7 +19,7 @@ export type Writable<T> = {
     -readonly [k in keyof T]: T[k];
 };
 export type Id<T> = (x: T) => T;
-export function id<T>(x: T) {
+export function id<TIn extends TOut, TOut = TIn>(x: TIn): TOut {
     return x;
 }
 export function ignore(..._args: unknown[]): void {
