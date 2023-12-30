@@ -44,6 +44,9 @@ export function createEmitter() {
         }
         initializeScope(currentScope);
     }
+    function write(text: string) {
+        buffer.push(text);
+    }
     function usingNameScope<T1, T2, T3, R>(
         scope: (argument1: T1, argument2: T2, argument3: T3) => R,
         argument1: T1,
@@ -100,14 +103,12 @@ export function createEmitter() {
         );
     }
     function writeIdentifierToken(text: string) {
-        buffer.push(text);
+        write(text);
     }
     function writeStringLiteralToken(value: string) {
-        buffer.push(
-            `"`,
-            value.replace(escapedCharsPattern, escapeCharacter),
-            `"`
-        );
+        write(`"`);
+        write(value.replace(escapedCharsPattern, escapeCharacter));
+        write(`"`);
     }
 
     function generateJsName(baseName: string) {
@@ -127,9 +128,9 @@ export function createEmitter() {
             writeIdentifierToken(id);
         } else {
             // TODO:
-            buffer.push(resolverJsId, ".global[");
+            write(resolverJsId), write(".global[");
             writeStringLiteralToken(identifier);
-            buffer.push("]");
+            write("]");
         }
     }
     /*
@@ -158,15 +159,15 @@ export function createEmitter() {
     }: LetExpression) {
         const id0 = patterns[0].value;
         emitExpressionStatements(value);
-        buffer.push("const ");
+        write("const ");
         const jsName0 = generateJsName(id0);
-        buffer.push(jsName0, " = ");
+        write(jsName0), write(" = ");
         if (patterns.length === 1) {
             emitExpressionValue(value);
         } else {
             emitAsGeneratorFunction(patterns, 1, value);
         }
-        buffer.push("; ");
+        write("; ");
         currentScope.nameToJsName.set(id0, jsName0);
         emitExpressionStatements(scope);
     }
@@ -174,14 +175,14 @@ export function createEmitter() {
         return emitExpressionValue(scope);
     }
     function emitAsBlock(body: Expression, emitUseStrictDirective = false) {
-        buffer.push("{ ");
+        write("{ ");
         if (emitUseStrictDirective) {
-            buffer.push(`"use strict"; `);
+            write(`"use strict"; `);
         }
         emitExpressionStatements(body);
-        buffer.push("return ");
+        write("return ");
         emitExpressionValue(body);
-        buffer.push("; }");
+        write("; }");
     }
     function emitAsGeneratorFunction(
         patterns: readonly [Pattern, ...Pattern[]],
@@ -189,7 +190,7 @@ export function createEmitter() {
         body: Expression
     ) {
         usingNameScope(
-            emitAsGeneratorFunctionScope,
+            emitAsGeneratorFunctionInNameScope,
             patterns,
             patternsStartIndex,
             body
@@ -201,7 +202,7 @@ export function createEmitter() {
      * function*(%(p1)) { return function* (%(p2)) { return function* (%(p3)) …%(body) } }
      * `
      */
-    function emitAsGeneratorFunctionScope(
+    function emitAsGeneratorFunctionInNameScope(
         patterns: Patterns1,
         patternsStartIndex: number,
         body: LetExpressionOrHigher
@@ -211,15 +212,15 @@ export function createEmitter() {
             const pattern = patterns[i]!;
             const id = pattern.value;
             const jsName = generateJsName(id);
-            buffer.push("function* (", jsName, ")");
+            write("function* ("), write(jsName), write(")");
             if (i < patterns.length - 1) {
-                buffer.push("{ return ");
+                write("{ return ");
             }
             currentScope.nameToJsName.set(id, jsName);
         }
         emitAsBlock(body);
         for (let i = patternsStartIndex; i < patterns.length - 1; i++) {
-            buffer.push(" }");
+            write(" }");
         }
     }
 
@@ -237,11 +238,11 @@ export function createEmitter() {
         const scope0 = arms[0].scope;
 
         emitExpressionStatements(target);
-        buffer.push("const ");
+        write("const ");
         const jsName0 = generateJsName(id0);
-        buffer.push(jsName0, " = ");
+        write(jsName0), write(" = ");
         emitExpressionValue(scope0);
-        buffer.push("; ");
+        write("; ");
         currentScope.nameToJsName.set(id0, jsName0);
         emitExpressionStatements(scope0);
     }
@@ -277,21 +278,21 @@ export function createEmitter() {
         operator: Expression | AtNameToken | string,
         right: Expression
     ) {
-        buffer.push("yield* (yield* ");
+        write("yield* (yield* ");
         if (typeof operator === "string") {
             emitIdentifier(operator);
         } else if (operator.kind === SyntaxKind.AtNameToken) {
             emitIdentifier("_" + operator.value + "_");
         } else {
-            buffer.push("(");
+            write("(");
             emitExpressionValue(operator);
-            buffer.push(")");
+            write(")");
         }
-        buffer.push("(");
+        write("(");
         emitExpressionValue(left);
-        buffer.push("))(");
+        write("))(");
         emitExpressionValue(right);
-        buffer.push(")");
+        write(")");
     }
     /**
      * `$op $x` =>
@@ -314,17 +315,17 @@ export function createEmitter() {
         operator,
         operand,
     }: PrefixExpression) {
-        buffer.push("yield* ");
+        write("yield* ");
         if (operator.kind === SyntaxKind.AtNameToken) {
             emitIdentifier(operator.value + "_");
         } else {
-            buffer.push("(");
+            write("(");
             emitExpressionValue(operator);
-            buffer.push(")");
+            write(")");
         }
-        buffer.push("(");
+        write("(");
         emitExpressionValue(operand);
-        buffer.push(")");
+        write(")");
     }
     function emitListExpressionStatements({ items }: ListExpression) {
         for (const item of items) {
@@ -336,15 +337,15 @@ export function createEmitter() {
      */
     function emitListExpressionValue({ items }: ListExpression) {
         for (const _ of items) {
-            buffer.push("yield* (yield* ");
+            write("yield* (yield* ");
             emitIdentifier(commaOperatorIdentifier);
-            buffer.push("(");
+            write("(");
         }
         emitIdentifier(emptyListIdentifier);
         for (const item of items) {
-            buffer.push("))(");
+            write("))(");
             emitExpressionValue(item);
-            buffer.push(")");
+            write(")");
         }
     }
     function emitRecordExpressionStatements({ entries }: RecordExpression) {
@@ -355,15 +356,15 @@ export function createEmitter() {
     function emitRecordExpressionValue({ entries }: RecordExpression) {
         for (const _ of entries) {
             emitIdentifier(addEntryOperatorIdentifier);
-            buffer.push("(");
+            write("(");
         }
         emitIdentifier(emptyRecordIdentifier);
         for (const { field, value } of entries) {
-            buffer.push(")(");
+            write(")(");
             emitExpressionValue(field);
-            buffer.push(")(");
+            write(")(");
             emitExpressionValue(value);
-            buffer.push(")");
+            write(")");
         }
     }
     function emitExpressionStatements(expression: Expression): void {
@@ -423,7 +424,7 @@ export function createEmitter() {
             case SyntaxKind.StringLiteralToken:
                 return writeStringLiteralToken(expression.value);
             case SyntaxKind.NumberLiteralToken:
-                return void buffer.push(expression.value);
+                return write(expression.value);
             case SyntaxKind.WordToken:
                 return writeStringLiteralToken(expression.value);
             case SyntaxKind.DollarNameToken:
@@ -478,6 +479,10 @@ export function createEmitter() {
                 );
         }
     }
+    function emitExpressionAsModuleCore(expression: LetExpressionOrHigher) {
+        write("function* ("), write(resolverJsId), write(") ");
+        emitAsBlock(expression, true);
+    }
     function initializeAndEmitAsModule(expression: Expression) {
         initialize();
         try {
@@ -492,10 +497,6 @@ export function createEmitter() {
         } finally {
             initialize();
         }
-    }
-    function emitExpressionAsModuleCore(expression: LetExpressionOrHigher) {
-        buffer.push("function* (", resolverJsId, ") ");
-        emitAsBlock(expression, true);
     }
     return { emit: initializeAndEmitAsModule };
 }
