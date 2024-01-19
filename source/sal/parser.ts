@@ -263,7 +263,7 @@ export function parse(scanner: Scanner, options?: CreateParserOptions) {
             );
         }
         const body = parseExpression();
-        return createMatchArm([pattern], body);
+        return createMatchArm(pattern, body);
     }
     function parseCommaExpressionItems<T>(
         initialize: (item0: CommaExpression["right"]) => T,
