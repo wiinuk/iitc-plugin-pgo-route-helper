@@ -31,12 +31,29 @@ const noMatchIdentifier = "noMatch";
 const handleMatchFailureIdentifier = "handleMatchFailure";
 const isPatternIdentifier = "|is|";
 
+const privateJsNameSymbol = Symbol("privateJsName");
+type JsName = {
+    readonly _privateBrand: typeof privateJsNameSymbol;
+};
+
+const reservedWordSet = new Set(
+    [
+        // 予約語
+        "break,case,catch,class,const,continue,debugger,default,delete,do,else,export,extends,false,finally,for,function,if,import,in,instanceof,new,null,return,super,switch,this,throw,true,try,typeof,var,void,while,with",
+        "let,static,yield",
+        "await",
+        // 将来の予約語
+        "enum",
+        "implements,interface,package,private,protected,public",
+        // ES1-ES3 で有効だった将来の予約語
+        "abstract,boolean,byte,char,double,final,float,goto,int,long,native,short,synchronized,throws,transient,volatile",
+        // 特殊な識別子
+        "arguments,as,async,eval,from,get,of,set",
+    ].flatMap((x) => x.split(",") as unknown as JsName[])
+);
+
 export function createEmitter() {
     type Stack<T> = T[];
-    const privateJsNameSymbol = Symbol("privateJsName");
-    type JsName = {
-        readonly _privateBrand: typeof privateJsNameSymbol;
-    };
     interface Scope {
         readonly nameToJsName: Map<string, JsName>;
         readonly reservedJsNames: Set<JsName>;
@@ -132,7 +149,11 @@ export function createEmitter() {
 
     function generateJsName(baseName: string) {
         let name = baseName as unknown as JsName;
-        for (let index = 2; currentScope.reservedJsNames.has(name); index++) {
+        for (
+            let index = 2;
+            reservedWordSet.has(name) || currentScope.reservedJsNames.has(name);
+            index++
+        ) {
             name = `${baseName}_${index}` as unknown as JsName;
         }
         currentScope.reservedJsNames.add(name);
