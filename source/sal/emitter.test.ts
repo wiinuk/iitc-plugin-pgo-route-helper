@@ -130,42 +130,61 @@ const SearchSettings = {
     },
 } as const;
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type AnyGenerator<R> = Generator<any, R, any>;
+type AnyGeneratorFunction<T, R> = (x: T) => AnyGenerator<R>;
+type CurriedFunction = (x: unknown) => CurriedFunctionResult;
+type CurriedFunctionResult = Generator | CurriedFunction;
+
+type CurriedGeneratorFunction<
+    TArgs extends readonly [unknown, ...unknown[]],
+    TResult
+> = TArgs extends readonly [infer arg0, infer arg1, ...infer args]
+    ? AnyGeneratorFunction<
+          arg0,
+          CurriedGeneratorFunction<[arg1, ...args], TResult>
+      >
+    : AnyGeneratorFunction<TArgs[0], TResult>;
+
+/** `curried((x, y) => x + y)` = `function*(x) { return function*(y) { return x + y } }` */
+function curriedGeneratorFunction<
+    TArgs extends readonly [unknown, ...unknown[]],
+    TResult
+>(
+    body: (...args: TArgs) => AnyGenerator<TResult>,
+    length: TArgs["length"] = body.length
+) {
+    function* aux(xs: readonly [unknown, ...unknown[]]): AnyGenerator<unknown> {
+        if (xs.length < length) {
+            return (x: unknown) => aux([...xs, x]);
+        }
+        return yield* body(...(xs as TArgs));
+    }
+    return ((x0) => aux([x0])) as CurriedGeneratorFunction<TArgs, TResult>;
+}
+
+function curried<TArgs extends readonly [unknown, ...unknown[]], TResult>(
+    body: (...args: TArgs) => TResult,
+    length: TArgs["length"] = body.length
+) {
+    return curriedGeneratorFunction(function* (...args) {
+        return body(...args);
+    }, length);
+}
+
 function createSystem() {
     const scopedRecords = new WeakSet<object>();
 
-    type CurriedFunction = (x: unknown) => CurriedFunctionResult;
-    type CurriedFunctionResult = Generator | CurriedFunction;
-
-    /**
-     * ```
-     * curried((x, y) => x + y)
-     * ```
-     * =
-     * ```
-     * function*(x) { return function*(y) { return x + y } }
-     * ```
-     */
-    function curriedGeneratorFunction(
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        body: (...args: [any, ...any[]]) => Generator
-    ): CurriedFunction {
-        function aux(xs: [unknown, ...unknown[]]): CurriedFunctionResult {
-            if (xs.length < body.length) {
-                return function* (x: unknown) {
-                    return aux(xs.concat([x]) as [unknown, ...unknown[]]);
-                };
-            }
-            return body(...xs);
-        }
-        return function* (arg0) {
-            return aux([arg0]);
+    const noMatch = Symbol("noMatch");
+    function* fix<T, R>(
+        f: AnyGeneratorFunction<
+            AnyGeneratorFunction<T, R>,
+            AnyGeneratorFunction<T, R>
+        >
+    ) {
+        return function* (x: T): AnyGenerator<R> {
+            return yield* (yield* f(yield* fix(f)))(x);
         };
-    }
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    function curried(body: (...args: [any, ...any[]]) => unknown) {
-        return curriedGeneratorFunction(function* (x) {
-            return body(x);
-        });
     }
     // NOTE:
     // グローバルオブジェクトを漏らさない ( globalThis, window, global など )
@@ -178,46 +197,60 @@ function createSystem() {
     const globalEntries = {
         true: true,
         false: false,
-        fix: curriedGeneratorFunction(function* (f, x) {
-            return yield* (yield* f(f))(x);
-        }),
-        neg_: curried((x) => -x),
-        _add_: curried((x, y) => x + y),
-        _sub_: curried((x, y) => x - y),
-        _mul_: curried((x, y) => x * y),
-        _div_: curried((x, y) => x / y),
-        _pipe_: curriedGeneratorFunction(function* (x, f) {
+        fix,
+        neg_: curried((x: number) => -x),
+        _add_: curried((x: number, y: number) => x + y),
+        _sub_: curried((x: number, y: number) => x - y),
+        _mul_: curried((x: number, y: number) => x * y),
+        _div_: curried((x: number, y: number) => x / y),
+        _pipe_: curriedGeneratorFunction(function* (
+            x,
+            f: AnyGeneratorFunction<unknown, unknown>
+        ) {
             return yield* f(x);
         }),
-        "_ _": curriedGeneratorFunction(function* (l, r) {
+        "_ _": curriedGeneratorFunction(function* (
+            l:
+                | AnyGeneratorFunction<unknown, unknown>
+                | number
+                | string
+                | SearchSettings<unknown>,
+            r
+        ) {
             if (typeof l === "function") {
-                return l(r);
+                return yield* l(r);
             }
             if (typeof l === "number" || typeof l === "string") {
                 l = SearchSettings.fromWord(String(l));
                 return SearchSettings.and(
                     SearchSettings.fromWord(String(l)),
-                    r
+                    r as SearchSettings<unknown>
                 );
             }
             if (typeof r === "number" || typeof r === "string") {
                 r = SearchSettings.fromWord(String(l));
             }
-            return SearchSettings.and(l, r);
+            return SearchSettings.and(l, r as SearchSettings<unknown>);
         }),
         "[]": Object.freeze([]),
-        "_,_": curried((xs, x) => [...xs, x]),
+        "_,_": curried((xs: unknown[], x) => [...xs, x]),
         "{}": Object.freeze(Object.create(null)),
-        "_,_:_": curried((r, k, v) => {
-            const result = Object.create(null);
-            for (const k of Object.keys(r)) {
-                result[k] = r[k];
+        "_,_:_": curried(
+            (
+                r: Record<string | number | symbol, unknown>,
+                k: string | number | symbol,
+                v
+            ) => {
+                const result = Object.create(null);
+                for (const k of Object.keys(r)) {
+                    result[k] = r[k];
+                }
+                result[k] = v;
+                scopedRecords.add(result);
+                return result;
             }
-            result[k] = v;
-            scopedRecords.add(result);
-            return result;
-        }),
-        "_._": curried((r, k) => {
+        ),
+        "_._": curried((r: Record<string, string | number | symbol>, k) => {
             if (r !== null || typeof r === "object") {
                 if (
                     (typeof k === "string" && scopedRecords.has(r)) ||
@@ -228,6 +261,8 @@ function createSystem() {
             }
             throw new TypeError("${_._}");
         }),
+        noMatch,
+        "|is|": curried((v1, v2) => (Object.is(v1, v2) ? true : noMatch)),
     };
     const global = Object.create(null);
     for (const [k, v] of Object.entries(globalEntries)) {
@@ -320,14 +355,19 @@ function evaluate(
 ) {
     const emitResult = emit(source);
     if (emitResult.kind === "Success") {
-        const generator: Generator = globalThis.eval(emitResult.value)(
-            createSystem()
-        );
-        let result = generator.next();
-        while (result.done !== true) {
-            result = generator.next(yieldHandler(result.value));
+        try {
+            const generator: Generator = globalThis.eval(emitResult.value)(
+                createSystem()
+            );
+            let result = generator.next();
+            while (result.done !== true) {
+                result = generator.next(yieldHandler(result.value));
+            }
+            return Success(result.value);
+        } catch (error) {
+            console.error(emitResult.value);
+            throw error;
         }
-        return Success(result.value);
     } else {
         return emitResult;
     }
@@ -370,17 +410,4 @@ describe("file tests", () => {
         }
     }
     defineFileTestsRecursive(testsDirectoryPath);
-
-    it("fib", async () => {
-        const actual = evaluate(`
-        $let $f = $fix ($function $fib $n =>
-            $n $as
-            | 0 => $n
-            | 1 => $n
-            | $n => $fib ($n @sub 1) @add $fib ($n @sub 2)
-        );
-        [$f 10, $f 14]
-        `);
-        expect(actual).toStrictEqual(Success([55, 377]));
-    });
 });

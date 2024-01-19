@@ -1,15 +1,24 @@
+import { error, exhaustive } from "../standard-extensions";
 import {
     AtNameToken,
     Expression,
     LetExpression,
     LetExpressionOrHigher,
     ListExpression,
+    Literal,
+    MatchArm,
     MatchExpression,
     Pattern,
     Patterns1,
     PrefixExpression,
     RecordExpression,
     SyntaxKind,
+    Variable,
+    isAtNameToken,
+    isLiteral,
+    isNumberLiteralToken,
+    isStringExpression,
+    isVariable,
 } from "./syntax";
 
 const concatenationOperatorIdentifier = "_ _";
@@ -18,14 +27,24 @@ const emptyRecordIdentifier = "{}";
 const emptyListIdentifier = "[]";
 const commaOperatorIdentifier = "_,_";
 const addEntryOperatorIdentifier = "_,_:_";
+const noMatchIdentifier = "noMatch";
+const handleMatchFailureIdentifier = "handleMatchFailure";
+const isPatternIdentifier = "|is|";
+
 export function createEmitter() {
+    type Stack<T> = T[];
+    const privateJsNameSymbol = Symbol("privateJsName");
+    type JsName = {
+        readonly _privateBrand: typeof privateJsNameSymbol;
+    };
     interface Scope {
-        readonly nameToJsName: Map<string, string>;
-        readonly reservedJsNames: Set<string>;
+        readonly nameToJsName: Map<string, JsName>;
+        readonly reservedJsNames: Set<JsName>;
     }
     const buffer: string[] = [];
+
+    let resolverName = "_" as unknown as JsName;
     const parentScopes: Scope[] = [];
-    let resolverJsId = "";
     let currentScope: Scope = {
         nameToJsName: new Map(),
         reservedJsNames: new Set(),
@@ -102,87 +121,84 @@ export function createEmitter() {
             charCodeToEscapeSequence(char.charCodeAt(0))
         );
     }
-    function writeIdentifierToken(text: string) {
-        write(text);
-    }
     function writeStringLiteralToken(value: string) {
         write(`"`);
         write(value.replace(escapedCharsPattern, escapeCharacter));
         write(`"`);
     }
+    function writeJsName(value: JsName) {
+        write(value as unknown as string);
+    }
 
     function generateJsName(baseName: string) {
-        let name = baseName;
+        let name = baseName as unknown as JsName;
         for (let index = 2; currentScope.reservedJsNames.has(name); index++) {
-            name = `${baseName}_${index}`;
+            name = `${baseName}_${index}` as unknown as JsName;
         }
         currentScope.reservedJsNames.add(name);
         return name;
     }
-    function emitIdentifier(identifier: string) {
-        let id = currentScope.nameToJsName.get(identifier);
-        for (let i = parentScopes.length - 1; id == null && 0 <= i; i--) {
-            id = parentScopes[i]?.nameToJsName.get(identifier);
-        }
-        if (id) {
-            writeIdentifierToken(id);
-        } else {
-            // TODO:
-            write(resolverJsId), write(".global[");
-            writeStringLiteralToken(identifier);
-            write("]");
-        }
+    function emitGlobalVariable(identifier: string) {
+        // TODO:
+        writeJsName(resolverName), write(".global[");
+        writeStringLiteralToken(identifier);
+        write("]");
     }
-    /*
-     * `$let %x = %value $in %body` =>
-     * `
+    function resolveIdentifier(identifier: string) {
+        let name = currentScope.nameToJsName.get(identifier);
+        for (let i = parentScopes.length - 1; name == null && 0 <= i; i--) {
+            name = parentScopes[i]?.nameToJsName.get(identifier);
+        }
+        return name;
+    }
+    function emitIdentifier(identifier: string) {
+        const name = resolveIdentifier(identifier);
+        if (name != null) {
+            return write(name as unknown as string);
+        }
+        return emitGlobalVariable(identifier);
+    }
+
+    const letExpressionToOutput = new WeakMap<LetExpression, JsName>();
+    /**
+     * ```
+     * $let %p %p1 … %pN = %value $in
+     * %body
+     * ``` =>
+     * ```
+     * $let $v = (\%p1 … %pN => %value) $in
+     * $v %as $p => %body
+     * ``` =>
+     * ```
      * %(statements(value))…;
      * const %(x) = %(expression(value));
      * %(statements(body))…;
      * return (%expression(body));
-     * `
-     *
-     * `$let %f %x1 %x2 = %value $in %body` =>
-     * `
-     * const %(v) = %(x1) => %(x2) => {
-     *     %(statements(value))…;
-     *     return %(expression(value));
-     * };
-     * %(statements(body))…;
-     * return %(expression(body));
-     * `
+     * ```
      */
-    function emitLetExpressionStatements({
-        patterns,
-        value,
-        scope,
-    }: LetExpression) {
-        const id0 = patterns[0].value;
+    function emitLetExpressionStatements(expression: LetExpression) {
+        const { patterns, value, scope } = expression;
         emitExpressionStatements(value);
-        write("const ");
-        const jsName0 = generateJsName(id0);
-        write(jsName0), write(" = ");
+        const input = generateJsName("_x");
+        write("const "), writeJsName(input), write(" = ");
         if (patterns.length === 1) {
             emitExpressionValue(value);
         } else {
             emitAsGeneratorFunction(patterns, 1, value);
         }
         write("; ");
-        currentScope.nameToJsName.set(id0, jsName0);
-        emitExpressionStatements(scope);
+        const output = generateJsName("_output");
+        letExpressionToOutput.set(expression, output);
+        emitMatchArmsAsStatements(
+            [input],
+            [{ pattern: patterns[0], scope }],
+            output
+        );
     }
-    function emitLetExpressionValue({ scope }: LetExpression) {
-        return emitExpressionValue(scope);
-    }
-    function emitAsBlock(body: Expression, emitUseStrictDirective = false) {
-        write("{ ");
-        if (emitUseStrictDirective) {
-            write(`"use strict"; `);
-        }
-        emitExpressionStatements(body);
-        write("return ");
-        emitExpressionValue(body);
-        write("; }");
+    function emitLetExpressionValue(expression: LetExpression) {
+        const output =
+            letExpressionToOutput.get(expression) ?? error`internal error`;
+        writeJsName(output);
     }
     function emitAsGeneratorFunction(
         patterns: readonly [Pattern, ...Pattern[]],
@@ -197,57 +213,60 @@ export function createEmitter() {
         );
     }
     /**
-     * `$p1 $p2 $p3 => $body` =>
-     * `
+     * `$p1 … $pN => $body` =>
+     * `$v1 … $vN => $v1 $as $p1 => … $vN $as $pN => $body` =>
+     * ```
      * function*(%(p1)) { return function* (%(p2)) { return function* (%(p3)) …%(body) } }
-     * `
+     * ```
      */
     function emitAsGeneratorFunctionInNameScope(
-        patterns: Patterns1,
+        pattern: Patterns1,
         patternsStartIndex: number,
-        body: LetExpressionOrHigher
+        scope: LetExpressionOrHigher
     ) {
-        for (let i = patternsStartIndex; i < patterns.length; i++) {
-            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-            const pattern = patterns[i]!;
-            const id = pattern.value;
-            const jsName = generateJsName(id);
-            write("function* ("), write(jsName), write(")");
-            if (i < patterns.length - 1) {
+        const inputs = [];
+        for (let i = patternsStartIndex; i < pattern.length; i++) {
+            const jsName = generateJsName(`_p${i - patternsStartIndex}`);
+            inputs.push(jsName);
+            write("function* ("), writeJsName(jsName), write(")");
+            if (i < pattern.length - 1) {
                 write("{ return ");
             }
-            currentScope.nameToJsName.set(id, jsName);
         }
-        emitAsBlock(body);
-        for (let i = patternsStartIndex; i < patterns.length - 1; i++) {
+        write("{ ");
+        const output = generateJsName("_output");
+        emitMatchArmsAsStatements(inputs, [{ pattern, scope }], output);
+        write("return "), writeJsName(output), write("; }");
+        for (let i = patternsStartIndex; i < pattern.length - 1; i++) {
             write(" }");
         }
     }
 
-    /**
-     * `$target $as $x => $scope` =>
-     * `
-     * %(statements(target))…;
-     * const %(x) = %(expression(target))
-     * %(statements(scope))…;
-     * return %(expression(scope));
-     * `
-     */
-    function emitMatchExpressionStatements({ target, arms }: MatchExpression) {
-        const id0 = arms[0].pattern.value;
-        const scope0 = arms[0].scope;
+    const matchExpressionToOutput = new WeakMap<MatchExpression, JsName>();
+    function emitMatchExpressionStatements(expression: MatchExpression) {
+        const { input, arms } = expression;
+        const output = generateJsName("_output");
+        matchExpressionToOutput.set(expression, output);
 
-        emitExpressionStatements(target);
-        write("const ");
-        const jsName0 = generateJsName(id0);
-        write(jsName0), write(" = ");
-        emitExpressionValue(scope0);
-        write("; ");
-        currentScope.nameToJsName.set(id0, jsName0);
-        emitExpressionStatements(scope0);
+        let inputVariable;
+        if (isVariable(input)) {
+            inputVariable = resolveIdentifier(input.value);
+        }
+        if (inputVariable == null) {
+            inputVariable = generateJsName("_input");
+            emitExpressionStatements(input);
+            write("const "),
+                writeJsName(inputVariable),
+                write(" = "),
+                emitExpressionValue(input),
+                write(";");
+        }
+        emitMatchArmsAsStatements([inputVariable], arms, output);
     }
-    function emitMatchExpressionValue({ arms }: MatchExpression) {
-        return emitExpressionValue(arms[0].scope);
+    function emitMatchExpressionValue(expression: MatchExpression) {
+        const output =
+            matchExpressionToOutput.get(expression) ?? error`internal error`;
+        writeJsName(output);
     }
 
     /**
@@ -265,10 +284,7 @@ export function createEmitter() {
         right: Expression
     ) {
         emitExpressionStatements(left);
-        if (
-            typeof operator !== "string" &&
-            operator.kind !== SyntaxKind.AtNameToken
-        ) {
+        if (typeof operator !== "string" && !isAtNameToken(operator)) {
             emitExpressionStatements(operator);
         }
         emitExpressionStatements(right);
@@ -281,7 +297,7 @@ export function createEmitter() {
         write("yield* (yield* ");
         if (typeof operator === "string") {
             emitIdentifier(operator);
-        } else if (operator.kind === SyntaxKind.AtNameToken) {
+        } else if (isAtNameToken(operator)) {
             emitIdentifier("_" + operator.value + "_");
         } else {
             write("(");
@@ -306,7 +322,7 @@ export function createEmitter() {
         operator,
         operand,
     }: PrefixExpression) {
-        if (operator.kind !== SyntaxKind.AtNameToken) {
+        if (!isAtNameToken(operator)) {
             emitExpressionStatements(operator);
         }
         emitExpressionStatements(operand);
@@ -316,7 +332,7 @@ export function createEmitter() {
         operand,
     }: PrefixExpression) {
         write("yield* ");
-        if (operator.kind === SyntaxKind.AtNameToken) {
+        if (isAtNameToken(operator)) {
             emitIdentifier(operator.value + "_");
         } else {
             write("(");
@@ -333,7 +349,9 @@ export function createEmitter() {
         }
     }
     /**
-     * `[a, b, c]` => `${_,_}(${_,_}(${_,_}(${[]})(a))(b))(c)` => `yield* (yield* comma(yield* (yield* comma(yield* (yield* comma(empty))(a)))(b)))(c)`
+     * `[a, b, c]` =>
+     * `${_,_}(${_,_}(${_,_}(${[]})(a))(b))(c)` =>
+     * `yield* (yield* comma(yield* (yield* comma(yield* (yield* comma(empty))(a)))(b)))(c)`
      */
     function emitListExpressionValue({ items }: ListExpression) {
         for (const _ of items) {
@@ -412,21 +430,24 @@ export function createEmitter() {
             case SyntaxKind.RecordExpression:
                 return emitRecordExpressionStatements(expression);
             default:
-                throw new Error(
-                    `internal error: unknown expression: ${
-                        expression satisfies never
-                    }`
-                );
+                return exhaustive(expression);
         }
+    }
+    function emitLiteral(expression: Literal) {
+        if (isStringExpression(expression)) {
+            return writeStringLiteralToken(expression.value);
+        }
+        if (isNumberLiteralToken(expression)) {
+            return write(expression.value);
+        }
+        return exhaustive(expression);
     }
     function emitExpressionValue(expression: Expression): void {
         switch (expression.kind) {
             case SyntaxKind.StringLiteralToken:
-                return writeStringLiteralToken(expression.value);
-            case SyntaxKind.NumberLiteralToken:
-                return write(expression.value);
             case SyntaxKind.WordToken:
-                return writeStringLiteralToken(expression.value);
+            case SyntaxKind.NumberLiteralToken:
+                return emitLiteral(expression);
             case SyntaxKind.DollarNameToken:
                 return emitIdentifier(expression.value);
             case SyntaxKind.LetExpression:
@@ -472,21 +493,186 @@ export function createEmitter() {
             case SyntaxKind.RecordExpression:
                 return emitRecordExpressionValue(expression);
             default:
-                throw new Error(
-                    `internal error: unknown expression: ${
-                        expression satisfies never
-                    }`
-                );
+                return exhaustive(expression);
         }
     }
+
+    const isReadonlyArray = Array.isArray as (
+        x: unknown
+    ) => x is readonly unknown[];
+    /**
+     * ```
+     * let $output;
+     * _match0: {
+     *     $(arms[0])…
+     *     …
+     *     $(arms[N])…
+     *     $output = yield* handleMatchFailure();
+     * }
+     * ```
+     */
+    function emitMatchArmsAsStatements(
+        inputs: readonly JsName[],
+        arms: readonly (
+            | MatchArm
+            | Readonly<{ pattern: readonly Pattern[]; scope: Expression }>
+        )[],
+        output: JsName
+    ) {
+        write("let "), writeJsName(output), write(";");
+
+        const matchBlockLabel = generateJsName("_matchLabel");
+        writeJsName(matchBlockLabel), write(": {");
+
+        for (const { pattern, scope } of arms) {
+            emitMatchArm(
+                [...inputs],
+                isReadonlyArray(pattern) ? [...pattern] : [pattern],
+                scope,
+                output,
+                matchBlockLabel
+            );
+        }
+        writeJsName(output),
+            write(" = yield*"),
+            emitIdentifier(handleMatchFailureIdentifier),
+            write("(null);");
+        write("}");
+    }
+    function emitMatchArm(
+        remainingInputs: Stack<JsName>,
+        remainingPatterns: Stack<Pattern>,
+        scope: Expression,
+        output: JsName,
+        matchBlockLabel: JsName
+    ) {
+        const input = remainingInputs.pop();
+        if (input == null) {
+            return emitMatchArmWithScope(scope, output, matchBlockLabel);
+        }
+        const pattern = remainingPatterns.pop() ?? error`internal error`;
+        if (isVariable(pattern)) {
+            return emitMatchArmWithVariablePattern(
+                remainingInputs,
+                remainingPatterns,
+                scope,
+                output,
+                matchBlockLabel,
+                input,
+                pattern
+            );
+        }
+        if (isLiteral(pattern)) {
+            return emitMatchArmWithLiteralPattern(
+                remainingInputs,
+                remainingPatterns,
+                scope,
+                output,
+                matchBlockLabel,
+                input,
+                pattern
+            );
+        }
+        return exhaustive(pattern);
+    }
+    /**
+     * ```
+     * $(statements(scope))…
+     * $output = $(value(scope));
+     * break $matchBlockLabel;
+     * ```
+     */
+    function emitMatchArmWithScope(
+        scope: Expression,
+        output: JsName,
+        matchBlockLabel: JsName
+    ) {
+        emitExpressionStatements(scope), write(" ");
+        writeJsName(output),
+            write(" = "),
+            emitExpressionValue(scope),
+            write("; ");
+        write("break "), writeJsName(matchBlockLabel), write(";");
+    }
+    /**
+     * ```
+     * const $pattern = $input;
+     * $remainingStatements…
+     * ```
+     */
+    function emitMatchArmWithVariablePattern(
+        remainingInputs: Stack<JsName>,
+        remainingPatterns: Stack<Pattern>,
+        scope: Expression,
+        output: JsName,
+        matchBlockLabel: JsName,
+        input: JsName,
+        { value }: Variable
+    ) {
+        const name = generateJsName(value);
+        currentScope.nameToJsName.set(value, name);
+        write("const "),
+            writeJsName(name),
+            write(" = "),
+            writeJsName(input),
+            write("; ");
+        emitMatchArm(
+            remainingInputs,
+            remainingPatterns,
+            scope,
+            output,
+            matchBlockLabel
+        );
+    }
+    /**
+     * ```
+     * if ((yield* (yield* ($(isPatternIdentifier)($literal))($input))) !== globalThis.noMatch) {
+     *     $remainingStatements…
+     * }
+     * ```
+     */
+    function emitMatchArmWithLiteralPattern(
+        remainingInputs: Stack<JsName>,
+        remainingPatterns: Stack<Pattern>,
+        scope: LetExpressionOrHigher,
+        output: JsName,
+        matchBlockLabel: JsName,
+        input: JsName,
+        pattern: Literal
+    ) {
+        write("if ((yield* (yield* ("),
+            emitIdentifier(isPatternIdentifier),
+            write("("),
+            emitLiteral(pattern),
+            write(")))("),
+            writeJsName(input),
+            write(")) !== "),
+            emitGlobalVariable(noMatchIdentifier),
+            write(") {");
+        emitMatchArm(
+            remainingInputs,
+            remainingPatterns,
+            scope,
+            output,
+            matchBlockLabel
+        );
+        write("}");
+    }
+
     function emitExpressionAsModuleCore(expression: LetExpressionOrHigher) {
-        write("function* ("), write(resolverJsId), write(") ");
-        emitAsBlock(expression, true);
+        write("(function* ("),
+            writeJsName(resolverName),
+            write(") "),
+            write("{ ");
+        write(`"use strict"; `);
+        emitExpressionStatements(expression);
+        write("return "), emitExpressionValue(expression), write(";");
+        write("})");
     }
     function initializeAndEmitAsModule(expression: Expression) {
         initialize();
         try {
-            resolverJsId = generateJsName("resolver");
+            resolverName = generateJsName("_resolver");
             usingNameScope(
                 emitExpressionAsModuleCore,
                 expression,

@@ -113,10 +113,16 @@ export type PrimaryExpression =
     | ParenthesisExpression
     | RecordExpression
     | ListExpression
-    | LiteralExpression
+    | Literal
     | Variable;
 
-type LiteralExpression = StringExpression | NumberLiteralToken;
+export type Literal = StringExpression | NumberLiteralToken;
+export function isLiteral(syntax: KnownSyntaxes): syntax is Literal {
+    if (isStringExpression(syntax) || isNumberLiteralToken(syntax)) {
+        return syntax satisfies Literal, true;
+    }
+    return syntax satisfies Exclude<KnownSyntaxes, Literal>, false;
+}
 
 type KnownSyntaxes = KnownTokens | KnownExpressions;
 interface Syntax {
@@ -124,13 +130,9 @@ interface Syntax {
     readonly start?: number;
     readonly end?: number;
 }
-interface Token<K extends KnownTokenKind> extends Syntax {
+interface Token<K extends KnownTokenKind, V extends string = string>
+    extends Syntax {
     readonly kind: K;
-}
-export interface TokenWithValue<
-    K extends KnownTokenKind,
-    V extends string = string
-> extends Token<K> {
     readonly value: V;
 }
 
@@ -142,13 +144,27 @@ export type KnownTokens =
     | DollarNameToken
     | AtNameToken;
 
-export type WordToken = TokenWithValue<SyntaxKind.WordToken>;
-export type StringLiteralToken = TokenWithValue<SyntaxKind.StringLiteralToken>;
-export type NumberLiteralToken = TokenWithValue<SyntaxKind.NumberLiteralToken>;
-export type DollarNameToken = TokenWithValue<SyntaxKind.DollarNameToken>;
-export type AtNameToken = TokenWithValue<SyntaxKind.AtNameToken>;
+export type WordToken = Token<SyntaxKind.WordToken>;
+export type StringLiteralToken = Token<SyntaxKind.StringLiteralToken>;
+export type NumberLiteralToken = Token<SyntaxKind.NumberLiteralToken>;
+export function isNumberLiteralToken(
+    syntax: KnownSyntaxes
+): syntax is NumberLiteralToken {
+    if (syntax.kind === SyntaxKind.NumberLiteralToken) {
+        return syntax satisfies NumberLiteralToken, true;
+    }
+    return syntax satisfies Exclude<KnownSyntaxes, NumberLiteralToken>, false;
+}
+export type DollarNameToken = Token<SyntaxKind.DollarNameToken>;
+export type AtNameToken = Token<SyntaxKind.AtNameToken>;
+export function isAtNameToken(syntax: KnownSyntaxes): syntax is AtNameToken {
+    if (syntax.kind === SyntaxKind.AtNameToken) {
+        return syntax satisfies AtNameToken, true;
+    }
+    return syntax satisfies Exclude<KnownSyntaxes, AtNameToken>, false;
+}
 
-interface ExpressionBase extends Syntax {
+interface ExpressionSyntax extends Syntax {
     readonly kind: KnownExpressions["kind"];
 }
 
@@ -165,59 +181,59 @@ export type KnownExpressions =
     | PrimaryExpression;
 
 export type Patterns1 = readonly [Pattern, ...Pattern[]];
-export interface LetExpression extends ExpressionBase {
+export interface LetExpression extends ExpressionSyntax {
     readonly kind: SyntaxKind.LetExpression;
     readonly patterns: Patterns1;
     readonly value: LambdaExpressionOrHigher;
     readonly scope: LetExpressionOrHigher;
 }
-export interface LambdaExpression extends ExpressionBase {
+export interface LambdaExpression extends ExpressionSyntax {
     readonly kind: SyntaxKind.LambdaExpression;
     readonly parameters: Patterns1;
     readonly body: Expression;
 }
-export interface MatchExpression extends ExpressionBase {
+export interface MatchExpression extends ExpressionSyntax {
     readonly kind: SyntaxKind.MatchExpression;
-    readonly target: MatchExpressionOrHigher;
+    readonly input: MatchExpressionOrHigher;
     readonly arms: readonly [MatchArm, ...MatchArm[]];
 }
 export interface MatchArm {
     readonly pattern: Pattern;
     readonly scope: Expression;
 }
-export interface CommaExpression extends ExpressionBase {
+export interface CommaExpression extends ExpressionSyntax {
     readonly kind: SyntaxKind.CommaExpression;
     readonly left: CommaExpressionOrHigher;
     readonly right: OperationExpressionOrHigher;
 }
-export interface BinaryExpression extends ExpressionBase {
+export interface BinaryExpression extends ExpressionSyntax {
     readonly kind: SyntaxKind.BinaryExpression;
     readonly left: BinaryExpressionOrHigher;
     readonly operator: Operator;
     readonly right: UnaryExpressionOrHigher;
 }
 export type Operator = AtNameToken | DotExpressionOrHigher;
-export interface PrefixExpression extends ExpressionBase {
+export interface PrefixExpression extends ExpressionSyntax {
     readonly kind: SyntaxKind.PrefixExpression;
     readonly operator: Operator;
     readonly operand: PrefixExpressionOrHigher;
 }
 
-export interface ConcatenationExpression extends ExpressionBase {
+export interface ConcatenationExpression extends ExpressionSyntax {
     readonly kind: SyntaxKind.ConcatenationExpression;
     readonly left: ConcatenationExpressionOrHigher;
     readonly right: DotExpressionOrHigher;
 }
-interface DotExpression extends ExpressionBase {
+interface DotExpression extends ExpressionSyntax {
     readonly kind: SyntaxKind.DotExpression;
     readonly left: DotExpressionOrHigher;
     readonly right: PrimaryExpression;
 }
-interface ParenthesisExpression extends ExpressionBase {
+interface ParenthesisExpression extends ExpressionSyntax {
     readonly kind: SyntaxKind.ParenthesisExpression;
     readonly expression: Expression;
 }
-export interface RecordExpression extends ExpressionBase {
+export interface RecordExpression extends ExpressionSyntax {
     readonly kind: SyntaxKind.RecordExpression;
     readonly entries: readonly RecordEntry[];
 }
@@ -225,19 +241,36 @@ export interface RecordEntry {
     readonly field: StringExpression;
     readonly value: OperationExpressionOrHigher;
 }
-export interface ListExpression extends ExpressionBase {
+export interface ListExpression extends ExpressionSyntax {
     readonly kind: SyntaxKind.ListExpression;
     readonly items: readonly OperationExpressionOrHigher[];
 }
 export type StringExpression = StringLiteralToken | WordToken;
+export function isStringExpression(
+    syntax: KnownSyntaxes
+): syntax is StringExpression {
+    if (
+        syntax.kind === SyntaxKind.StringLiteralToken ||
+        syntax.kind === SyntaxKind.WordToken
+    ) {
+        return syntax satisfies StringExpression, true;
+    }
+    return syntax satisfies Exclude<KnownSyntaxes, StringExpression>, false;
+}
 
 export type Variable = DollarNameToken;
-export type Pattern = Variable;
+export function isVariable(syntax: KnownSyntaxes): syntax is Variable {
+    if (syntax.kind === SyntaxKind.DollarNameToken) {
+        return syntax satisfies Variable, true;
+    }
+    return syntax satisfies Exclude<KnownSyntaxes, Variable>, false;
+}
+export type Pattern = Variable | Literal;
 
 export function createTokenWithValue<
     K extends KnownTokens["kind"],
     V extends string
->(kind: K, value: V): TokenWithValue<K, V> {
+>(kind: K, value: V): Token<K, V> {
     return {
         kind,
         value,
@@ -266,12 +299,12 @@ export function createLambdaExpression(
     };
 }
 export function createMatchExpression(
-    target: MatchExpression["target"],
+    input: MatchExpression["input"],
     arms: MatchExpression["arms"]
 ): MatchExpression {
     return {
         kind: SyntaxKind.MatchExpression,
-        target,
+        input,
         arms,
     };
 }

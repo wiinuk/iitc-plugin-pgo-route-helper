@@ -18,7 +18,7 @@ export const enum CharacterCodes {
     /** u+0021 "EXCLAMATION MARK" */
     "!" = 0x0021,
     /** u+0022 "QUOTATION MARK" */
-    "\"" = 0x0022,
+    '"' = 0x0022,
     /** u+0023 "NUMBER SIGN" */
     "#" = 0x0023,
     /** u+0024 "DOLLAR SIGN" */

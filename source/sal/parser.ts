@@ -263,7 +263,7 @@ export function parse(scanner: Scanner, options?: CreateParserOptions) {
             );
         }
         const body = parseExpression();
-        return createMatchArm(pattern, body);
+        return createMatchArm([pattern], body);
     }
     function parseCommaExpressionItems<T>(
         initialize: (item0: CommaExpression["right"]) => T,
@@ -454,11 +454,17 @@ export function parse(scanner: Scanner, options?: CreateParserOptions) {
         return parseDollarNameToken();
     }
     function parsePattern() {
+        if (currentTokenKind === SyntaxKind.NumberLiteralToken) {
+            return parseNumberLiteral();
+        }
+        if (isStringExpressionStart()) {
+            return parseStringExpression();
+        }
         return parseVariable();
     }
-    function parsePatterns1(isPatternEndQuote: () => boolean) {
+    function parsePatterns1(isPatternsEnd: () => boolean) {
         const patterns: [Pattern, ...Pattern[]] = [parsePattern()];
-        while (!isPatternEndQuote()) {
+        while (!isPatternsEnd()) {
             patterns.push(parsePattern());
         }
         return patterns;
