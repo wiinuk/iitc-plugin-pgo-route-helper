@@ -1,9 +1,9 @@
 import { error, exhaustive } from "../standard-extensions";
 import {
     AtNameToken,
+    CommaExpression,
     Expression,
     LetExpression,
-    LetExpressionOrHigher,
     ListExpression,
     Literal,
     MatchArm,
@@ -13,7 +13,9 @@ import {
     PrefixExpression,
     RecordExpression,
     SyntaxKind,
+    TuplePattern,
     Variable,
+    ViewPattern,
     isAtNameToken,
     isLiteral,
     isNumberLiteralToken,
@@ -30,6 +32,7 @@ const addEntryOperatorIdentifier = "_,_:_";
 const noMatchIdentifier = "noMatch";
 const handleMatchFailureIdentifier = "handleMatchFailure";
 const isPatternIdentifier = "|is|";
+const tuplePatternIdentifier = "|tuple|";
 
 const privateJsNameSymbol = Symbol("privateJsName");
 type JsName = {
@@ -58,7 +61,7 @@ export function createEmitter() {
         readonly nameToJsName: Map<string, JsName>;
         readonly reservedJsNames: Set<JsName>;
     }
-    const buffer: string[] = [];
+    const buffer: (string | number)[] = [];
 
     let resolverName = "_" as unknown as JsName;
     const parentScopes: Scope[] = [];
@@ -80,7 +83,7 @@ export function createEmitter() {
         }
         initializeScope(currentScope);
     }
-    function write(text: string) {
+    function write(text: string | number) {
         buffer.push(text);
     }
     function usingNameScope<T1, T2, T3, R>(
@@ -222,7 +225,7 @@ export function createEmitter() {
         writeJsName(output);
     }
     function emitAsGeneratorFunction(
-        patterns: readonly [Pattern, ...Pattern[]],
+        patterns: Patterns1,
         patternsStartIndex: number,
         body: Expression
     ) {
@@ -243,7 +246,7 @@ export function createEmitter() {
     function emitAsGeneratorFunctionInNameScope(
         pattern: Patterns1,
         patternsStartIndex: number,
-        scope: LetExpressionOrHigher
+        scope: Expression
     ) {
         const inputs = [];
         for (let i = patternsStartIndex; i < pattern.length; i++) {
@@ -364,6 +367,20 @@ export function createEmitter() {
         emitExpressionValue(operand);
         write(")");
     }
+    function emitCommaExpressionStatements({ items }: CommaExpression) {
+        for (const item of items) {
+            emitExpressionStatements(item);
+        }
+    }
+    /** `a, b` => `[a, b]` */
+    function emitCommaExpressionValue({ items }: CommaExpression) {
+        write("[");
+        emitExpressionValue(items[0]);
+        for (let i = 1; i < items.length; i++) {
+            write(", "), emitExpressionValue(items[i] ?? error`internal error`);
+        }
+        write("]");
+    }
     function emitListExpressionStatements({ items }: ListExpression) {
         for (const item of items) {
             emitExpressionStatements(item);
@@ -419,11 +436,7 @@ export function createEmitter() {
             case SyntaxKind.MatchExpression:
                 return emitMatchExpressionStatements(expression);
             case SyntaxKind.CommaExpression:
-                return emitBinaryStatements(
-                    expression.left,
-                    commaOperatorIdentifier,
-                    expression.right
-                );
+                return emitCommaExpressionStatements(expression);
             case SyntaxKind.BinaryExpression:
                 return emitBinaryStatements(
                     expression.left,
@@ -482,11 +495,7 @@ export function createEmitter() {
             case SyntaxKind.MatchExpression:
                 return emitMatchExpressionValue(expression);
             case SyntaxKind.CommaExpression:
-                return emitBinaryValue(
-                    expression.left,
-                    commaOperatorIdentifier,
-                    expression.right
-                );
+                return emitCommaExpressionValue(expression);
             case SyntaxKind.BinaryExpression:
                 return emitBinaryValue(
                     expression.left,
@@ -594,6 +603,39 @@ export function createEmitter() {
                 pattern
             );
         }
+        if (pattern.kind === SyntaxKind.ParenthesisPattern) {
+            remainingInputs.push(input);
+            remainingPatterns.push(pattern.pattern);
+            return emitMatchArm(
+                remainingInputs,
+                remainingPatterns,
+                scope,
+                output,
+                matchBlockLabel
+            );
+        }
+        if (pattern.kind === SyntaxKind.TuplePattern) {
+            return emitMatchArmWithTuplePattern(
+                remainingInputs,
+                remainingPatterns,
+                scope,
+                output,
+                matchBlockLabel,
+                input,
+                pattern
+            );
+        }
+        if (pattern.kind === SyntaxKind.ViewPattern) {
+            return emitMatchArmWithViewPattern(
+                remainingInputs,
+                remainingPatterns,
+                scope,
+                output,
+                matchBlockLabel,
+                input,
+                pattern
+            );
+        }
         return exhaustive(pattern);
     }
     /**
@@ -647,7 +689,7 @@ export function createEmitter() {
     }
     /**
      * ```
-     * if ((yield* (yield* ($(isPatternIdentifier)($literal))($input))) !== globalThis.noMatch) {
+     * if ((yield* (yield* ($(isPatternIdentifier)($literal)))($input)) !== globalThis.noMatch) {
      *     $remainingStatements…
      * }
      * ```
@@ -655,7 +697,7 @@ export function createEmitter() {
     function emitMatchArmWithLiteralPattern(
         remainingInputs: Stack<JsName>,
         remainingPatterns: Stack<Pattern>,
-        scope: LetExpressionOrHigher,
+        scope: Expression,
         output: JsName,
         matchBlockLabel: JsName,
         input: JsName,
@@ -679,8 +721,107 @@ export function createEmitter() {
         );
         write("}");
     }
+    /**
+     * ```
+     * const _temp0 = yield* (yield* $(globalName("|tuple|"))($(tupleLength(pattern))))($input);
+     * if (_temp0 !== $(getGlobal("noMatch"))) {
+     *     const [_temp1, …, _tempN] = _temp0;
+     *     $remainingStatements…
+     * }
+     * ```
+     */
+    function emitMatchArmWithTuplePattern(
+        remainingInputs: Stack<JsName>,
+        remainingPatterns: Stack<Pattern>,
+        scope: Expression,
+        output: JsName,
+        matchBlockLabel: JsName,
+        input: JsName,
+        { patterns }: TuplePattern
+    ) {
+        const tuple = generateJsName("_xs");
+        write("const "),
+            writeJsName(tuple),
+            write(" = yield* (yield* ("),
+            emitGlobalVariable(tuplePatternIdentifier),
+            write("("),
+            write(patterns.length),
+            write(")))("),
+            writeJsName(input),
+            write(");");
 
-    function emitExpressionAsModuleCore(expression: LetExpressionOrHigher) {
+        write("if ("),
+            writeJsName(tuple),
+            write(" !== "),
+            emitGlobalVariable(noMatchIdentifier),
+            write(") {");
+
+        write("const [");
+        for (let i = 0; i < patterns.length; i++) {
+            if (0 < i) {
+                write(", ");
+            }
+            const pattern = patterns[i] ?? error`internal error`;
+            const input = generateJsName(`_x${i}`);
+            writeJsName(input);
+            remainingInputs.push(input);
+            remainingPatterns.push(pattern);
+        }
+        write("] = "), writeJsName(tuple), write(";");
+
+        emitMatchArm(
+            remainingInputs,
+            remainingPatterns,
+            scope,
+            output,
+            matchBlockLabel
+        );
+        write("}");
+    }
+    /**
+     * const _temp0 = yield* (yield* (yield* (yield* $view($parameter0))($parameter1))($parameter2))($input);
+     * if (_temp0 !== $(getGlobal("noMatch"))) {
+     *     $remainingStatements…
+     * }
+     */
+    function emitMatchArmWithViewPattern(
+        remainingInputs: Stack<JsName>,
+        remainingPatterns: Stack<Pattern>,
+        scope: Expression,
+        output: JsName,
+        matchBlockLabel: JsName,
+        input: JsName,
+        { view, parameters, pattern }: ViewPattern
+    ) {
+        const result = generateJsName("_x");
+        write("const "), writeJsName(result), write(" = yield* ");
+        for (const _ of parameters) {
+            write("(yield* ");
+        }
+        emitIdentifier(view.value);
+        for (const parameter of parameters) {
+            write("("), emitExpressionValue(parameter), write("))");
+        }
+        write("("), writeJsName(input), write(");");
+        write("if ("),
+            writeJsName(result),
+            write(" !== "),
+            emitGlobalVariable(noMatchIdentifier),
+            write(") {");
+
+        remainingInputs.push(result);
+        remainingPatterns.push(pattern);
+        emitMatchArm(
+            remainingInputs,
+            remainingPatterns,
+            scope,
+            output,
+            matchBlockLabel
+        );
+        write("}");
+    }
+
+    function emitExpressionAsModuleCore(expression: Expression) {
         write("(function* ("),
             writeJsName(resolverName),
             write(") "),

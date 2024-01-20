@@ -65,6 +65,11 @@ export const enum SyntaxKind {
     RecordExpression,
     ListExpression,
     PrefixExpression,
+
+    // pattern
+    ViewPattern,
+    TuplePattern,
+    ParenthesisPattern,
 }
 
 export const enum DiagnosticKind {
@@ -124,7 +129,7 @@ export function isLiteral(syntax: KnownSyntaxes): syntax is Literal {
     return syntax satisfies Exclude<KnownSyntaxes, Literal>, false;
 }
 
-type KnownSyntaxes = KnownTokens | KnownExpressions;
+type KnownSyntaxes = KnownTokens | KnownExpressions | KnownPatterns;
 interface Syntax {
     readonly kind: KnownSyntaxes["kind"];
     readonly start?: number;
@@ -180,7 +185,7 @@ export type KnownExpressions =
     | DotExpression
     | PrimaryExpression;
 
-export type Patterns1 = readonly [Pattern, ...Pattern[]];
+export type Patterns1 = readonly [PrimaryPattern, ...PrimaryPattern[]];
 export interface LetExpression extends ExpressionSyntax {
     readonly kind: SyntaxKind.LetExpression;
     readonly patterns: Patterns1;
@@ -203,8 +208,11 @@ export interface MatchArm {
 }
 export interface CommaExpression extends ExpressionSyntax {
     readonly kind: SyntaxKind.CommaExpression;
-    readonly left: CommaExpressionOrHigher;
-    readonly right: OperationExpressionOrHigher;
+    readonly items: readonly [
+        OperationExpressionOrHigher,
+        OperationExpressionOrHigher,
+        ...OperationExpressionOrHigher[]
+    ];
 }
 export interface BinaryExpression extends ExpressionSyntax {
     readonly kind: SyntaxKind.BinaryExpression;
@@ -265,7 +273,44 @@ export function isVariable(syntax: KnownSyntaxes): syntax is Variable {
     }
     return syntax satisfies Exclude<KnownSyntaxes, Variable>, false;
 }
-export type Pattern = Variable | Literal;
+export type KnownPatterns = TuplePattern | ViewPattern | PrimaryPattern;
+
+export type Pattern = TuplePatternOrHigher;
+export type TuplePatternOrHigher = ViewPatternOrHigher | TuplePattern;
+export type ViewPatternOrHigher = ViewPattern | PrimaryPattern;
+export type PrimaryPattern = Variable | Literal | ParenthesisPattern;
+
+export interface TuplePattern extends Syntax {
+    readonly kind: SyntaxKind.TuplePattern;
+    readonly patterns: readonly [
+        ViewPatternOrHigher,
+        ViewPatternOrHigher,
+        ...ViewPatternOrHigher[]
+    ];
+}
+
+export type ViewPatternParameterExpression = Literal | Variable;
+export function isViewPatternParameterExpression(
+    syntax: KnownSyntaxes
+): syntax is ViewPatternParameterExpression {
+    if (isLiteral(syntax) || isVariable(syntax)) {
+        return syntax satisfies ViewPatternParameterExpression, true;
+    }
+    return (
+        syntax satisfies Exclude<KnownSyntaxes, ViewPatternParameterExpression>,
+        false
+    );
+}
+export interface ViewPattern extends Syntax {
+    readonly kind: SyntaxKind.ViewPattern;
+    readonly view: Variable;
+    readonly parameters: readonly ViewPatternParameterExpression[];
+    readonly pattern: PrimaryPattern;
+}
+export interface ParenthesisPattern extends Syntax {
+    readonly kind: SyntaxKind.ParenthesisPattern;
+    readonly pattern: Pattern;
+}
 
 export function createTokenWithValue<
     K extends KnownTokens["kind"],
@@ -318,13 +363,11 @@ export function createMatchArm(
     };
 }
 export function createCommaExpression(
-    left: CommaExpression["left"],
-    right: CommaExpression["right"]
+    items: CommaExpression["items"]
 ): CommaExpression {
     return {
         kind: SyntaxKind.CommaExpression,
-        left,
-        right,
+        items,
     };
 }
 export function createBinaryExpression(
@@ -381,4 +424,29 @@ export function createListExpression(
     items: ListExpression["items"]
 ): ListExpression {
     return { kind: SyntaxKind.ListExpression, items };
+}
+export function createTuplePattern(
+    patterns: TuplePattern["patterns"]
+): TuplePattern {
+    return { kind: SyntaxKind.TuplePattern, patterns };
+}
+export function createParenthesisPattern(
+    pattern: ParenthesisPattern["pattern"]
+): ParenthesisPattern {
+    return {
+        kind: SyntaxKind.ParenthesisPattern,
+        pattern,
+    };
+}
+export function createViewPattern(
+    view: ViewPattern["view"],
+    parameters: ViewPattern["parameters"],
+    pattern: ViewPattern["pattern"]
+): ViewPattern {
+    return {
+        kind: SyntaxKind.ViewPattern,
+        view,
+        parameters,
+        pattern,
+    };
 }

@@ -29,21 +29,28 @@ import {
     MatchExpressionOrHigher,
     DotExpressionOrHigher,
     createParenthesisExpression,
-    CommaExpression,
     ConcatenationExpressionOrHigher,
     PrefixExpressionOrHigher,
     Pattern,
+    createParenthesisPattern,
+    ViewPatternOrHigher,
+    createTuplePattern,
+    isVariable as isVariableSyntax,
+    isViewPatternParameterExpression,
+    createViewPattern,
+    PrimaryPattern,
+    OperationExpressionOrHigher,
 } from "./syntax";
 
 /**
 ```bnf
 expression = let-expression-or-higher
 let-expression-or-higher =
-    | "$let" pattern+ ("=" | "$is") lambda-expression-or-higher (";" | "$in") let-expression-or-higher
+    | "$let" primary-pattern+ ("=" | "$is") lambda-expression-or-higher (";" | "$in") let-expression-or-higher
     | lambda-expression-or-higher
 
 lambda-expression-or-higher =
-    | ("$function" | "\") pattern+ ("=>" | "$into") expression
+    | ("$function" | "\") primary-pattern+ ("=>" | "$into") expression
     | match-expression-or-higher
 
 match-expression-or-higher =
@@ -91,8 +98,7 @@ primary-expression =
     | "(" expression ")"
     | record-expression
     | list-expression
-    | string-expression
-    | number-literal
+    | literal
     | variable
 
 // `{ a: A, b: B, c: C }` => `${_,_:_}(${_,_:_}(${_,_:_}(${\{\}})("a")("A"))("b")("B"))("c")("C")`
@@ -107,6 +113,10 @@ list-expression =
     | "[" "]"
     | "[" comma-expression-or-higher ","? "]"
 
+literal =
+    | string-expression
+    | number-literal
+
 string-expression =
     | string-literal
     | word
@@ -115,8 +125,22 @@ variable =
     | dollar-name
     | braced-dollar-name
 
-pattern =
+pattern = tuple-pattern-or-higher
+tuple-pattern-or-higher =
+    | view-pattern-or-higher ("," view-pattern-or-higher)*
+
+view-pattern-parameter-expression =
+    | literal
     | variable
+
+view-pattern-or-higher =
+    | variable view-pattern-parameter-expression* primary-pattern
+    | primary-pattern
+
+primary-pattern =
+    | variable
+    | literal
+    | "(" pattern ")"
 ```
 */
 
@@ -137,6 +161,9 @@ export function parse(scanner: Scanner, options?: CreateParserOptions) {
         );
     }
 
+    function isToken(kind: SyntaxKind) {
+        return currentTokenKind === kind;
+    }
     function isOperator(text: string) {
         return (
             currentTokenKind === SyntaxKind.OperatorToken &&
@@ -198,10 +225,8 @@ export function parse(scanner: Scanner, options?: CreateParserOptions) {
             nextToken();
             const value = parseLambdaExpressionOrHigher();
             if (
-                // @ts-expect-error currentTokenKind が書き換わるのが検知されない
-                currentTokenKind === SyntaxKind.SemicolonToken ||
-                // @ts-expect-error currentTokenKind が書き換わるのが検知されない
-                currentTokenKind === SyntaxKind.InKeyword
+                isToken(SyntaxKind.SemicolonToken) ||
+                isToken(SyntaxKind.InKeyword)
             ) {
                 nextToken();
             } else {
@@ -266,8 +291,8 @@ export function parse(scanner: Scanner, options?: CreateParserOptions) {
         return createMatchArm(pattern, body);
     }
     function parseCommaExpressionItems<T>(
-        initialize: (item0: CommaExpression["right"]) => T,
-        add: (accumulator: T, item: CommaExpression["right"]) => T
+        initialize: (item0: OperationExpressionOrHigher) => T,
+        add: (accumulator: T, item: OperationExpressionOrHigher) => T
     ) {
         let accumulator = initialize(parseOperatorExpressionOrHigher());
         while (currentTokenKind === SyntaxKind.CommaToken) {
@@ -277,7 +302,15 @@ export function parse(scanner: Scanner, options?: CreateParserOptions) {
         return accumulator;
     }
     function parseCommaExpressionOrHigher() {
-        return parseCommaExpressionItems(id, createCommaExpression);
+        type E = OperationExpressionOrHigher;
+        type ExpressionOrItems = E | [E, E, ...E[]];
+        const expressionOrItems = parseCommaExpressionItems<ExpressionOrItems>(
+            id,
+            (a, item) => (Array.isArray(a) ? (a.push(item), a) : [a, item])
+        );
+        return Array.isArray(expressionOrItems)
+            ? createCommaExpression(expressionOrItems)
+            : expressionOrItems;
     }
     const parseOperatorExpressionOrHigher = parseBinaryExpressionOrHigher;
     function parseBinaryExpressionOrHigher() {
@@ -386,8 +419,7 @@ export function parse(scanner: Scanner, options?: CreateParserOptions) {
         const entries: RecordEntry[] = [parseRecordEntry()];
         while (currentTokenKind === SyntaxKind.CommaToken) {
             nextToken();
-            //@ts-expect-error nextToken で currentTokenKind が変更されるのがコンパイラで検知されないのでエラーを無視する
-            if (currentTokenKind === SyntaxKind.RightCurlyBracketToken) {
+            if (isToken(SyntaxKind.RightCurlyBracketToken)) {
                 break;
             }
             entries.push(parseRecordEntry());
@@ -414,7 +446,7 @@ export function parse(scanner: Scanner, options?: CreateParserOptions) {
             (x) => [x],
             (xs, x) => (xs.push(x), xs)
         );
-        if (currentTokenKind === SyntaxKind.CommaToken) {
+        if (isToken(SyntaxKind.CommaToken)) {
             nextToken();
         }
         skipToken(
@@ -453,19 +485,81 @@ export function parse(scanner: Scanner, options?: CreateParserOptions) {
     function parseVariable() {
         return parseDollarNameToken();
     }
-    function parsePattern() {
+    function parsePattern(): Pattern {
+        return parseTuplePatternOrHigher();
+    }
+    function parseTuplePatternOrHigher() {
+        const pattern0 = parseViewPatternOrHigher();
+        let patterns:
+            | [
+                  ViewPatternOrHigher,
+                  ViewPatternOrHigher,
+                  ...ViewPatternOrHigher[]
+              ]
+            | undefined;
+        if (currentTokenKind === SyntaxKind.CommaToken) {
+            nextToken();
+            const pattern = parseViewPatternOrHigher();
+            if (patterns == null) {
+                patterns = [pattern0, pattern];
+            } else {
+                patterns.push(pattern);
+            }
+        }
+        if (patterns == null) {
+            return pattern0;
+        }
+        return createTuplePattern(patterns);
+    }
+    function parseViewPatternOrHigher() {
+        const viewOrPattern = parsePrimaryPattern();
+        if (!isVariableSyntax(viewOrPattern) || !isPrimaryPatternStart()) {
+            return viewOrPattern;
+        }
+
+        const parameters = [];
+        let last = parsePrimaryPattern();
+        while (
+            isViewPatternParameterExpression(last) &&
+            isPrimaryPatternStart()
+        ) {
+            parameters.push(last);
+            last = parsePrimaryPattern();
+        }
+        return createViewPattern(viewOrPattern, parameters, last);
+    }
+    function isPrimaryPatternStart() {
+        return (
+            currentTokenKind === SyntaxKind.NumberLiteralToken ||
+            currentTokenKind === SyntaxKind.LeftParenthesisToken ||
+            isVariable() ||
+            isStringExpressionStart()
+        );
+    }
+    function parsePrimaryPattern() {
         if (currentTokenKind === SyntaxKind.NumberLiteralToken) {
             return parseNumberLiteral();
         }
         if (isStringExpressionStart()) {
             return parseStringExpression();
         }
+        if (currentTokenKind === SyntaxKind.LeftParenthesisToken) {
+            nextToken();
+            const pattern = parsePattern();
+            skipToken(
+                SyntaxKind.RightParenthesisToken,
+                DiagnosticKind.RightParenthesisTokenExpected
+            );
+            return createParenthesisPattern(pattern);
+        }
         return parseVariable();
     }
     function parsePatterns1(isPatternsEnd: () => boolean) {
-        const patterns: [Pattern, ...Pattern[]] = [parsePattern()];
+        const patterns: [PrimaryPattern, ...PrimaryPattern[]] = [
+            parsePrimaryPattern(),
+        ];
         while (!isPatternsEnd()) {
-            patterns.push(parsePattern());
+            patterns.push(parsePrimaryPattern());
         }
         return patterns;
     }

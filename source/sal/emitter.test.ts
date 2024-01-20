@@ -263,6 +263,9 @@ function createSystem() {
         }),
         noMatch,
         "|is|": curried((v1, v2) => (Object.is(v1, v2) ? true : noMatch)),
+        "|tuple|": curried((length, v) =>
+            Array.isArray(v) && v.length === length ? v : noMatch
+        ),
     };
     const global = Object.create(null);
     for (const [k, v] of Object.entries(globalEntries)) {
