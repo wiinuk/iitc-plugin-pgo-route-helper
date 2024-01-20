@@ -31,8 +31,8 @@ const commaOperatorIdentifier = "_,_";
 const addEntryOperatorIdentifier = "_,_:_";
 const noMatchIdentifier = "noMatch";
 const handleMatchFailureIdentifier = "handleMatchFailure";
-const isPatternIdentifier = "|is|";
-const tuplePatternIdentifier = "|tuple|";
+const isPatternIdentifier = "|Is|";
+const tuplePatternIdentifier = "|Tuple|";
 
 const privateJsNameSymbol = Symbol("privateJsName");
 type JsName = {

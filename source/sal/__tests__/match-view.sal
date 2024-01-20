@@ -1,0 +1,7 @@
+$let $f $x =
+    $x $as
+    | $Is 777 $_ => "lucky"
+    | $Is 42 $_ => "answer"
+    | $_ => "other"
+$in
+[$f 10, $f 42, $f 777]

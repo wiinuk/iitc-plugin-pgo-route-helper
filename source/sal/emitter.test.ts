@@ -262,8 +262,8 @@ function createSystem() {
             throw new TypeError("${_._}");
         }),
         noMatch,
-        "|is|": curried((v1, v2) => (Object.is(v1, v2) ? true : noMatch)),
-        "|tuple|": curried((length, v) =>
+        "|Is|": curried((v1, v2) => (Object.is(v1, v2) ? true : noMatch)),
+        "|Tuple|": curried((length, v) =>
             Array.isArray(v) && v.length === length ? v : noMatch
         ),
     };
