@@ -798,7 +798,7 @@ export function createEmitter() {
         for (const _ of parameters) {
             write("(yield* ");
         }
-        emitIdentifier(view.value);
+        emitIdentifier("|" + view.value + "|");
         for (const parameter of parameters) {
             write("("), emitExpressionValue(parameter), write("))");
         }
