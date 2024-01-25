@@ -29,8 +29,8 @@ export const enum SyntaxKind {
     ColonToken,
     /** `\\` */
     ReverseSolidusToken,
-    /** `${…}` */
-    BracedDollarNameToken,
+    /** `$"…"` */
+    QuotedDollarNameToken,
     /** `@abc` */
     AtNameToken,
     /** `+…` */
@@ -82,7 +82,7 @@ export const enum DiagnosticKind {
     UnterminatedStringLiteral,
     DecimalDigitExpected,
     WordTokenExpected,
-    DollarNameExpected,
+    DollarNameOrQuotedDollarNameExpected,
     AtNameExpected,
     StringLiteralExpected,
     SemicolonTokenOrInKeywordExpected,
@@ -146,7 +146,7 @@ export type KnownTokens =
     | StringLiteralToken
     | NumberLiteralToken
     | WordToken
-    | DollarNameToken
+    | Variable
     | AtNameToken;
 
 export type WordToken = Token<SyntaxKind.WordToken>;
@@ -161,6 +161,7 @@ export function isNumberLiteralToken(
     return syntax satisfies Exclude<KnownSyntaxes, NumberLiteralToken>, false;
 }
 export type DollarNameToken = Token<SyntaxKind.DollarNameToken>;
+export type QuotedDollarNameToken = Token<SyntaxKind.QuotedDollarNameToken>;
 export type AtNameToken = Token<SyntaxKind.AtNameToken>;
 export function isAtNameToken(syntax: KnownSyntaxes): syntax is AtNameToken {
     if (syntax.kind === SyntaxKind.AtNameToken) {
@@ -173,7 +174,6 @@ interface ExpressionSyntax extends Syntax {
     readonly kind: KnownExpressions["kind"];
 }
 
-export type Identifier = DollarNameToken;
 export type KnownExpressions =
     | LetExpression
     | LambdaExpression
@@ -266,9 +266,12 @@ export function isStringExpression(
     return syntax satisfies Exclude<KnownSyntaxes, StringExpression>, false;
 }
 
-export type Variable = DollarNameToken;
+export type Variable = DollarNameToken | QuotedDollarNameToken;
 export function isVariable(syntax: KnownSyntaxes): syntax is Variable {
-    if (syntax.kind === SyntaxKind.DollarNameToken) {
+    if (
+        syntax.kind === SyntaxKind.DollarNameToken ||
+        syntax.kind === SyntaxKind.QuotedDollarNameToken
+    ) {
         return syntax satisfies Variable, true;
     }
     return syntax satisfies Exclude<KnownSyntaxes, Variable>, false;

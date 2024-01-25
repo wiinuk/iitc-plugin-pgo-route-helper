@@ -180,6 +180,29 @@ it("dollar name", () => {
         token(SyntaxKind.NumberLiteralToken, { value: "0" }),
     ]);
 });
+it("quoted dollar name", () => {
+    expect(getTokens('$""')).toMatchObject([
+        token(SyntaxKind.QuotedDollarNameToken, {
+            start: 0,
+            end: 3,
+            value: "",
+        }),
+    ]);
+    expect(getTokens('$"123 abc"')).toMatchObject([
+        token(SyntaxKind.QuotedDollarNameToken, {
+            start: 0,
+            end: 10,
+            value: "123 abc",
+        }),
+    ]);
+    expect(getTokens('$"\\\\\\""')).toMatchObject([
+        token(SyntaxKind.QuotedDollarNameToken, {
+            start: 0,
+            end: 7,
+            value: '\\"',
+        }),
+    ]);
+});
 it("at name", () => {
     expect(getTokens("@a")).toMatchObject([
         token(SyntaxKind.AtNameToken, { value: "a" }),

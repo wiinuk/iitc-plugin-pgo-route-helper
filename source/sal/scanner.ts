@@ -182,7 +182,7 @@ export function createScanner(options?: ScannerOptions) {
         raiseDiagnostic?.(DiagnosticKind.UndefinedEscapeSequence);
         return String.fromCodePoint(character);
     }
-    function scanStringLiteral() {
+    function scanStringLiteralLike(kind: SyntaxKind) {
         // `"`
         position++;
         let result = "";
@@ -208,7 +208,7 @@ export function createScanner(options?: ScannerOptions) {
             position++;
         }
         tokenValue = result;
-        return (tokenKind = S.StringLiteralToken);
+        return (tokenKind = kind);
     }
     function skipDigits1() {
         if (position < end && !isAsciiDigit(source.codePointAt(position)!)) {
@@ -338,12 +338,17 @@ export function createScanner(options?: ScannerOptions) {
 
             case C["$"]:
                 position++;
+                if (source.charCodeAt(position) === C['"']) {
+                    return scanStringLiteralLike(
+                        SyntaxKind.QuotedDollarNameToken
+                    );
+                }
                 return scanName(
                     S.DollarNameToken,
                     DiagnosticKind.UnterminatedDollarName
                 );
             case C['"']:
-                return scanStringLiteral();
+                return scanStringLiteralLike(SyntaxKind.StringLiteralToken);
 
             case C.C0:
             case C.C1:

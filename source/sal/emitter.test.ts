@@ -1,6 +1,6 @@
 /* eslint-disable object-shorthand, require-yield */
+import "jest-expect-message";
 import path from "node:path";
-import fss from "node:fs";
 import fs from "node:fs/promises";
 import { createEmitter } from "./emitter";
 import { parse } from "./parser";
@@ -293,8 +293,8 @@ function stringifyDiagnosticKind(kind: DiagnosticKind) {
             return "DecimalDigitExpected";
         case D.WordTokenExpected:
             return "WordTokenExpected";
-        case D.DollarNameExpected:
-            return "DollarNameExpected";
+        case D.DollarNameOrQuotedDollarNameExpected:
+            return "DollarNameOrQuotedDollarNameExpected";
         case D.AtNameExpected:
             return "AtNameExpected";
         case D.StringLiteralExpected:
@@ -345,10 +345,10 @@ function emit(source: string) {
         },
     });
     if (diagnostics.length !== 0) {
-        return Failure(diagnostics);
+        return Failure({ diagnostics, expression, emittedCode: undefined });
     }
     emitter ??= createEmitter();
-    return Success(emitter.emit(expression));
+    return Success({ emittedCode: emitter.emit(expression), expression });
 }
 function evaluate(
     source: string,
@@ -359,14 +359,14 @@ function evaluate(
     const emitResult = emit(source);
     if (emitResult.kind === "Success") {
         try {
-            const generator: Generator = globalThis.eval(emitResult.value)(
-                createSystem()
-            );
+            const generator: Generator = globalThis.eval(
+                emitResult.value.emittedCode
+            )(createSystem());
             let result = generator.next();
             while (result.done !== true) {
                 result = generator.next(yieldHandler(result.value));
             }
-            return Success(result.value);
+            return Success({ ...emitResult.value, value: result.value });
         } catch (error) {
             console.error(emitResult.value);
             throw error;
@@ -381,36 +381,52 @@ function changeExtension(filePath: string, extension: string) {
         path.basename(filePath, path.extname(filePath)) + extension
     );
 }
-async function doFileTest(sourcePath: string) {
-    const source = await fs.readFile(sourcePath, {
-        encoding: "utf8",
-    });
-    const resultJsonPath = changeExtension(sourcePath, ".json");
-    const resultJson = await fs.readFile(resultJsonPath, {
-        encoding: "utf8",
-    });
-    const actual = evaluate(source);
-    const expected: unknown = JSON.parse(resultJson);
-    expect(actual).toStrictEqual(Success(expected));
-}
-describe("file tests", () => {
-    const testsDirectoryPath = path.join(__dirname, "__tests__");
-    function defineFileTestsRecursive(directoryPath: string) {
-        const names = fss.readdirSync(directoryPath);
+async function doFileTests(
+    rootDirectoryPath: string,
+    doFileTest: (test: { sourcePath: string }) => Promise<void>
+): Promise<void> {
+    async function* getFileTestsRecursive(
+        directoryPath: string
+    ): AsyncGenerator<{ test: Promise<void> }> {
+        const names = await fs.readdir(directoryPath);
         for (const name of names) {
             const direntPath = path.join(directoryPath, name);
-            const s = fss.statSync(direntPath);
+            const s = await fs.stat(direntPath);
             if (s.isDirectory()) {
-                describe(name, () => {
-                    defineFileTestsRecursive(direntPath);
-                });
+                yield* getFileTestsRecursive(direntPath);
             }
             if (/\.sal$/i.test(direntPath) && s.isFile()) {
-                it(path.basename(direntPath), async () => {
-                    await doFileTest(direntPath);
-                });
+                yield {
+                    test: doFileTest({
+                        sourcePath: direntPath,
+                    }),
+                };
             }
         }
     }
-    defineFileTestsRecursive(testsDirectoryPath);
+    const tests = [];
+    for await (const { test } of getFileTestsRecursive(rootDirectoryPath)) {
+        tests.push(test);
+    }
+    await Promise.all(tests);
+}
+describe("file tests", () => {
+    it("file tests", async () => {
+        const testsDirectoryPath = path.join(__dirname, "__tests__");
+        await doFileTests(testsDirectoryPath, async ({ sourcePath }) => {
+            const source = await fs.readFile(sourcePath, {
+                encoding: "utf8",
+            });
+            const resultJsonPath = changeExtension(sourcePath, ".json");
+            const resultJson = await fs.readFile(resultJsonPath, {
+                encoding: "utf8",
+            });
+            const actual = evaluate(source);
+            const expected: unknown = JSON.parse(resultJson);
+            expect(
+                actual,
+                JSON.stringify({ sourcePath, source, actual, expected })
+            ).toMatchObject(Success({ value: expected }));
+        });
+    });
 });

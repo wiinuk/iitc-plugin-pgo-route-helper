@@ -1,4 +1,5 @@
 import { error, exhaustive } from "../standard-extensions";
+import { CharacterCodes } from "./character-codes.g";
 import {
     AtNameToken,
     CommaExpression,
@@ -33,30 +34,29 @@ const noMatchIdentifier = "noMatch";
 const handleMatchFailureIdentifier = "handleMatchFailure";
 const isPatternIdentifier = "|Is|";
 const tuplePatternIdentifier = "|Tuple|";
-
-const privateJsNameSymbol = Symbol("privateJsName");
-type JsName = {
-    readonly _privateBrand: typeof privateJsNameSymbol;
-};
-
-const reservedWordSet = new Set(
-    [
-        // 予約語
-        "break,case,catch,class,const,continue,debugger,default,delete,do,else,export,extends,false,finally,for,function,if,import,in,instanceof,new,null,return,super,switch,this,throw,true,try,typeof,var,void,while,with",
-        "let,static,yield",
-        "await",
-        // 将来の予約語
-        "enum",
-        "implements,interface,package,private,protected,public",
-        // ES1-ES3 で有効だった将来の予約語
-        "abstract,boolean,byte,char,double,final,float,goto,int,long,native,short,synchronized,throws,transient,volatile",
-        // 特殊な識別子
-        "arguments,as,async,eval,from,get,of,set",
-    ].flatMap((x) => x.split(",") as unknown as JsName[])
-);
+const separatedReservedWords =
+    // 予約語
+    "break,case,catch,class,const,continue,debugger,default,delete,do,else,export,extends,false,finally,for,function,if,import,in,instanceof,new,null,return,super,switch,this,throw,true,try,typeof,var,void,while,with" +
+    ",let,static,yield" +
+    ",await" +
+    // 将来の予約語
+    ",enum" +
+    ",implements,interface,package,private,protected,public" +
+    // ES1-ES3 で有効だった将来の予約語
+    ",abstract,boolean,byte,char,double,final,float,goto,int,long,native,short,synchronized,throws,transient,volatile" +
+    // 特殊な識別子
+    ",arguments,as,async,eval,from,get,of,set";
 
 export function createEmitter() {
     type Stack<T> = T[];
+    const privateJsNameSymbol = Symbol("privateJsName");
+    type JsName = {
+        readonly _privateBrand: typeof privateJsNameSymbol;
+    };
+    const reservedWordSet = new Set(
+        separatedReservedWords.split(",") as unknown as JsName[]
+    );
+
     interface Scope {
         readonly nameToJsName: Map<string, JsName>;
         readonly reservedJsNames: Set<JsName>;
@@ -130,15 +130,17 @@ export function createEmitter() {
             "\r\n": "\\r\\n",
         })
     );
-    function charCodeToEscapeSequence(charCode: number) {
-        let hex = charCode.toString(16).toUpperCase();
-        hex = ("0000" + hex).slice(-4);
-        return `\\u${hex}`;
+    function toHex4(charCode: CharacterCodes) {
+        const hex = charCode.toString(16).toUpperCase();
+        return ("0000" + hex).slice(-4);
     }
-    function escapeCharacter(char: string) {
+    function charCodeToEscapeSequence(charCode: number) {
+        return `\\u${toHex4(charCode)}`;
+    }
+    function escapeCharacter(c: string) {
         return (
-            charToEscapeSequence.get(char) ||
-            charCodeToEscapeSequence(char.charCodeAt(0))
+            charToEscapeSequence.get(c) ||
+            charCodeToEscapeSequence(c.charCodeAt(0))
         );
     }
     function writeStringLiteralToken(value: string) {
@@ -150,8 +152,29 @@ export function createEmitter() {
         write(value as unknown as string);
     }
 
+    const jsNamePattern =
+        /^[\p{ID_Start}$_][\p{ID_Start}$_\p{ID_Continue}\u200C\u200D]*$/u;
+
+    const jsNameEscapeSymbol = "$";
+    const escapingJsNameCharacterPattern =
+        /^[^\p{ID_Start}_]|(?<=^.+)[^\p{ID_Start}_\p{ID_Continue}\u200C\u200D]/gu;
+    function escapeAsJsNameCharacter(c: string) {
+        return "$" + toHex4(c.charCodeAt(0));
+    }
+    function escapeAsJsName(text: string) {
+        if (jsNamePattern.test(text) && !text.includes(jsNameEscapeSymbol)) {
+            return text as unknown as JsName;
+        }
+        if (text === "") {
+            return "$" as unknown as JsName;
+        }
+        return text.replace(
+            escapingJsNameCharacterPattern,
+            escapeAsJsNameCharacter
+        ) as unknown as JsName;
+    }
     function generateJsName(baseName: string) {
-        let name = baseName as unknown as JsName;
+        let name = escapeAsJsName(baseName);
         for (
             let index = 2;
             reservedWordSet.has(name) || currentScope.reservedJsNames.has(name);
@@ -178,7 +201,7 @@ export function createEmitter() {
     function emitIdentifier(identifier: string) {
         const name = resolveIdentifier(identifier);
         if (name != null) {
-            return write(name as unknown as string);
+            return writeJsName(name);
         }
         return emitGlobalVariable(identifier);
     }
@@ -429,6 +452,7 @@ export function createEmitter() {
             case SyntaxKind.NumberLiteralToken:
             case SyntaxKind.WordToken:
             case SyntaxKind.DollarNameToken:
+            case SyntaxKind.QuotedDollarNameToken:
             case SyntaxKind.LambdaExpression:
                 return;
             case SyntaxKind.LetExpression:
@@ -483,6 +507,7 @@ export function createEmitter() {
             case SyntaxKind.NumberLiteralToken:
                 return emitLiteral(expression);
             case SyntaxKind.DollarNameToken:
+            case SyntaxKind.QuotedDollarNameToken:
                 return emitIdentifier(expression.value);
             case SyntaxKind.LetExpression:
                 return emitLetExpressionValue(expression);

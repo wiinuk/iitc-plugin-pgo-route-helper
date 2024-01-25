@@ -1,9 +1,7 @@
-import { id } from "../standard-extensions";
 import { Scanner } from "./scanner";
 import {
     AtNameToken,
     DiagnosticKind,
-    DollarNameToken,
     Expression,
     KnownTokenKind,
     LetExpressionOrHigher,
@@ -40,6 +38,8 @@ import {
     createViewPattern,
     PrimaryPattern,
     OperationExpressionOrHigher,
+    Variable,
+    CommaExpression,
 } from "./syntax";
 
 /**
@@ -123,7 +123,7 @@ string-expression =
 
 variable =
     | dollar-name
-    | braced-dollar-name
+    | quoted-dollar-name
 
 pattern = tuple-pattern-or-higher
 tuple-pattern-or-higher =
@@ -185,6 +185,13 @@ export function parse(scanner: Scanner, options?: CreateParserOptions) {
         }
         notifyDiagnostic?.(diagnosticKind);
     }
+    function trySkipToken(kind: SyntaxKind) {
+        if (currentTokenKind === kind) {
+            nextToken();
+            return true;
+        }
+        return false;
+    }
     function parseTokenWithValue<K extends KnownTokenKind>(
         expectedTokenKind: K,
         diagnosticKind: DiagnosticKind
@@ -200,12 +207,6 @@ export function parse(scanner: Scanner, options?: CreateParserOptions) {
             diagnosticKind
         );
     }
-    function parseDollarNameToken(): DollarNameToken {
-        return parseTokenWithValue(
-            SyntaxKind.DollarNameToken,
-            DiagnosticKind.DollarNameExpected
-        );
-    }
     function parseAtNameToken(): AtNameToken {
         return parseTokenWithValue(
             SyntaxKind.AtNameToken,
@@ -219,9 +220,9 @@ export function parse(scanner: Scanner, options?: CreateParserOptions) {
         return currentTokenKind === SyntaxKind.IsKeyword || isOperator("=");
     }
     function parseLetExpressionOrHigher(): LetExpressionOrHigher {
-        if (currentTokenKind === SyntaxKind.LetKeyword) {
-            nextToken();
+        if (trySkipToken(SyntaxKind.LetKeyword)) {
             const patterns = parsePatterns1(isLetPatternsTerminator);
+            // =
             nextToken();
             const value = parseLambdaExpressionOrHigher();
             if (
@@ -257,8 +258,7 @@ export function parse(scanner: Scanner, options?: CreateParserOptions) {
     }
     function parseMatchExpressionOrHigher() {
         let left: MatchExpressionOrHigher = parseCommaExpressionOrHigher();
-        while (currentTokenKind === SyntaxKind.AsKeyword) {
-            nextToken();
+        while (trySkipToken(SyntaxKind.AsKeyword)) {
             const arms = parseMatchArms1();
             left = createMatchExpression(left, arms);
         }
@@ -290,27 +290,20 @@ export function parse(scanner: Scanner, options?: CreateParserOptions) {
         const body = parseExpression();
         return createMatchArm(pattern, body);
     }
-    function parseCommaExpressionItems<T>(
-        initialize: (item0: OperationExpressionOrHigher) => T,
-        add: (accumulator: T, item: OperationExpressionOrHigher) => T
-    ) {
-        let accumulator = initialize(parseOperatorExpressionOrHigher());
-        while (currentTokenKind === SyntaxKind.CommaToken) {
-            nextToken();
-            accumulator = add(accumulator, parseOperatorExpressionOrHigher());
-        }
-        return accumulator;
-    }
     function parseCommaExpressionOrHigher() {
-        type E = OperationExpressionOrHigher;
-        type ExpressionOrItems = E | [E, E, ...E[]];
-        const expressionOrItems = parseCommaExpressionItems<ExpressionOrItems>(
-            id,
-            (a, item) => (Array.isArray(a) ? (a.push(item), a) : [a, item])
-        );
-        return Array.isArray(expressionOrItems)
-            ? createCommaExpression(expressionOrItems)
-            : expressionOrItems;
+        const item0 = parseOperatorExpressionOrHigher();
+        if (currentTokenKind !== SyntaxKind.CommaToken) {
+            return item0;
+        }
+        nextToken();
+
+        const item1 = parseOperatorExpressionOrHigher();
+        type E = CommaExpression["items"][0];
+        const items: [E, E, ...E[]] = [item0, item1];
+        while (trySkipToken(SyntaxKind.CommaToken)) {
+            items.push(parseOperatorExpressionOrHigher());
+        }
+        return createCommaExpression(items);
     }
     const parseOperatorExpressionOrHigher = parseBinaryExpressionOrHigher;
     function parseBinaryExpressionOrHigher() {
@@ -383,8 +376,7 @@ export function parse(scanner: Scanner, options?: CreateParserOptions) {
         );
     }
     function parsePrimaryExpression() {
-        if (currentTokenKind === SyntaxKind.LeftParenthesisToken) {
-            nextToken();
+        if (trySkipToken(SyntaxKind.LeftParenthesisToken)) {
             const expression = parseExpression();
             skipToken(
                 SyntaxKind.RightParenthesisToken,
@@ -412,13 +404,11 @@ export function parse(scanner: Scanner, options?: CreateParserOptions) {
     function parseRecordExpression() {
         // {
         nextToken();
-        if (currentTokenKind === SyntaxKind.RightCurlyBracketToken) {
-            nextToken();
+        if (trySkipToken(SyntaxKind.RightCurlyBracketToken)) {
             return createRecordExpression([]);
         }
         const entries: RecordEntry[] = [parseRecordEntry()];
-        while (currentTokenKind === SyntaxKind.CommaToken) {
-            nextToken();
+        while (trySkipToken(SyntaxKind.CommaToken)) {
             if (isToken(SyntaxKind.RightCurlyBracketToken)) {
                 break;
             }
@@ -442,12 +432,17 @@ export function parse(scanner: Scanner, options?: CreateParserOptions) {
     function parseListExpression() {
         // [
         nextToken();
-        const items = parseCommaExpressionItems(
-            (x) => [x],
-            (xs, x) => (xs.push(x), xs)
-        );
-        if (isToken(SyntaxKind.CommaToken)) {
-            nextToken();
+
+        const items: OperationExpressionOrHigher[] = [];
+        if (trySkipToken(SyntaxKind.RightSquareBracketToken)) {
+            return createListExpression(items);
+        }
+        items.push(parseOperatorExpressionOrHigher());
+        while (trySkipToken(SyntaxKind.CommaToken)) {
+            if (trySkipToken(SyntaxKind.RightSquareBracketToken)) {
+                return createListExpression(items);
+            }
+            items.push(parseOperatorExpressionOrHigher());
         }
         skipToken(
             SyntaxKind.RightSquareBracketToken,
@@ -480,10 +475,22 @@ export function parse(scanner: Scanner, options?: CreateParserOptions) {
         );
     }
     function isVariable() {
-        return currentTokenKind === SyntaxKind.DollarNameToken;
+        return (
+            currentTokenKind === SyntaxKind.DollarNameToken ||
+            currentTokenKind === SyntaxKind.QuotedDollarNameToken
+        );
     }
-    function parseVariable() {
-        return parseDollarNameToken();
+    function parseVariable(): Variable {
+        if (currentTokenKind === SyntaxKind.QuotedDollarNameToken) {
+            return parseTokenWithValue(
+                SyntaxKind.QuotedDollarNameToken,
+                DiagnosticKind.DollarNameOrQuotedDollarNameExpected
+            );
+        }
+        return parseTokenWithValue(
+            SyntaxKind.DollarNameToken,
+            DiagnosticKind.DollarNameOrQuotedDollarNameExpected
+        );
     }
     function parsePattern(): Pattern {
         return parseTuplePatternOrHigher();
@@ -497,8 +504,7 @@ export function parse(scanner: Scanner, options?: CreateParserOptions) {
                   ...ViewPatternOrHigher[]
               ]
             | undefined;
-        if (currentTokenKind === SyntaxKind.CommaToken) {
-            nextToken();
+        if (trySkipToken(SyntaxKind.CommaToken)) {
             const pattern = parseViewPatternOrHigher();
             if (patterns == null) {
                 patterns = [pattern0, pattern];
@@ -543,8 +549,7 @@ export function parse(scanner: Scanner, options?: CreateParserOptions) {
         if (isStringExpressionStart()) {
             return parseStringExpression();
         }
-        if (currentTokenKind === SyntaxKind.LeftParenthesisToken) {
-            nextToken();
+        if (trySkipToken(SyntaxKind.LeftParenthesisToken)) {
             const pattern = parsePattern();
             skipToken(
                 SyntaxKind.RightParenthesisToken,
