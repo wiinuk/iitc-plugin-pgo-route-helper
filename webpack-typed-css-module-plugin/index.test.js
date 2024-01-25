@@ -41,6 +41,12 @@ const normalizeSourcePath = (position) => ({
 });
 
 it("test", async () => {
+    if (typeof global.setImmediate === "undefined") {
+        const timers = require("node:timers");
+        global.setImmediate = timers.setImmediate;
+        global.clearImmediate = timers.clearImmediate;
+    }
+
     const files = {
         "main.ts": `
             import styles, { cssText } from "./styles.module.css";
