@@ -73,6 +73,7 @@ export const enum SyntaxKind {
 }
 
 export const enum DiagnosticKind {
+    InvalidControlCharacter,
     /** e.g. `"\"` */
     UnterminatedEscapeSequence,
     /** e.g. `"\?"` */

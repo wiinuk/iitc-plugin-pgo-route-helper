@@ -30,6 +30,15 @@ export function isUnicodeWhiteSpace(codePoint: number | undefined) {
     }
     return false;
 }
+export function isUnicodeControl(codePoint: number | undefined) {
+    return (
+        codePoint != null &&
+        ((CharacterCodes.NULL <= codePoint &&
+            codePoint <= CharacterCodes["INFORMATION SEPARATOR ONE"]) ||
+            (CharacterCodes.DELETE <= codePoint &&
+                codePoint <= CharacterCodes["APPLICATION PROGRAM COMMAND"]))
+    );
+}
 export function getCharacterSize(codePoint: number) {
     return codePoint >= 0x10000 ? 2 : 1;
 }

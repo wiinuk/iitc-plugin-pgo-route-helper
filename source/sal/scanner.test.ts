@@ -239,3 +239,35 @@ it("word", () => {
         token(SyntaxKind.ReverseSolidusToken),
     ]);
 });
+it("control", () => {
+    expect(getTokens("\u0000\u001F\u007F\u009F")).toMatchObject([
+        error(DiagnosticKind.InvalidControlCharacter),
+        token(SyntaxKind.WordToken, { value: "\u0000" }),
+        error(DiagnosticKind.InvalidControlCharacter),
+        token(SyntaxKind.WordToken, { value: "\u001F" }),
+        error(DiagnosticKind.InvalidControlCharacter),
+        token(SyntaxKind.WordToken, { value: "\u007F" }),
+        error(DiagnosticKind.InvalidControlCharacter),
+        token(SyntaxKind.WordToken, { value: "\u009F" }),
+    ]);
+    expect(getTokens("a\u001F")).toMatchObject([
+        token(SyntaxKind.WordToken, { value: "a" }),
+        error(DiagnosticKind.InvalidControlCharacter),
+        token(SyntaxKind.WordToken, { value: "\u001F" }),
+    ]);
+    expect(getTokens("\u001Fa")).toMatchObject([
+        error(DiagnosticKind.InvalidControlCharacter),
+        token(SyntaxKind.WordToken, { value: "\u001Fa" }),
+    ]);
+});
+it("unicode", () => {
+    expect(getTokens("あいう,≠≤≥ 、。:🚶🏽🚀")).toMatchObject([
+        token(SyntaxKind.WordToken, { value: "あいう" }),
+        token(SyntaxKind.CommaToken),
+        token(SyntaxKind.WordToken, { value: "≠≤≥" }),
+        token(SyntaxKind.WhitespaceTrivia),
+        token(SyntaxKind.WordToken, { value: "、。" }),
+        token(SyntaxKind.ColonToken),
+        token(SyntaxKind.WordToken, { value: "🚶🏽🚀" }),
+    ]);
+});

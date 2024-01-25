@@ -313,6 +313,8 @@ function stringifyDiagnosticKind(kind: DiagnosticKind) {
             return "RightSquareBracketTokenExpected";
         case D.NumberLiteralTokenExpected:
             return "NumberLiteralTokenExpected";
+        case D.InvalidControlCharacter:
+            return "InvalidControlCharacter";
         default:
             throw new Error(`Unknown diagnostic kind: ${kind satisfies never}`);
     }

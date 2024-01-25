@@ -6,6 +6,7 @@ import {
     getCharacterSize,
     isAsciiDigit,
     isAsciiLetter,
+    isUnicodeControl,
     isUnicodeWhiteSpace,
 } from "./character";
 
@@ -28,7 +29,8 @@ import {
 // dollarName ::= "$" name
 // atName ::= "@" name
 // # 他のトークンの一文字目とかぶらないようにする
-// word ::= /[^!#%&*+\-./<=>?@^|~\s()[\]{},;:\\$"'`0-9][^\s()[\]{},;:\\]*/
+// word ::= /[^\x00-\x1F\x7F-\x9F!#%&*+\-./<=>?@^|~\s()[\]{},;:\\$"'`0-9][^\s()[\]{},;:\\]*/
+// control ::= [\x00-\x1F\x7F-\x9F]
 
 function isNameStart(codePoint: number | undefined) {
     return codePoint === C["_"] || isAsciiLetter(codePoint);
@@ -76,7 +78,11 @@ function isPunctuator(codePoint: number | undefined) {
     return false;
 }
 function isWordContinue(codePoint: number | undefined) {
-    return !(isPunctuator(codePoint) || isUnicodeWhiteSpace(codePoint));
+    return !(
+        isPunctuator(codePoint) ||
+        isUnicodeWhiteSpace(codePoint) ||
+        isUnicodeControl(codePoint)
+    );
 }
 export interface ScannerOptions {
     raiseDiagnostic?(kind: DiagnosticKind): void;
@@ -391,6 +397,9 @@ export function createScanner(options?: ScannerOptions) {
                 return scanOperator();
 
             default:
+                if (isUnicodeControl(character)) {
+                    raiseDiagnostic?.(DiagnosticKind.InvalidControlCharacter);
+                }
                 return scanWord();
         }
     }

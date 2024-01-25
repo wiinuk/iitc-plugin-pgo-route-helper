@@ -7,12 +7,14 @@ export const enum CharacterCodes {
     "CHARACTER TABULATION" = 0x0009,
     /** u+000a "LINE FEED (LF)" */
     "LINE FEED (LF)" = 0x000a,
-    /** u+000c "FORM FEED (FF)" */
-    "FORM FEED (FF)" = 0x000c,
     /** u+000b "LINE TABULATION" */
     "LINE TABULATION" = 0x000b,
+    /** u+000c "FORM FEED (FF)" */
+    "FORM FEED (FF)" = 0x000c,
     /** u+000d "CARRIAGE RETURN (CR)" */
     "CARRIAGE RETURN (CR)" = 0x000d,
+    /** u+001f "INFORMATION SEPARATOR ONE" */
+    "INFORMATION SEPARATOR ONE" = 0x001f,
     /** u+0020 "SPACE" */
     SPACE = 0x0020,
     /** u+0021 "EXCLAMATION MARK" */
@@ -203,6 +205,10 @@ export const enum CharacterCodes {
     "}" = 0x007d,
     /** u+007e "TILDE" */
     "~" = 0x007e,
+    /** u+007f "DELETE" */
+    DELETE = 0x007f,
+    /** u+009f "APPLICATION PROGRAM COMMAND" */
+    "APPLICATION PROGRAM COMMAND" = 0x009f,
     /** u+00a0 "NO-BREAK SPACE" */
     "NO-BREAK SPACE" = 0x00a0,
     /** u+1680 "OGHAM SPACE MARK" */
