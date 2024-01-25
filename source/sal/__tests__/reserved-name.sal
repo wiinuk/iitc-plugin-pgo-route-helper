@@ -1,0 +1,9 @@
+$let $this = 0;
+$let $yield = $this @add 1;
+$let $await = $yield @add 2;
+$let $enum = $await @add 4;
+$let $public = $enum @add 8;
+$let $byte = $public @add 16;
+$let $eval = $byte @add 32;
+$let $async = $eval @add 64;
+$async

@@ -1,0 +1,7 @@
+$let $f = $fix (\$fib $n =>
+    $n $as
+    | 0 => $n
+    | 1 => $n
+    | $n => $fib ($n @sub 1) @add $fib ($n @sub 2)
+);
+[$f 10, $f 14]
