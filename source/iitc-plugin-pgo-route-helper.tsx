@@ -1,13 +1,20 @@
 // spell-checker: ignore layeradd drivetunnel latlngschanged lngs
 import { z } from "../../gas-drivetunnel/source/json-schema";
 import { addStyle, waitElementLoaded } from "./document-extensions";
-import { parseCoordinates } from "./kml";
-import type { Route } from "./route";
+import { parseCoordinates, stringifyCoordinates } from "./kml";
+import {
+    type Route,
+    getRouteKind,
+    setRouteKind,
+    type RouteKind,
+} from "./route";
 import {
     error,
     microYield as doOtherTasks,
     createAsyncCancelScope,
     sleep,
+    exhaustive,
+    pipe,
 } from "./standard-extensions";
 import classNames, { cssText } from "./styles.module.css";
 import * as remote from "./remote";
@@ -68,7 +75,7 @@ type ConfigVAny = z.infer<typeof configVAnySchema>;
 type Config = z.infer<LastOfArray<typeof configSchemas>>;
 
 const apiRoot =
-    "https://script.google.com/macros/s/AKfycbx_E1nHPWlUKz6f23nxINetyaartn3Lj1M2htYA4xBK75jpsfKWVzXVFoEqfo_wJBDN/exec";
+    "https://script.google.com/macros/s/AKfycbyyGDSmQEMDkEWu-RlQI1Dd9vYiDXRYhcf4TTQbpRtt07-0qErl-PsiAH0qEoK8y080/exec";
 
 const storageConfigKey = "pgo-route-helper-config";
 function upgradeConfig(config: ConfigVAny): Config {
@@ -152,10 +159,9 @@ async function asyncMain() {
     type PolylineEditor = InstanceType<
         ReturnType<typeof createPolylineEditorPlugin>["PolylineEditor"]
     >;
-    type Editor = PolylineEditor;
     type RouteWithView = {
-        route: Route;
-        editor: Editor;
+        readonly route: Route;
+        readonly coordinatesEditor: PolylineEditor | L.Marker;
     };
     const state: {
         /** null: 選択されていない */
@@ -228,100 +234,94 @@ async function asyncMain() {
         }
     };
 
-    type RemoteCommand =
-        | { type: "set"; route: Route }
-        | { type: "delete"; routeId: string; routeName: string };
-
-    const remoteCommandCancelScope = createAsyncCancelScope(handleAsyncError);
-    const uncompletedRemoteCommands = new Map<string, RemoteCommand>();
-    function routeIdAndName(command: RemoteCommand) {
-        switch (command.type) {
-            case "set":
-                return command.route;
-            case "delete":
-                return command;
+    function peekFirst<K, V>(map: Map<K, V>) {
+        for (const kv of map) {
+            return kv;
         }
     }
 
+    type RemoteCommand = Readonly<{
+        routeId: string;
+        routeName: string;
+        process: (signal: AbortSignal) => Promise<void>;
+    }>;
+
+    const remoteCommandCancelScope = createAsyncCancelScope(handleAsyncError);
+    let commandQueueNextId = 0;
+    const commandQueue = new Map<number, RemoteCommand>();
     function queueRemoteCommandDelayed(
         waitMilliseconds: number,
         command: RemoteCommand
     ) {
         remoteCommandCancelScope(async (signal) => {
-            const { routeId, routeName } = routeIdAndName(command);
-            uncompletedRemoteCommands.set(routeId, command);
+            const { routeName } = command;
+            commandQueue.set(commandQueueNextId++, command);
             progress({
                 type: "upload-waiting",
                 routeName,
                 milliseconds: waitMilliseconds,
-                queueCount: uncompletedRemoteCommands.size,
+                queueCount: commandQueue.size,
             });
             await sleep(waitMilliseconds, { signal });
-
-            const entries = [...uncompletedRemoteCommands.entries()];
-            for (const [routeId, command] of entries) {
-                const { routeName } = routeIdAndName(command);
-                progress({
-                    type: "uploading",
-                    routeName,
-                });
-                switch (command.type) {
-                    case "set": {
-                        const {
-                            type,
-                            userId,
-                            routeId,
-                            routeName,
-                            coordinates,
-                            description,
-                            note,
-                        } = command.route;
-                        await remote.setRoute(
-                            {
-                                type,
-                                "user-id": userId,
-                                "route-id": routeId,
-                                "route-name": routeName,
-                                coordinates,
-                                description,
-                                note,
-                            },
-                            {
-                                signal,
-                                rootUrl: config.apiRoot ?? apiRoot,
-                            }
-                        );
-                        break;
-                    }
-                    case "delete": {
-                        await remote.deleteRoute(
-                            { "route-id": command.routeId },
-                            { signal, rootUrl: config.apiRoot ?? apiRoot }
-                        );
-                        break;
-                    }
-                    default: {
-                        throw new Error(
-                            `Unknown command: ${command satisfies never}`
-                        );
-                    }
+            {
+                let idAndCommand;
+                while ((idAndCommand = peekFirst(commandQueue)) != null) {
+                    const [commandId, { process }] = idAndCommand;
+                    progress({
+                        type: "uploading",
+                        routeName,
+                    });
+                    await process(signal);
+                    commandQueue.delete(commandId);
+                    progress({
+                        type: "uploaded",
+                        routeName,
+                        queueCount: commandQueue.size,
+                    });
                 }
-                uncompletedRemoteCommands.delete(routeId);
-                progress({
-                    type: "uploaded",
-                    routeName,
-                    queueCount: uncompletedRemoteCommands.size,
-                });
             }
+        });
+    }
+    function queueSetRouteCommandDelayed(
+        waitMilliseconds: number,
+        route: Route
+    ) {
+        queueRemoteCommandDelayed(waitMilliseconds, {
+            routeName: route.routeName,
+            routeId: route.routeId,
+            async process(signal) {
+                const {
+                    type,
+                    userId,
+                    routeId,
+                    routeName,
+                    coordinates,
+                    description,
+                    note,
+                    data,
+                } = route;
+                await remote.setRoute(
+                    {
+                        type,
+                        "user-id": userId,
+                        "route-id": routeId,
+                        "route-name": routeName,
+                        coordinates,
+                        description,
+                        note,
+                        data: JSON.stringify(data),
+                    },
+                    {
+                        signal,
+                        rootUrl: config.apiRoot ?? apiRoot,
+                    }
+                );
+            },
         });
     }
 
     function mergeSelectedRoute(difference: Partial<Route>) {
-        const { selectedRouteId, routes } = state;
-        if (selectedRouteId == null || routes == "routes-unloaded") {
-            return;
-        }
-        const view = routes.get(selectedRouteId);
+        const view = getSelectedRoute();
         if (view == null) {
             return;
         }
@@ -336,7 +336,7 @@ async function asyncMain() {
             }
         }
         if (changed) {
-            queueRemoteCommandDelayed(3000, { type: "set", route });
+            queueSetRouteCommandDelayed(3000, route);
         }
     }
 
@@ -419,34 +419,62 @@ async function asyncMain() {
         <div>{`ルートは読み込まれていません。レイヤー '${routeLayerGroupName}' を有効にすると読み込まれます。`}</div>
     ) as HTMLDivElement;
 
+    function onAddRouteButtonClick(kind: RouteKind) {
+        const { routes } = state;
+        if (config.userId == null || routes == "routes-unloaded") return;
+
+        let coordinates;
+        let routeName;
+        switch (kind) {
+            case "route": {
+                const bound = map.getBounds();
+                coordinates = stringifyCoordinates([
+                    getMiddleCoordinate(
+                        bound.getCenter(),
+                        bound.getNorthEast()
+                    ),
+                    getMiddleCoordinate(
+                        bound.getCenter(),
+                        bound.getSouthWest()
+                    ),
+                ]);
+                routeName = "新しいルート";
+                break;
+            }
+            case "spot": {
+                coordinates = stringifyCoordinates([map.getCenter()]);
+                routeName = "新しいスポット";
+                break;
+            }
+            default:
+                return exhaustive(kind);
+        }
+
+        const newRoute = {
+            type: "route",
+            userId: config.userId,
+            routeId: `route-${Date.now()}-${Math.floor(
+                Math.random() * 1000000
+            )}`,
+            routeName,
+            coordinates,
+            data: {},
+            description: "",
+            note: "",
+        } satisfies Route;
+        setRouteKind(newRoute, kind);
+
+        addRouteView(routes, newRoute);
+        queueSetRouteCommandDelayed(3000, newRoute);
+    }
     const addRouteElement = addListeners(<a>ルートを追加</a>, {
         click() {
-            const { routes } = state;
-            if (config.userId == null || routes == "routes-unloaded") return;
-
-            const bound = map.getBounds();
-            const coordinates = [
-                getMiddleCoordinate(bound.getCenter(), bound.getNorthEast()),
-                getMiddleCoordinate(bound.getCenter(), bound.getSouthWest()),
-            ]
-                .map(({ lat, lng }) => `${lat},${lng}`)
-                .join(",");
-
-            const newRoute = {
-                type: "route",
-                userId: config.userId,
-                routeId: `route-${Date.now()}-${Math.floor(
-                    Math.random() * 1000000
-                )}`,
-                routeName: "新しいルート",
-                coordinates,
-                data: {},
-                description: "",
-                note: "",
-            } satisfies Route;
-
-            addRouteView(routes, newRoute);
-            queueRemoteCommandDelayed(1000, { type: "set", route: newRoute });
+            onAddRouteButtonClick("route");
+        },
+    });
+    const addSpotElement = addListeners(<a>スポットを追加</a>, {
+        click() {
+            onAddRouteButtonClick("spot");
         },
     });
 
@@ -470,11 +498,17 @@ async function asyncMain() {
                 if (view == null) return;
 
                 routes.delete(deleteRouteId);
-                map.removeLayer(view.editor);
+                map.removeLayer(view.coordinatesEditor);
+                routeLayerGroup.removeLayer(view.coordinatesEditor);
                 queueRemoteCommandDelayed(1000, {
-                    type: "delete",
-                    routeId: deleteRouteId,
                     routeName: view.route.routeName,
+                    routeId: deleteRouteId,
+                    async process(signal) {
+                        await remote.deleteRoute(
+                            { "route-id": deleteRouteId },
+                            { signal, rootUrl: config.apiRoot ?? apiRoot }
+                        );
+                    },
                 });
             },
             cancel() {
@@ -519,6 +553,7 @@ async function asyncMain() {
                 }
             )}
             <div>{addRouteElement}</div>
+            <div>{addSpotElement}</div>
             <div>{deleteSelectedRouteElement}</div>
             {reportElement}
         </div>
@@ -540,41 +575,88 @@ async function asyncMain() {
         })
     );
 
-    function updateSelectedRouteInfo() {
-        if (state.routes === "routes-unloaded" || state.selectedRouteId == null)
+    function getSelectedRoute() {
+        if (
+            state.routes === "routes-unloaded" ||
+            state.selectedRouteId == null
+        ) {
             return;
+        }
 
-        const selectedRoute =
-            state.routes.get(state.selectedRouteId) ?? error`internal error`;
+        return state.routes.get(state.selectedRouteId) ?? error`internal error`;
+    }
+    function updateSelectedRouteInfo() {
+        const selectedRoute = getSelectedRoute();
+        if (selectedRoute == null) {
+            return;
+        }
         setEditorElements(selectedRoute.route);
     }
-    function addRouteView(
-        routeMap: Map<string, { route: Route; editor: Editor }>,
-        route: Route
-    ) {
+    function addRouteView(routeMap: Map<string, RouteWithView>, route: Route) {
         const { routeId } = route;
+        const kind = getRouteKind(route);
 
-        // TODO: parse のエラーを処理する
-        const view = polylineEditor(parseCoordinates(route.coordinates), {
-            clickable: true,
-            color: "#5fd6ff",
-        });
-        routeLayerGroup.addLayer(view);
-        routeMap.set(routeId, { route, editor: view });
+        let coordinatesEditor;
+        switch (kind) {
+            case "route": {
+                const editor = (coordinatesEditor = polylineEditor(
+                    parseCoordinates(route.coordinates),
+                    {
+                        clickable: true,
+                        color: "#5fd6ff",
+                    }
+                ));
+                editor.on("click", () => {
+                    state.selectedRouteId = routeId;
+                    updateSelectedRouteInfo();
+                });
+                editor.on("latlngschanged", () => {
+                    const { route } =
+                        routeMap.get(routeId) ?? error`internal error`;
+                    route.coordinates = pipe(
+                        editor.getLatLngs(),
+                        stringifyCoordinates
+                    );
 
-        view.on("click", () => {
-            state.selectedRouteId = routeId;
-            updateSelectedRouteInfo();
-        });
-        view.on("latlngschanged", () => {
-            const { route } = routeMap.get(routeId) ?? error`internal error`;
-            route.coordinates = view
-                .getLatLngs()
-                .map(({ lat, lng }) => `${lat},${lng}`)
-                .join(",");
+                    updateSelectedRouteInfo();
+                    queueSetRouteCommandDelayed(3000, route);
+                });
+                break;
+            }
+            case "spot": {
+                const editor = (coordinatesEditor = L.marker(
+                    parseCoordinates(route.coordinates)[0] ??
+                        error`internal error`,
+                    {
+                        draggable: true,
+                    }
+                ));
+                editor.on("click", () => {
+                    state.selectedRouteId = routeId;
+                    updateSelectedRouteInfo();
+                });
+                editor.on("dragend", () => {
+                    state.selectedRouteId = routeId;
 
-            updateSelectedRouteInfo();
-            queueRemoteCommandDelayed(3000, { type: "set", route });
+                    const { route } =
+                        routeMap.get(routeId) ?? error`internal error`;
+                    route.coordinates = stringifyCoordinates([
+                        editor.getLatLng(),
+                    ]);
+
+                    updateSelectedRouteInfo();
+                    queueSetRouteCommandDelayed(3000, route);
+                });
+                break;
+            }
+            default:
+                return exhaustive(kind);
+        }
+        routeLayerGroup.addLayer(coordinatesEditor);
+
+        routeMap.set(routeId, {
+            route,
+            coordinatesEditor,
         });
     }
 

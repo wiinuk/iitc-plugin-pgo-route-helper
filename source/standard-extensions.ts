@@ -165,3 +165,67 @@ export type equals<T1, T2> = [T1] extends [T2]
         ? true
         : false
     : false;
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type PipeFunction = (arg: any) => unknown;
+type PipePartialCallDescription = readonly [
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (...args: any[]) => unknown,
+    ...unknown[]
+];
+type PipePropertyDescription = string;
+type PipeProcess =
+    | PipeFunction
+    | PipePartialCallDescription
+    | PipePropertyDescription;
+
+type PipeProcessResult<V, P extends PipeProcess> = P extends PipeFunction
+    ? [V] extends Parameters<P>
+        ? ReturnType<P>
+        : never
+    : P extends PipePartialCallDescription
+    ? P extends readonly [
+          (...args: [V, ...infer params]) => infer result,
+          ...infer args
+      ]
+        ? args extends params
+            ? result
+            : never
+        : never
+    : P extends PipePropertyDescription
+    ? V extends Readonly<Partial<Record<P, unknown>>>
+        ? V[P]
+        : V extends null | undefined
+        ? V
+        : never
+    : never;
+
+export type Pipe<V, Ps extends readonly PipeProcess[]> = Ps extends readonly [
+    infer process extends PipeProcess,
+    ...infer rest extends readonly PipeProcess[]
+]
+    ? Pipe<PipeProcessResult<V, process>, rest>
+    : V;
+
+export function pipe<T, Ps extends readonly PipeProcess[]>(
+    value: T,
+    ...processes: Ps
+) {
+    let a: unknown = value;
+    for (const p of processes) {
+        switch (typeof p) {
+            case "function":
+                a = p(a);
+                break;
+            case "string":
+                a = a == null ? a : (a as Record<string, unknown>)[p];
+                break;
+            default: {
+                const [f, ...xs] = p;
+                a = f.call(null, a, ...xs);
+                break;
+            }
+        }
+    }
+    return a as Pipe<T, Ps>;
+}

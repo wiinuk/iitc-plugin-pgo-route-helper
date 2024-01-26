@@ -10,3 +10,21 @@ export function parseCoordinates(kmlCoordinatesText: string) {
     }
     return result;
 }
+export function stringifyCoordinates(
+    coordinates: readonly (
+        | Readonly<{ lat: number; lng: number }>
+        | Coordinate
+    )[]
+) {
+    return coordinates
+        .map((c) => {
+            let lat, lng;
+            if (Array.isArray(c)) {
+                [lat, lng] = c;
+            } else {
+                ({ lat, lng } = c);
+            }
+            return `${lat},${lng}`;
+        })
+        .join(",");
+}
