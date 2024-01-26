@@ -1,4 +1,4 @@
-// spell-checker: ignore layeradd drivetunnel latlngschanged lngs
+// spell-checker: ignore layeradd drivetunnel latlngschanged lngs latlng
 import { z } from "../../gas-drivetunnel/source/json-schema";
 import { addStyle, waitElementLoaded } from "./document-extensions";
 import { parseCoordinates, stringifyCoordinates } from "./kml";
@@ -161,7 +161,7 @@ async function asyncMain() {
     >;
     type RouteWithView = {
         readonly route: Route;
-        readonly coordinatesEditor: PolylineEditor | L.Marker;
+        readonly coordinatesEditor: PolylineEditor | L.FeatureGroup<L.ILayer>;
     };
     const state: {
         /** null: 選択されていない */
@@ -592,6 +592,60 @@ async function asyncMain() {
         }
         setEditorElements(selectedRoute.route);
     }
+    function createSpotView(
+        route: Route,
+        routeMap: Map<string, RouteWithView>
+    ) {
+        const { routeId } = route;
+        const circle = L.circleMarker(
+            parseCoordinates(route.coordinates)[0] ?? error`internal error`,
+            {
+                className: `spot-circle spot-circle-${routeId}`,
+                opacity: 0.3,
+                fillOpacity: 0.8,
+                color: "#000",
+                fillColor: "#3e9",
+                weight: 5,
+            }
+        );
+        const onDragging = (e: L.LeafletMouseEvent) => {
+            circle.setLatLng(e.latlng);
+            title.setLatLng(e.latlng);
+        };
+        const onMouseDown = () => {
+            map.dragging.disable();
+            map.on("mousemove", onDragging);
+
+            state.selectedRouteId = routeId;
+            updateSelectedRouteInfo();
+        };
+        map.on("mouseup", () => {
+            map.dragging.enable();
+            map.off("mousemove", onDragging);
+
+            const { route } = routeMap.get(routeId) ?? error`internal error`;
+            route.coordinates = stringifyCoordinates([circle.getLatLng()]);
+
+            updateSelectedRouteInfo();
+            queueSetRouteCommandDelayed(3000, route);
+        });
+        const maxTitleWidth = 160;
+        const maxTitleHeight = 46;
+        const title = L.marker(circle.getLatLng(), {
+            icon: L.divIcon({
+                className: classNames["spot-label"],
+                html: route.routeName,
+                iconAnchor: [maxTitleWidth / 2, maxTitleHeight / -4],
+                iconSize: [maxTitleWidth, maxTitleHeight],
+            }),
+        });
+        const group = L.featureGroup([circle, title]);
+        group.eachLayer((l) => {
+            l.on("mousedown", onMouseDown);
+        });
+        return group;
+    }
+
     function addRouteView(routeMap: Map<string, RouteWithView>, route: Route) {
         const { routeId } = route;
         const kind = getRouteKind(route);
@@ -623,32 +677,9 @@ async function asyncMain() {
                 });
                 break;
             }
-            case "spot": {
-                const editor = (coordinatesEditor = L.marker(
-                    parseCoordinates(route.coordinates)[0] ??
-                        error`internal error`,
-                    {
-                        draggable: true,
-                    }
-                ));
-                editor.on("click", () => {
-                    state.selectedRouteId = routeId;
-                    updateSelectedRouteInfo();
-                });
-                editor.on("dragend", () => {
-                    state.selectedRouteId = routeId;
-
-                    const { route } =
-                        routeMap.get(routeId) ?? error`internal error`;
-                    route.coordinates = stringifyCoordinates([
-                        editor.getLatLng(),
-                    ]);
-
-                    updateSelectedRouteInfo();
-                    queueSetRouteCommandDelayed(3000, route);
-                });
+            case "spot":
+                coordinatesEditor = createSpotView(route, routeMap);
                 break;
-            }
             default:
                 return exhaustive(kind);
         }

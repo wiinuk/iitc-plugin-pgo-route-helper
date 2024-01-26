@@ -19,3 +19,16 @@ input.editable-text {
     font-size: 16px;
     color: black;
 }
+
+.spot-label {
+    color: #FFFFBB;
+    font-size: 11px;
+    line-height: 12px;
+    text-align: center;
+    padding: 2px;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    text-shadow: 1px 1px #000, 1px -1px #000, -1px 1px #000, -1px -1px #000, 0 0 5px #000;
+    pointer-events: none;
+}
