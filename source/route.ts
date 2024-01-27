@@ -1,3 +1,4 @@
+import type { Json } from "../../gas-drivetunnel/source/json-schema-core";
 import type { Route as RemoteRoute } from "../../gas-drivetunnel/source/schemas";
 import { exhaustive } from "./standard-extensions";
 export type Route = RemoteRoute;
@@ -18,4 +19,13 @@ export function setRouteKind(route: Route, kind: RouteKind) {
         default:
             return exhaustive(kind);
     }
+}
+export function getRouteTags(
+    route: Route
+): { [p in string]?: Json } | undefined {
+    const tags = route.data["tags"];
+    if (tags != null && typeof tags === "object" && !Array.isArray(tags)) {
+        return tags;
+    }
+    return undefined;
 }

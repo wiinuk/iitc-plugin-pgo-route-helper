@@ -27,6 +27,7 @@ import { isIITCMobile } from "./environment";
 import { createPolylineEditorPlugin } from "./polyline-editor";
 import jqueryUIPolyfillTouchEvents from "./jquery-ui-polyfill-touch-events";
 import type { LastOfArray } from "./type-level";
+import { getEmptyQuery, createQuery, type RouteQuery } from "./query";
 
 function handleAsyncError(promise: Promise<void>) {
     promise.catch((error: unknown) => {
@@ -167,16 +168,19 @@ async function asyncMain() {
             layer: L.ILayer;
             update: (route: Route) => void;
         }>;
+        readonly listItem: HTMLLIElement;
     };
     const state: {
         /** null: 選択されていない */
         selectedRouteId: null | string;
         deleteRouteId: null | string;
         routes: "routes-unloaded" | Map<string, RouteWithView>;
+        routeListQuery: RouteQuery;
     } = {
         selectedRouteId: null,
         deleteRouteId: null,
         routes: "routes-unloaded",
+        routeListQuery: getEmptyQuery(),
     };
 
     const progress = (
@@ -499,12 +503,12 @@ async function asyncMain() {
 
         queueSetRouteCommandDelayed(3000, newRoute);
     }
-    const addRouteElement = addListeners(<a>ルートを追加</a>, {
+    const addRouteElement = addListeners(<a>🚶🏽新しいルートを追加</a>, {
         click() {
             onAddRouteButtonClick("route");
         },
     });
-    const addSpotElement = addListeners(<a>スポットを追加</a>, {
+    const addSpotElement = addListeners(<a>📍新しいスポットを追加</a>, {
         click() {
             onAddRouteButtonClick("spot");
         },
@@ -530,6 +534,7 @@ async function asyncMain() {
                 if (view == null) return;
 
                 routes.delete(deleteRouteId);
+                updateRoutesListElement();
                 map.removeLayer(view.coordinatesEditor.layer);
                 routeLayerGroup.removeLayer(view.coordinatesEditor.layer);
                 queueRemoteCommandDelayed(1000, {
@@ -550,7 +555,7 @@ async function asyncMain() {
         },
     });
     const deleteSelectedRouteElement = addListeners(
-        <a>選択中のルートを削除</a>,
+        <a>🗑️選択中のルートを削除</a>,
         {
             click() {
                 const routeId = (state.deleteRouteId = state.selectedRouteId);
@@ -564,48 +569,174 @@ async function asyncMain() {
             },
         }
     );
-    const moveToRouteElement = addListeners(<a>選択中のルートまで移動</a>, {
+    function moveToBound(bounds: L.LatLngBounds) {
+        isMapAutoMoving = true;
+        if (map.getZoom() < map.getBoundsZoom(bounds, true)) {
+            map.fitBounds(bounds);
+        } else {
+            map.panInsideBounds(bounds);
+        }
+        isMapAutoMoving = false;
+    }
+    const moveToRouteElement = addListeners(<a>🎯選択中のルートまで移動</a>, {
         click() {
             const route = getSelectedRoute();
             if (route == null) return;
-            const bounds = L.latLngBounds(
-                parseCoordinates(route.route.coordinates)
+            moveToBound(
+                L.latLngBounds(parseCoordinates(route.route.coordinates))
             );
-            if (map.getZoom() < map.getBoundsZoom(bounds, true)) {
-                map.fitBounds(bounds);
-            } else {
-                map.panInsideBounds(bounds);
-            }
         },
     });
+
+    let lastManualMapView: { center: L.LatLng; zoom: number } | null = null;
+    let isMapAutoMoving = false;
+    map.on("moveend", () => {
+        if (!isMapAutoMoving) {
+            lastManualMapView = {
+                center: map.getCenter(),
+                zoom: map.getZoom(),
+            };
+        }
+    });
+    function selectedRouteListItemUpdated(selectedRouteIds: readonly string[]) {
+        if (state.routes === "routes-unloaded") {
+            return;
+        }
+
+        state.selectedRouteId = selectedRouteIds[0] ?? null;
+        updateSelectedRouteInfo();
+
+        if (state.selectedRouteId == null) {
+            if (lastManualMapView != null) {
+                isMapAutoMoving = true;
+                map.setView(lastManualMapView.center, lastManualMapView.zoom);
+                isMapAutoMoving = false;
+            }
+        } else {
+            const bounds = L.latLngBounds([]);
+            for (const routeId of selectedRouteIds) {
+                const route = state.routes.get(routeId);
+                if (route == null) {
+                    continue;
+                }
+                for (const coordinate of parseCoordinates(
+                    route.route.coordinates
+                )) {
+                    bounds.extend(coordinate);
+                }
+            }
+            moveToBound(bounds);
+        }
+    }
+    function updateRoutesListItem(route: Route, listItem: HTMLLIElement) {
+        listItem.innerText = route.routeName;
+    }
+    function updateRoutesListElement() {
+        if (state.routes === "routes-unloaded") {
+            return;
+        }
+
+        while (routeListElement.firstChild) {
+            routeListElement.removeChild(routeListElement.firstChild);
+        }
+        const { predicate } = state.routeListQuery;
+        for (const { route, listItem } of state.routes.values()) {
+            if (predicate(route)) {
+                updateRoutesListItem(route, listItem);
+                routeListElement.appendChild(listItem);
+            }
+        }
+    }
+
+    const elementToRouteId = new WeakMap<Element, string>();
+    function createRouteListItem(route: Route) {
+        const listItem = (
+            <li class="ui-widget-content">{route.routeName}</li>
+        ) as HTMLLIElement;
+        elementToRouteId.set(listItem, route.routeId);
+        return listItem;
+    }
+    const routeListElement = (
+        <ol class={classNames["route-list"]}></ol>
+    ) as HTMLOListElement;
+
+    $(routeListElement).selectable({
+        stop() {
+            const routeIds = [];
+            for (const selectedListItem of routeListElement.querySelectorAll(
+                ".ui-selected"
+            )) {
+                const routeId = elementToRouteId.get(selectedListItem);
+                if (routeId == null) {
+                    continue;
+                }
+                routeIds.push(routeId);
+            }
+            selectedRouteListItemUpdated(routeIds);
+        },
+    });
+    const setQueryExpressionCancelScope =
+        createAsyncCancelScope(handleAsyncError);
+    function setQueryExpressionDelayed(
+        delayMilliseconds: number,
+        expression: string
+    ) {
+        setQueryExpressionCancelScope(async (signal) => {
+            await sleep(delayMilliseconds, { signal });
+            state.routeListQuery = createQuery(expression);
+            updateRoutesListElement();
+        });
+    }
+    const routeSearchInputElement = addListeners(
+        (
+            <input type="text" placeholder="🔍ルート検索"></input>
+        ) as HTMLInputElement,
+        {
+            input() {
+                setQueryExpressionDelayed(500, this.value);
+            },
+        }
+    );
+    const routeListContainer = (
+        <div>
+            {routeSearchInputElement}
+            <div class={`${classNames["route-list-container"]}`}>
+                {routeListElement}
+            </div>
+        </div>
+    );
+
     const editorElement = (
         <div
             id="pgo-route-helper-editor"
             class={classNames["properties-editor"]}
         >
-            {titleElement}
-            {descriptionElement}
-            {notesElement}
-            {coordinatesElement}
-            {lengthElement}
-            {addListeners(
-                <input
-                    class={classNames["editable-text"]}
-                    type="text"
-                    placeholder="ユーザー名"
-                    value={config.userId}
-                />,
-                {
-                    input() {
-                        // TODO:
-                        console.log("user name changed");
-                    },
-                }
-            )}
+            <div>{titleElement}</div>
+            <div>{descriptionElement}</div>
+            <div>{notesElement}</div>
+            <div>{coordinatesElement}</div>
+            <div>{lengthElement}</div>
+            <div>
+                {addListeners(
+                    <input
+                        class={classNames["editable-text"]}
+                        type="text"
+                        placeholder="ユーザー名"
+                        value={config.userId}
+                    />,
+                    {
+                        change() {
+                            // TODO:
+                            console.log("user name changed");
+                        },
+                    }
+                )}
+            </div>
             <div>{addRouteElement}</div>
             <div>{addSpotElement}</div>
             <div>{deleteSelectedRouteElement}</div>
             <div>{moveToRouteElement}</div>
+            {routeListContainer}
             {reportElement}
         </div>
     );
@@ -615,6 +746,8 @@ async function asyncMain() {
         autoOpen: false,
         title: "ルート",
         resizable: true,
+        height: "auto",
+        width: "auto",
     });
 
     document.querySelector("#toolbox")?.append(
@@ -643,6 +776,7 @@ async function asyncMain() {
         }
         setEditorElements(selectedRoute.route);
         selectedRoute.coordinatesEditor.update(selectedRoute.route);
+        updateRoutesListItem(selectedRoute.route, selectedRoute.listItem);
     }
     function createRouteView(
         { routeId, coordinates }: Route,
@@ -770,10 +904,14 @@ async function asyncMain() {
         }
         routeLayerGroup.addLayer(view.layer);
 
+        const listItem = createRouteListItem(route);
+
         routeMap.set(routeId, {
             route,
             coordinatesEditor: view,
+            listItem,
         });
+        updateRoutesListElement();
     }
 
     const routeLayerGroup = L.layerGroup();
