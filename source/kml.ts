@@ -1,5 +1,11 @@
 import type { Coordinate } from "./route";
 
+const numberPattern = "\\d+(\\.\\d+)?\\s*";
+const commaPattern = ",\\s*";
+const pointPattern = numberPattern + commaPattern + numberPattern;
+export const coordinatesPattern = new RegExp(
+    `^\\s*${pointPattern}(${commaPattern}${pointPattern})*$`
+);
 // TODO: パースエラーを戻り値で伝える
 export function parseCoordinates(kmlCoordinatesText: string) {
     const tokens = kmlCoordinatesText.split(",");

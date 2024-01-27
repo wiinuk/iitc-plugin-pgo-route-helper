@@ -1,7 +1,11 @@
 // spell-checker: ignore layeradd drivetunnel latlngschanged lngs latlng
 import { z } from "../../gas-drivetunnel/source/json-schema";
 import { addStyle, waitElementLoaded } from "./document-extensions";
-import { parseCoordinates, stringifyCoordinates } from "./kml";
+import {
+    coordinatesPattern,
+    parseCoordinates,
+    stringifyCoordinates,
+} from "./kml";
 import {
     type Route,
     getRouteKind,
@@ -15,6 +19,7 @@ import {
     sleep,
     exhaustive,
     pipe,
+    ignore,
 } from "./standard-extensions";
 import classNames, { cssText } from "./styles.module.css";
 import * as remote from "./remote";
@@ -75,7 +80,7 @@ type ConfigVAny = z.infer<typeof configVAnySchema>;
 type Config = z.infer<LastOfArray<typeof configSchemas>>;
 
 const apiRoot =
-    "https://script.google.com/macros/s/AKfycbyyGDSmQEMDkEWu-RlQI1Dd9vYiDXRYhcf4TTQbpRtt07-0qErl-PsiAH0qEoK8y080/exec";
+    "https://script.google.com/macros/s/AKfycbx-BeayFoyAro3uwYbuG9C12M3ODyuZ6GDwbhW3ifq76DWBAvzMskn9tc4dTuvLmohW/exec";
 
 const storageConfigKey = "pgo-route-helper-config";
 function upgradeConfig(config: ConfigVAny): Config {
@@ -156,12 +161,12 @@ async function asyncMain() {
     }
     console.debug(`'${config.userId}' としてログインしています。`);
 
-    type PolylineEditor = InstanceType<
-        ReturnType<typeof createPolylineEditorPlugin>["PolylineEditor"]
-    >;
     type RouteWithView = {
         readonly route: Route;
-        readonly coordinatesEditor: PolylineEditor | L.FeatureGroup<L.ILayer>;
+        readonly coordinatesEditor: Readonly<{
+            layer: L.ILayer;
+            update: (route: Route) => void;
+        }>;
     };
     const state: {
         /** null: 選択されていない */
@@ -234,12 +239,6 @@ async function asyncMain() {
         }
     };
 
-    function peekFirst<K, V>(map: Map<K, V>) {
-        for (const kv of map) {
-            return kv;
-        }
-    }
-
     type RemoteCommand = Readonly<{
         routeId: string;
         routeName: string;
@@ -247,38 +246,44 @@ async function asyncMain() {
     }>;
 
     const remoteCommandCancelScope = createAsyncCancelScope(handleAsyncError);
-    let commandQueueNextId = 0;
-    const commandQueue = new Map<number, RemoteCommand>();
+    let nextCommandId = 0;
+    const routeIdToCommand = new Map<
+        string,
+        Readonly<{ commandId: number; command: RemoteCommand }>
+    >();
     function queueRemoteCommandDelayed(
         waitMilliseconds: number,
         command: RemoteCommand
     ) {
         remoteCommandCancelScope(async (signal) => {
-            const { routeName } = command;
-            commandQueue.set(commandQueueNextId++, command);
+            const { routeName, routeId } = command;
+            routeIdToCommand.set(routeId, {
+                commandId: nextCommandId++,
+                command,
+            });
             progress({
                 type: "upload-waiting",
                 routeName,
                 milliseconds: waitMilliseconds,
-                queueCount: commandQueue.size,
+                queueCount: routeIdToCommand.size,
             });
             await sleep(waitMilliseconds, { signal });
-            {
-                let idAndCommand;
-                while ((idAndCommand = peekFirst(commandQueue)) != null) {
-                    const [commandId, { process }] = idAndCommand;
-                    progress({
-                        type: "uploading",
-                        routeName,
-                    });
-                    await process(signal);
-                    commandQueue.delete(commandId);
-                    progress({
-                        type: "uploaded",
-                        routeName,
-                        queueCount: commandQueue.size,
-                    });
+            for (const [routeId, { commandId, command }] of [
+                ...routeIdToCommand.entries(),
+            ]) {
+                progress({
+                    type: "uploading",
+                    routeName,
+                });
+                await command.process(signal);
+                if (routeIdToCommand.get(routeId)?.commandId === commandId) {
+                    routeIdToCommand.delete(routeId);
                 }
+                progress({
+                    type: "uploaded",
+                    routeName,
+                    queueCount: routeIdToCommand.size,
+                });
             }
         });
     }
@@ -336,6 +341,7 @@ async function asyncMain() {
             }
         }
         if (changed) {
+            updateSelectedRouteInfo();
             queueSetRouteCommandDelayed(3000, route);
         }
     }
@@ -370,6 +376,24 @@ async function asyncMain() {
             },
         }
     );
+    const p = coordinatesPattern;
+    const coordinatesElement = addListeners(
+        (
+            <input
+                type="text"
+                placeholder="座標列 (例: 12.34,56.78,90.12,34.56)"
+                pattern={p.source}
+            ></input>
+        ) as HTMLInputElement,
+        {
+            input() {
+                if (!this.checkValidity()) {
+                    return;
+                }
+                mergeSelectedRoute({ coordinates: this.value });
+            },
+        }
+    );
     const lengthElement = <div></div>;
 
     function calculateRouteLengthMeters(route: Route) {
@@ -397,6 +421,8 @@ async function asyncMain() {
             descriptionElement.value = "";
             notesElement.readOnly = true;
             notesElement.value = "";
+            coordinatesElement.readOnly = true;
+            coordinatesElement.value = "";
             lengthElement.innerText = "";
         } else {
             titleElement.readOnly = false;
@@ -405,6 +431,8 @@ async function asyncMain() {
             descriptionElement.value = route.description;
             notesElement.readOnly = false;
             notesElement.value = route.note;
+            coordinatesElement.readOnly = false;
+            coordinatesElement.value = route.coordinates;
             const lengthMeters = calculateRouteLengthMeters(route);
             lengthElement.innerText = `${
                 Math.round(lengthMeters * 100) / 100
@@ -465,6 +493,10 @@ async function asyncMain() {
         setRouteKind(newRoute, kind);
 
         addRouteView(routes, newRoute);
+
+        state.selectedRouteId = newRoute.routeId;
+        updateSelectedRouteInfo();
+
         queueSetRouteCommandDelayed(3000, newRoute);
     }
     const addRouteElement = addListeners(<a>ルートを追加</a>, {
@@ -498,8 +530,8 @@ async function asyncMain() {
                 if (view == null) return;
 
                 routes.delete(deleteRouteId);
-                map.removeLayer(view.coordinatesEditor);
-                routeLayerGroup.removeLayer(view.coordinatesEditor);
+                map.removeLayer(view.coordinatesEditor.layer);
+                routeLayerGroup.removeLayer(view.coordinatesEditor.layer);
                 queueRemoteCommandDelayed(1000, {
                     routeName: view.route.routeName,
                     routeId: deleteRouteId,
@@ -532,11 +564,29 @@ async function asyncMain() {
             },
         }
     );
+    const moveToRouteElement = addListeners(<a>選択中のルートまで移動</a>, {
+        click() {
+            const route = getSelectedRoute();
+            if (route == null) return;
+            const bounds = L.latLngBounds(
+                parseCoordinates(route.route.coordinates)
+            );
+            if (map.getZoom() < map.getBoundsZoom(bounds, true)) {
+                map.fitBounds(bounds);
+            } else {
+                map.panInsideBounds(bounds);
+            }
+        },
+    });
     const editorElement = (
-        <div id="pgo-route-helper-editor">
+        <div
+            id="pgo-route-helper-editor"
+            class={classNames["properties-editor"]}
+        >
             {titleElement}
             {descriptionElement}
             {notesElement}
+            {coordinatesElement}
             {lengthElement}
             {addListeners(
                 <input
@@ -555,6 +605,7 @@ async function asyncMain() {
             <div>{addRouteElement}</div>
             <div>{addSpotElement}</div>
             <div>{deleteSelectedRouteElement}</div>
+            <div>{moveToRouteElement}</div>
             {reportElement}
         </div>
     );
@@ -591,7 +642,47 @@ async function asyncMain() {
             return;
         }
         setEditorElements(selectedRoute.route);
+        selectedRoute.coordinatesEditor.update(selectedRoute.route);
     }
+    function createRouteView(
+        { routeId, coordinates }: Route,
+        routeMap: Map<string, RouteWithView>
+    ) {
+        const layer = polylineEditor(parseCoordinates(coordinates), {
+            clickable: true,
+            color: "#5fd6ff",
+        });
+        layer.on("click", () => {
+            state.selectedRouteId = routeId;
+            updateSelectedRouteInfo();
+        });
+        layer.on("latlngschanged", () => {
+            const { route } = routeMap.get(routeId) ?? error`internal error`;
+            route.coordinates = pipe(layer.getLatLngs(), stringifyCoordinates);
+
+            updateSelectedRouteInfo();
+            queueSetRouteCommandDelayed(3000, route);
+        });
+        return { layer, update: ignore };
+    }
+    const maxTitleWidth = 160;
+    const maxTitleHeight = 46;
+    function createSpotLabel(text: string) {
+        return L.divIcon({
+            className: classNames["spot-label"],
+            html: text,
+            iconAnchor: [maxTitleWidth / 2, maxTitleHeight / -4],
+            iconSize: [maxTitleWidth, maxTitleHeight],
+        });
+    }
+    const spotCircleNormalStyle: L.PathOptions = {
+        opacity: 0.3,
+        fillOpacity: 0.8,
+    } as const;
+    const spotCircleSelectedStyle: L.PathOptions = {
+        opacity: 1.0,
+        fillOpacity: 1.0,
+    };
     function createSpotView(
         route: Route,
         routeMap: Map<string, RouteWithView>
@@ -601,93 +692,87 @@ async function asyncMain() {
             parseCoordinates(route.coordinates)[0] ?? error`internal error`,
             {
                 className: `spot-circle spot-circle-${routeId}`,
-                opacity: 0.3,
-                fillOpacity: 0.8,
                 color: "#000",
                 fillColor: "#3e9",
                 weight: 5,
+                ...spotCircleNormalStyle,
             }
         );
+        let draggable = false;
+        let dragging = false;
+        function changeStyle() {
+            if (draggable) {
+                circle.setStyle(spotCircleSelectedStyle);
+            } else {
+                circle.setStyle(spotCircleNormalStyle);
+            }
+        }
         const onDragging = (e: L.LeafletMouseEvent) => {
             circle.setLatLng(e.latlng);
-            title.setLatLng(e.latlng);
+            label.setLatLng(e.latlng);
+            dragging = true;
         };
-        const onMouseDown = () => {
-            map.dragging.disable();
-            map.on("mousemove", onDragging);
-
+        circle.on("dblclick", () => {
+            draggable = !draggable;
+            changeStyle();
+        });
+        circle.on("mousedown", () => {
+            if (draggable) {
+                map.dragging.disable();
+                map.on("mousemove", onDragging);
+            }
             state.selectedRouteId = routeId;
             updateSelectedRouteInfo();
-        };
+        });
         map.on("mouseup", () => {
+            const latlngChanged = dragging;
+            dragging = false;
             map.dragging.enable();
             map.off("mousemove", onDragging);
 
             const { route } = routeMap.get(routeId) ?? error`internal error`;
             route.coordinates = stringifyCoordinates([circle.getLatLng()]);
 
-            updateSelectedRouteInfo();
-            queueSetRouteCommandDelayed(3000, route);
+            if (latlngChanged) {
+                queueSetRouteCommandDelayed(3000, route);
+            }
         });
-        const maxTitleWidth = 160;
-        const maxTitleHeight = 46;
-        const title = L.marker(circle.getLatLng(), {
-            icon: L.divIcon({
-                className: classNames["spot-label"],
-                html: route.routeName,
-                iconAnchor: [maxTitleWidth / 2, maxTitleHeight / -4],
-                iconSize: [maxTitleWidth, maxTitleHeight],
-            }),
+        const label = L.marker(circle.getLatLng(), {
+            icon: createSpotLabel(route.routeName),
         });
-        const group = L.featureGroup([circle, title]);
-        group.eachLayer((l) => {
-            l.on("mousedown", onMouseDown);
-        });
-        return group;
+        const group = L.featureGroup([circle, label]);
+
+        function update(route: Route) {
+            label.setIcon(createSpotLabel(route.routeName));
+            const coordinate0 =
+                parseCoordinates(route.coordinates)[0] ?? error`internal error`;
+            circle.setLatLng(coordinate0);
+            label.setLatLng(coordinate0);
+        }
+        return { layer: group, update };
     }
 
     function addRouteView(routeMap: Map<string, RouteWithView>, route: Route) {
         const { routeId } = route;
         const kind = getRouteKind(route);
 
-        let coordinatesEditor;
+        let view;
         switch (kind) {
             case "route": {
-                const editor = (coordinatesEditor = polylineEditor(
-                    parseCoordinates(route.coordinates),
-                    {
-                        clickable: true,
-                        color: "#5fd6ff",
-                    }
-                ));
-                editor.on("click", () => {
-                    state.selectedRouteId = routeId;
-                    updateSelectedRouteInfo();
-                });
-                editor.on("latlngschanged", () => {
-                    const { route } =
-                        routeMap.get(routeId) ?? error`internal error`;
-                    route.coordinates = pipe(
-                        editor.getLatLngs(),
-                        stringifyCoordinates
-                    );
-
-                    updateSelectedRouteInfo();
-                    queueSetRouteCommandDelayed(3000, route);
-                });
+                view = createRouteView(route, routeMap);
                 break;
             }
             case "spot":
-                coordinatesEditor = createSpotView(route, routeMap);
+                view = createSpotView(route, routeMap);
                 break;
             default:
                 return exhaustive(kind);
         }
-        routeLayerGroup.addLayer(coordinatesEditor);
+        routeLayerGroup.addLayer(view.layer);
 
         routeMap.set(routeId, {
             route,
-            coordinatesEditor,
+            coordinatesEditor: view,
         });
     }
 
