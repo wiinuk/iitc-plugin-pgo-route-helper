@@ -6,7 +6,7 @@
 // @downloadURL  https://github.com/wiinuk/iitc-plugin-pgo-route-helper/raw/master/iitc-plugin-pgo-route-helper.user.js
 // @updateURL    https://github.com/wiinuk/iitc-plugin-pgo-route-helper/raw/master/iitc-plugin-pgo-route-helper.user.js
 // @homepageURL  https://github.com/wiinuk/iitc-plugin-pgo-route-helper
-// @version      0.6.0
+// @version      0.8.0
 // @description  IITC plugin to assist in Pokémon GO route creation.
 // @author       Wiinuk
 // @include      https://*.ingress.com/intel*
@@ -151,6 +151,29 @@ function validationError(path, expected, actual) {
         actual,
     }));
 }
+function record(keySchema, valueSchema) {
+    return wrap((target, path, seen) => {
+        if (target == null || typeof target !== "object") {
+            throw validationError(path, "object", target === null ? "null" : typeof target);
+        }
+        if (seen.has(target)) {
+            return target;
+        }
+        seen.add(target);
+        for (const key of Object.keys(target)) {
+            const value = target[key];
+            keySchema.parse(key);
+            try {
+                path.push(key);
+                valueSchema._validate(value, path, seen);
+            }
+            finally {
+                path.pop();
+            }
+        }
+        return target;
+    });
+}
 function strictObject(shape) {
     const props = [];
     for (const key in shape) {
@@ -158,7 +181,7 @@ function strictObject(shape) {
     }
     return wrap((target, path, seen) => {
         if (target === null || typeof target !== "object") {
-            throw validationError(path, "object", typeof target);
+            throw validationError(path, "object", target === null ? "null" : typeof target);
         }
         if (seen.has(target)) {
             return target;
@@ -206,6 +229,15 @@ function number() {
     return (numberSchema !== null && numberSchema !== void 0 ? numberSchema : (numberSchema = wrap((target, path) => {
         if (typeof target !== "number") {
             throw validationError(path, "number", typeof target);
+        }
+        return target;
+    })));
+}
+let booleanSchema;
+function json_schema_core_boolean() {
+    return (booleanSchema !== null && booleanSchema !== void 0 ? booleanSchema : (booleanSchema = wrap((target, path) => {
+        if (typeof target === "boolean") {
+            throw validationError(path, "boolean", typeof target);
         }
         return target;
     })));
@@ -324,6 +356,31 @@ function regexp(pattern) {
         return target;
     });
 }
+function createJsonSchema() {
+    const json = wrap((target, path, seen) => {
+        if (target === null) {
+            return target;
+        }
+        switch (typeof target) {
+            case "boolean":
+            case "number":
+            case "string":
+                return target;
+            case "object":
+                return Array.isArray(target)
+                    ? jsonArray._validate(target, path, seen)
+                    : jsonObject._validate(target, path, seen);
+        }
+        throw validationError(path, "Json", typeof target);
+    });
+    const jsonArray = array(json);
+    const jsonObject = record(string(), json);
+    return json;
+}
+let jsonSchemaCache;
+function json() {
+    return (jsonSchemaCache !== null && jsonSchemaCache !== void 0 ? jsonSchemaCache : (jsonSchemaCache = createJsonSchema()));
+}
 
 ;// CONCATENATED MODULE: ./package.json
 const package_namespaceObject = {};
@@ -441,6 +498,10 @@ function parseCssColor(cssColor, result = { r: 0, g: 0, b: 0, a: 0 }) {
 }
 
 ;// CONCATENATED MODULE: ./source/kml.ts
+const numberPattern = "\\d+(\\.\\d+)?\\s*";
+const commaPattern = ",\\s*";
+const pointPattern = numberPattern + commaPattern + numberPattern;
+const coordinatesPattern = new RegExp(`^\\s*${pointPattern}(${commaPattern}${pointPattern})*$`);
 // TODO: パースエラーを戻り値で伝える
 function parseCoordinates(kmlCoordinatesText) {
     const tokens = kmlCoordinatesText.split(",");
@@ -450,6 +511,20 @@ function parseCoordinates(kmlCoordinatesText) {
         result.push([Number(tokens[i - 1]), Number(tokens[i])]);
     }
     return result;
+}
+function stringifyCoordinates(coordinates) {
+    return coordinates
+        .map((c) => {
+        let lat, lng;
+        if (Array.isArray(c)) {
+            [lat, lng] = c;
+        }
+        else {
+            ({ lat, lng } = c);
+        }
+        return `${lat},${lng}`;
+    })
+        .join(",");
 }
 
 ;// CONCATENATED MODULE: ./source/standard-extensions.ts
@@ -563,20 +638,59 @@ function createAsyncCancelScope(handleAsyncError) {
 function assertTrue() {
     // 型レベルアサーション関数
 }
+function pipe(value, ...processes) {
+    let a = value;
+    for (const p of processes) {
+        switch (typeof p) {
+            case "function":
+                a = p(a);
+                break;
+            case "string":
+                a = a == null ? a : a[p];
+                break;
+            default: {
+                const [f, ...xs] = p;
+                a = f.call(null, a, ...xs);
+                break;
+            }
+        }
+    }
+    return a;
+}
+
+;// CONCATENATED MODULE: ./source/route.ts
+
+function getRouteKind(route) {
+    return route.data["kind"] === "spot" ? "spot" : "route";
+}
+function setRouteKind(route, kind) {
+    switch (kind) {
+        case "route":
+            delete route.data["kind"];
+            return;
+        case "spot":
+            route.data["kind"] = "spot";
+            return;
+        default:
+            return exhaustive(kind);
+    }
+}
 
 ;// CONCATENATED MODULE: ./source/styles.module.css
-const cssText = ".import-text-input-b2c4eb2b252429e03bb53e6c7bf3427c9a377002 {\r\n    position: fixed;\r\n    top: 0;\r\n    left: 0;\r\n    width: 100%;\r\n    height: 100%;\r\n    z-index: 10000;\r\n\r\n    display: flex;\r\n    justify-content: center;\r\n    align-items: center;\r\n}\r\n.import-text-input-b2c4eb2b252429e03bb53e6c7bf3427c9a377002.hidden-179f4ccc628f58fd404eed6dac90b9254ad32976 {\r\n    display: none;\r\n}\r\ninput.editable-text-37211a6268c18b074c34d3721915cd1559d983bd {\r\n    border: none;\r\n    background: none;\r\n    font-size: 16px;\r\n    color: black;\r\n}\r\n";
+const cssText = ".import-text-input-f0e461039f8f5f320ba17b484e4aea596d3e7ff3 {\r\n    position: fixed;\r\n    top: 0;\r\n    left: 0;\r\n    width: 100%;\r\n    height: 100%;\r\n    z-index: 10000;\r\n\r\n    display: flex;\r\n    justify-content: center;\r\n    align-items: center;\r\n}\r\n.import-text-input-f0e461039f8f5f320ba17b484e4aea596d3e7ff3.hidden-78a6ea5d2d0f564164b977cd5c0bbae89b3b9ebb {\r\n    display: none;\r\n}\r\ninput.editable-text-35db163266459a8bf79463f04f6e62022e91b210 {\r\n    border: none;\r\n    background: none;\r\n    font-size: 16px;\r\n    color: black;\r\n}\r\n\r\n.spot-label-d3b091f60d95555642788575005f26f539451c59 {\r\n    color: #FFFFBB;\r\n    font-size: 11px;\r\n    line-height: 12px;\r\n    text-align: center;\r\n    padding: 2px;\r\n    overflow: hidden;\r\n    white-space: nowrap;\r\n    text-overflow: ellipsis;\r\n    text-shadow: 1px 1px #000, 1px -1px #000, -1px 1px #000, -1px -1px #000, 0 0 5px #000;\r\n    pointer-events: none;\r\n}\r\n\r\n.properties-editor-e3ba11d727c19c03562960cf16d96e0056a60d88 textarea, .properties-editor-e3ba11d727c19c03562960cf16d96e0056a60d88 input {\r\n    font-family: Arial, Helvetica, sans-serif;\r\n}\r\n";
 /* harmony default export */ const styles_module = ({
-    "import-text-input": "import-text-input-b2c4eb2b252429e03bb53e6c7bf3427c9a377002",
-    hidden: "hidden-179f4ccc628f58fd404eed6dac90b9254ad32976",
-    "editable-text": "editable-text-37211a6268c18b074c34d3721915cd1559d983bd",
+    "import-text-input": "import-text-input-f0e461039f8f5f320ba17b484e4aea596d3e7ff3",
+    hidden: "hidden-78a6ea5d2d0f564164b977cd5c0bbae89b3b9ebb",
+    "editable-text": "editable-text-35db163266459a8bf79463f04f6e62022e91b210",
+    "spot-label": "spot-label-d3b091f60d95555642788575005f26f539451c59",
+    "properties-editor": "properties-editor-e3ba11d727c19c03562960cf16d96e0056a60d88",
 });
 
 ;// CONCATENATED MODULE: ../gas-drivetunnel/source/schemas.ts
 
 
 const iso8601DateTimeSchema = regexp(/\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[-+]\d{2}:\d{2})?/);
-const routeDataSchema = strictObject({});
+const routeDataSchema = record(string(), json());
 const routePropertySchemas = {
     type: literal("route"),
     userId: string(),
@@ -637,6 +751,7 @@ const schemas_interfaces = {
             description: string(),
             note: string(),
             coordinates: string(),
+            data: string(),
         }),
         result: strictObject({
             /** ISO8601 */
@@ -1169,7 +1284,8 @@ var iitc_plugin_pgo_route_helper_awaiter = (undefined && undefined.__awaiter) ||
     });
 };
 
-// spell-checker: ignore layeradd drivetunnel latlngschanged lngs
+// spell-checker: ignore layeradd drivetunnel latlngschanged lngs latlng
+
 
 
 
@@ -1208,7 +1324,7 @@ const configV2Properties = Object.assign(Object.assign({}, configV1Properties), 
 const configV2Schema = strictObject(configV2Properties);
 const configSchemas = [configV1Schema, configV2Schema];
 const configVAnySchema = union(configSchemas);
-const apiRoot = "https://script.google.com/macros/s/AKfycbx_E1nHPWlUKz6f23nxINetyaartn3Lj1M2htYA4xBK75jpsfKWVzXVFoEqfo_wJBDN/exec";
+const apiRoot = "https://script.google.com/macros/s/AKfycbx-BeayFoyAro3uwYbuG9C12M3ODyuZ6GDwbhW3ifq76DWBAvzMskn9tc4dTuvLmohW/exec";
 const storageConfigKey = "pgo-route-helper-config";
 function upgradeConfig(config) {
     switch (config.version) {
@@ -1311,74 +1427,69 @@ function asyncMain() {
             }
         };
         const remoteCommandCancelScope = createAsyncCancelScope(handleAsyncError);
-        const uncompletedRemoteCommands = new Map();
-        function routeIdAndName(command) {
-            switch (command.type) {
-                case "set":
-                    return command.route;
-                case "delete":
-                    return command;
-            }
-        }
+        let nextCommandId = 0;
+        const routeIdToCommand = new Map();
         function queueRemoteCommandDelayed(waitMilliseconds, command) {
             remoteCommandCancelScope((signal) => iitc_plugin_pgo_route_helper_awaiter(this, void 0, void 0, function* () {
-                var _a, _b;
-                const { routeId, routeName } = routeIdAndName(command);
-                uncompletedRemoteCommands.set(routeId, command);
+                var _a;
+                const { routeName, routeId } = command;
+                routeIdToCommand.set(routeId, {
+                    commandId: nextCommandId++,
+                    command,
+                });
                 progress({
                     type: "upload-waiting",
                     routeName,
                     milliseconds: waitMilliseconds,
-                    queueCount: uncompletedRemoteCommands.size,
+                    queueCount: routeIdToCommand.size,
                 });
                 yield sleep(waitMilliseconds, { signal });
-                const entries = [...uncompletedRemoteCommands.entries()];
-                for (const [routeId, command] of entries) {
-                    const { routeName } = routeIdAndName(command);
+                for (const [routeId, { commandId, command }] of [
+                    ...routeIdToCommand.entries(),
+                ]) {
                     progress({
                         type: "uploading",
                         routeName,
                     });
-                    switch (command.type) {
-                        case "set": {
-                            const { type, userId, routeId, routeName, coordinates, description, note, } = command.route;
-                            yield setRoute({
-                                type,
-                                "user-id": userId,
-                                "route-id": routeId,
-                                "route-name": routeName,
-                                coordinates,
-                                description,
-                                note,
-                            }, {
-                                signal,
-                                rootUrl: (_a = config.apiRoot) !== null && _a !== void 0 ? _a : apiRoot,
-                            });
-                            break;
-                        }
-                        case "delete": {
-                            yield deleteRoute({ "route-id": command.routeId }, { signal, rootUrl: (_b = config.apiRoot) !== null && _b !== void 0 ? _b : apiRoot });
-                            break;
-                        }
-                        default: {
-                            throw new Error(`Unknown command: ${command}`);
-                        }
+                    yield command.process(signal);
+                    if (((_a = routeIdToCommand.get(routeId)) === null || _a === void 0 ? void 0 : _a.commandId) === commandId) {
+                        routeIdToCommand.delete(routeId);
                     }
-                    uncompletedRemoteCommands.delete(routeId);
                     progress({
                         type: "uploaded",
                         routeName,
-                        queueCount: uncompletedRemoteCommands.size,
+                        queueCount: routeIdToCommand.size,
                     });
                 }
             }));
         }
+        function queueSetRouteCommandDelayed(waitMilliseconds, route) {
+            queueRemoteCommandDelayed(waitMilliseconds, {
+                routeName: route.routeName,
+                routeId: route.routeId,
+                process(signal) {
+                    var _a;
+                    return iitc_plugin_pgo_route_helper_awaiter(this, void 0, void 0, function* () {
+                        const { type, userId, routeId, routeName, coordinates, description, note, data, } = route;
+                        yield setRoute({
+                            type,
+                            "user-id": userId,
+                            "route-id": routeId,
+                            "route-name": routeName,
+                            coordinates,
+                            description,
+                            note,
+                            data: JSON.stringify(data),
+                        }, {
+                            signal,
+                            rootUrl: (_a = config.apiRoot) !== null && _a !== void 0 ? _a : apiRoot,
+                        });
+                    });
+                },
+            });
+        }
         function mergeSelectedRoute(difference) {
-            const { selectedRouteId, routes } = state;
-            if (selectedRouteId == null || routes == "routes-unloaded") {
-                return;
-            }
-            const view = routes.get(selectedRouteId);
+            const view = getSelectedRoute();
             if (view == null) {
                 return;
             }
@@ -1393,7 +1504,8 @@ function asyncMain() {
                 }
             }
             if (changed) {
-                queueRemoteCommandDelayed(3000, { type: "set", route });
+                updateSelectedRouteInfo();
+                queueSetRouteCommandDelayed(3000, route);
             }
         }
         const titleElement = addListeners((jsx("input", { type: "text", placeholder: "\u30BF\u30A4\u30C8\u30EB", readOnly: true })), {
@@ -1409,6 +1521,15 @@ function asyncMain() {
         const notesElement = addListeners((jsx("textarea", { type: "text", placeholder: "\u88DC\u8DB3", readOnly: true })), {
             input() {
                 mergeSelectedRoute({ note: this.value });
+            },
+        });
+        const p = coordinatesPattern;
+        const coordinatesElement = addListeners((jsx("input", { type: "text", placeholder: "\u5EA7\u6A19\u5217 (\u4F8B: 12.34,56.78,90.12,34.56)", pattern: p.source })), {
+            input() {
+                if (!this.checkValidity()) {
+                    return;
+                }
+                mergeSelectedRoute({ coordinates: this.value });
             },
         });
         const lengthElement = jsx("div", {});
@@ -1437,6 +1558,8 @@ function asyncMain() {
                 descriptionElement.value = "";
                 notesElement.readOnly = true;
                 notesElement.value = "";
+                coordinatesElement.readOnly = true;
+                coordinatesElement.value = "";
                 lengthElement.innerText = "";
             }
             else {
@@ -1446,6 +1569,8 @@ function asyncMain() {
                 descriptionElement.value = route.description;
                 notesElement.readOnly = false;
                 notesElement.value = route.note;
+                coordinatesElement.readOnly = false;
+                coordinatesElement.value = route.coordinates;
                 const lengthMeters = calculateRouteLengthMeters(route);
                 lengthElement.innerText = `${Math.round(lengthMeters * 100) / 100}m`;
             }
@@ -1453,30 +1578,54 @@ function asyncMain() {
         setEditorElements(undefined);
         const routeLayerGroupName = "Routes";
         const reportElement = (jsx("div", { children: `ルートは読み込まれていません。レイヤー '${routeLayerGroupName}' を有効にすると読み込まれます。` }));
+        function onAddRouteButtonClick(kind) {
+            const { routes } = state;
+            if (config.userId == null || routes == "routes-unloaded")
+                return;
+            let coordinates;
+            let routeName;
+            switch (kind) {
+                case "route": {
+                    const bound = map.getBounds();
+                    coordinates = stringifyCoordinates([
+                        getMiddleCoordinate(bound.getCenter(), bound.getNorthEast()),
+                        getMiddleCoordinate(bound.getCenter(), bound.getSouthWest()),
+                    ]);
+                    routeName = "新しいルート";
+                    break;
+                }
+                case "spot": {
+                    coordinates = stringifyCoordinates([map.getCenter()]);
+                    routeName = "新しいスポット";
+                    break;
+                }
+                default:
+                    return exhaustive(kind);
+            }
+            const newRoute = {
+                type: "route",
+                userId: config.userId,
+                routeId: `route-${Date.now()}-${Math.floor(Math.random() * 1000000)}`,
+                routeName,
+                coordinates,
+                data: {},
+                description: "",
+                note: "",
+            };
+            setRouteKind(newRoute, kind);
+            addRouteView(routes, newRoute);
+            state.selectedRouteId = newRoute.routeId;
+            updateSelectedRouteInfo();
+            queueSetRouteCommandDelayed(3000, newRoute);
+        }
         const addRouteElement = addListeners(jsx("a", { children: "\u30EB\u30FC\u30C8\u3092\u8FFD\u52A0" }), {
             click() {
-                const { routes } = state;
-                if (config.userId == null || routes == "routes-unloaded")
-                    return;
-                const bound = map.getBounds();
-                const coordinates = [
-                    getMiddleCoordinate(bound.getCenter(), bound.getNorthEast()),
-                    getMiddleCoordinate(bound.getCenter(), bound.getSouthWest()),
-                ]
-                    .map(({ lat, lng }) => `${lat},${lng}`)
-                    .join(",");
-                const newRoute = {
-                    type: "route",
-                    userId: config.userId,
-                    routeId: `route-${Date.now()}-${Math.floor(Math.random() * 1000000)}`,
-                    routeName: "新しいルート",
-                    coordinates,
-                    data: {},
-                    description: "",
-                    note: "",
-                };
-                addRouteView(routes, newRoute);
-                queueRemoteCommandDelayed(1000, { type: "set", route: newRoute });
+                onAddRouteButtonClick("route");
+            },
+        });
+        const addSpotElement = addListeners(jsx("a", { children: "\u30B9\u30DD\u30C3\u30C8\u3092\u8FFD\u52A0" }), {
+            click() {
+                onAddRouteButtonClick("spot");
             },
         });
         const deleteConfirmationElement = jsx("div", {});
@@ -1497,11 +1646,17 @@ function asyncMain() {
                     if (view == null)
                         return;
                     routes.delete(deleteRouteId);
-                    map.removeLayer(view.editor);
+                    map.removeLayer(view.coordinatesEditor.layer);
+                    routeLayerGroup.removeLayer(view.coordinatesEditor.layer);
                     queueRemoteCommandDelayed(1000, {
-                        type: "delete",
-                        routeId: deleteRouteId,
                         routeName: view.route.routeName,
+                        routeId: deleteRouteId,
+                        process(signal) {
+                            var _a;
+                            return iitc_plugin_pgo_route_helper_awaiter(this, void 0, void 0, function* () {
+                                yield deleteRoute({ "route-id": deleteRouteId }, { signal, rootUrl: (_a = config.apiRoot) !== null && _a !== void 0 ? _a : apiRoot });
+                            });
+                        },
                     });
                 },
                 cancel() {
@@ -1522,12 +1677,26 @@ function asyncMain() {
                 deleteConfirmation.dialog("open");
             },
         });
-        const editorElement = (jsxs("div", { id: "pgo-route-helper-editor", children: [titleElement, descriptionElement, notesElement, lengthElement, addListeners(jsx("input", { class: styles_module["editable-text"], type: "text", placeholder: "\u30E6\u30FC\u30B6\u30FC\u540D", value: config.userId }), {
+        const moveToRouteElement = addListeners(jsx("a", { children: "\u9078\u629E\u4E2D\u306E\u30EB\u30FC\u30C8\u307E\u3067\u79FB\u52D5" }), {
+            click() {
+                const route = getSelectedRoute();
+                if (route == null)
+                    return;
+                const bounds = L.latLngBounds(parseCoordinates(route.route.coordinates));
+                if (map.getZoom() < map.getBoundsZoom(bounds, true)) {
+                    map.fitBounds(bounds);
+                }
+                else {
+                    map.panInsideBounds(bounds);
+                }
+            },
+        });
+        const editorElement = (jsxs("div", { id: "pgo-route-helper-editor", class: styles_module["properties-editor"], children: [titleElement, descriptionElement, notesElement, coordinatesElement, lengthElement, addListeners(jsx("input", { class: styles_module["editable-text"], type: "text", placeholder: "\u30E6\u30FC\u30B6\u30FC\u540D", value: config.userId }), {
                     input() {
                         // TODO:
                         console.log("user name changed");
                     },
-                }), jsx("div", { children: addRouteElement }), jsx("div", { children: deleteSelectedRouteElement }), reportElement] }));
+                }), jsx("div", { children: addRouteElement }), jsx("div", { children: addSpotElement }), jsx("div", { children: deleteSelectedRouteElement }), jsx("div", { children: moveToRouteElement }), reportElement] }));
         document.body.append(editorElement);
         const editor = $(editorElement).dialog({
             autoOpen: false,
@@ -1540,35 +1709,133 @@ function asyncMain() {
                 return false;
             },
         }));
-        function updateSelectedRouteInfo() {
+        function getSelectedRoute() {
             var _a;
-            if (state.routes === "routes-unloaded" || state.selectedRouteId == null)
+            if (state.routes === "routes-unloaded" ||
+                state.selectedRouteId == null) {
                 return;
-            const selectedRoute = (_a = state.routes.get(state.selectedRouteId)) !== null && _a !== void 0 ? _a : standard_extensions_error `internal error`;
-            setEditorElements(selectedRoute.route);
+            }
+            return (_a = state.routes.get(state.selectedRouteId)) !== null && _a !== void 0 ? _a : standard_extensions_error `internal error`;
         }
-        function addRouteView(routeMap, route) {
-            const { routeId } = route;
-            // TODO: parse のエラーを処理する
-            const view = polylineEditor(parseCoordinates(route.coordinates), {
+        function updateSelectedRouteInfo() {
+            const selectedRoute = getSelectedRoute();
+            if (selectedRoute == null) {
+                return;
+            }
+            setEditorElements(selectedRoute.route);
+            selectedRoute.coordinatesEditor.update(selectedRoute.route);
+        }
+        function createRouteView({ routeId, coordinates }, routeMap) {
+            const layer = polylineEditor(parseCoordinates(coordinates), {
                 clickable: true,
                 color: "#5fd6ff",
             });
-            routeLayerGroup.addLayer(view);
-            routeMap.set(routeId, { route, editor: view });
-            view.on("click", () => {
+            layer.on("click", () => {
                 state.selectedRouteId = routeId;
                 updateSelectedRouteInfo();
             });
-            view.on("latlngschanged", () => {
+            layer.on("latlngschanged", () => {
                 var _a;
                 const { route } = (_a = routeMap.get(routeId)) !== null && _a !== void 0 ? _a : standard_extensions_error `internal error`;
-                route.coordinates = view
-                    .getLatLngs()
-                    .map(({ lat, lng }) => `${lat},${lng}`)
-                    .join(",");
+                route.coordinates = pipe(layer.getLatLngs(), stringifyCoordinates);
                 updateSelectedRouteInfo();
-                queueRemoteCommandDelayed(3000, { type: "set", route });
+                queueSetRouteCommandDelayed(3000, route);
+            });
+            return { layer, update: ignore };
+        }
+        const maxTitleWidth = 160;
+        const maxTitleHeight = 46;
+        function createSpotLabel(text) {
+            return L.divIcon({
+                className: styles_module["spot-label"],
+                html: text,
+                iconAnchor: [maxTitleWidth / 2, maxTitleHeight / -4],
+                iconSize: [maxTitleWidth, maxTitleHeight],
+            });
+        }
+        const spotCircleNormalStyle = {
+            opacity: 0.3,
+            fillOpacity: 0.8,
+        };
+        const spotCircleSelectedStyle = {
+            opacity: 1.0,
+            fillOpacity: 1.0,
+        };
+        function createSpotView(route, routeMap) {
+            var _a;
+            const { routeId } = route;
+            const circle = L.circleMarker((_a = parseCoordinates(route.coordinates)[0]) !== null && _a !== void 0 ? _a : standard_extensions_error `internal error`, Object.assign({ className: `spot-circle spot-circle-${routeId}`, color: "#000", fillColor: "#3e9", weight: 5 }, spotCircleNormalStyle));
+            let draggable = false;
+            let dragging = false;
+            function changeStyle() {
+                if (draggable) {
+                    circle.setStyle(spotCircleSelectedStyle);
+                }
+                else {
+                    circle.setStyle(spotCircleNormalStyle);
+                }
+            }
+            const onDragging = (e) => {
+                circle.setLatLng(e.latlng);
+                label.setLatLng(e.latlng);
+                dragging = true;
+            };
+            circle.on("dblclick", () => {
+                draggable = !draggable;
+                changeStyle();
+            });
+            circle.on("mousedown", () => {
+                if (draggable) {
+                    map.dragging.disable();
+                    map.on("mousemove", onDragging);
+                }
+                state.selectedRouteId = routeId;
+                updateSelectedRouteInfo();
+            });
+            map.on("mouseup", () => {
+                var _a;
+                const latlngChanged = dragging;
+                dragging = false;
+                map.dragging.enable();
+                map.off("mousemove", onDragging);
+                const { route } = (_a = routeMap.get(routeId)) !== null && _a !== void 0 ? _a : standard_extensions_error `internal error`;
+                route.coordinates = stringifyCoordinates([circle.getLatLng()]);
+                if (latlngChanged) {
+                    queueSetRouteCommandDelayed(3000, route);
+                }
+            });
+            const label = L.marker(circle.getLatLng(), {
+                icon: createSpotLabel(route.routeName),
+            });
+            const group = L.featureGroup([circle, label]);
+            function update(route) {
+                var _a;
+                label.setIcon(createSpotLabel(route.routeName));
+                const coordinate0 = (_a = parseCoordinates(route.coordinates)[0]) !== null && _a !== void 0 ? _a : standard_extensions_error `internal error`;
+                circle.setLatLng(coordinate0);
+                label.setLatLng(coordinate0);
+            }
+            return { layer: group, update };
+        }
+        function addRouteView(routeMap, route) {
+            const { routeId } = route;
+            const kind = getRouteKind(route);
+            let view;
+            switch (kind) {
+                case "route": {
+                    view = createRouteView(route, routeMap);
+                    break;
+                }
+                case "spot":
+                    view = createSpotView(route, routeMap);
+                    break;
+                default:
+                    return exhaustive(kind);
+            }
+            routeLayerGroup.addLayer(view.layer);
+            routeMap.set(routeId, {
+                route,
+                coordinatesEditor: view,
             });
         }
         const routeLayerGroup = L.layerGroup();
