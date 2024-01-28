@@ -30,3 +30,9 @@ export function getRouteTags(
     }
     return undefined;
 }
+export function setRouteIsTemplate(route: Route, isTemplate: boolean) {
+    route.data["isTemplate"] = isTemplate || undefined;
+}
+export function getRouteIsTemplate(route: Route) {
+    return route.data["isTemplate"] === true;
+}

@@ -1,4 +1,4 @@
-// spell-checker: ignore layeradd drivetunnel latlngschanged lngs latlng moveend
+// spell-checker: ignore layeradd drivetunnel latlngschanged lngs latlng moveend buttonset
 import { z } from "../../gas-drivetunnel/source/json-schema";
 import {
     addListeners,
@@ -15,6 +15,8 @@ import {
     getRouteKind,
     setRouteKind,
     type RouteKind,
+    getRouteIsTemplate,
+    setRouteIsTemplate,
 } from "./route";
 import {
     error,
@@ -505,6 +507,22 @@ async function asyncMain() {
         } satisfies Route;
         setRouteKind(newRoute, kind);
 
+        // テンプレートから各種データをコピー
+        let templateRoute: RouteWithView | undefined;
+        routes.forEach((route) => {
+            if (getRouteIsTemplate(route.route)) {
+                templateRoute = route;
+            }
+        });
+        if (templateRoute && getRouteKind(templateRoute.route) === kind) {
+            const r = templateRoute.route;
+            newRoute.routeName = r.routeName;
+            newRoute.data = structuredClone(r.data);
+            newRoute.description = r.description;
+            newRoute.note = r.note;
+            setRouteIsTemplate(newRoute, false);
+        }
+
         addRouteView(routes, newRoute);
 
         state.selectedRouteId = newRoute.routeId;
@@ -591,6 +609,32 @@ async function asyncMain() {
                 moveToBound(
                     L.latLngBounds(parseCoordinates(route.route.coordinates))
                 );
+            },
+        }
+    );
+    const setAsTemplateElement = addListeners(
+        <button>📑テンプレートとして設定</button>,
+        {
+            click() {
+                const selectedRoute = getSelectedRoute();
+                if (selectedRoute == null) return;
+
+                const routes =
+                    state.routes !== "routes-unloaded" && state.routes;
+                if (!routes) {
+                    return;
+                }
+
+                for (const { route } of routes.values()) {
+                    if (getRouteIsTemplate(route)) {
+                        setRouteIsTemplate(route, false);
+                        queueSetRouteCommandDelayed(3000, route);
+                        updateRouteView(route.routeId);
+                    }
+                }
+                setRouteIsTemplate(selectedRoute.route, true);
+                queueSetRouteCommandDelayed(3000, selectedRoute.route);
+                updateSelectedRouteInfo();
             },
         }
     );
@@ -742,6 +786,7 @@ async function asyncMain() {
             {addSpotElement}
             {deleteSelectedRouteElement}
             {moveToRouteElement}
+            {setAsTemplateElement}
         </span>
     );
 
@@ -817,14 +862,24 @@ async function asyncMain() {
 
         return state.routes.get(state.selectedRouteId) ?? error`internal error`;
     }
+    function updateRouteView(routeId: string) {
+        const route =
+            state.routes !== "routes-unloaded" && state.routes.get(routeId);
+        if (!route) return;
+        route.coordinatesEditor.update(route.route);
+        updateRoutesListItem(route.route, route.listItem);
+
+        if (getSelectedRoute()?.route?.routeId === routeId) {
+            setEditorElements(route.route);
+        }
+    }
     function updateSelectedRouteInfo() {
-        const selectedRoute = getSelectedRoute();
-        if (selectedRoute == null) {
+        const routeId = state.selectedRouteId;
+        if (routeId == null) {
+            setEditorElements(undefined);
             return;
         }
-        setEditorElements(selectedRoute.route);
-        selectedRoute.coordinatesEditor.update(selectedRoute.route);
-        updateRoutesListItem(selectedRoute.route, selectedRoute.listItem);
+        updateRouteView(routeId);
     }
     function createRouteView(
         { routeId, coordinates }: Route,
