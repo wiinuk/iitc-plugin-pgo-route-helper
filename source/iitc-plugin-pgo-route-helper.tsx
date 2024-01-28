@@ -32,7 +32,6 @@ import { createPolylineEditorPlugin } from "./polyline-editor";
 import jqueryUIPolyfillTouchEvents from "./jquery-ui-polyfill-touch-events";
 import type { LastOfArray } from "./type-level";
 import { getEmptyQuery, createQuery, type RouteQuery } from "./query";
-import { array } from "./json-spec";
 import { createQueryEditor } from "./query-editor";
 
 function handleAsyncError(promise: Promise<void>) {
