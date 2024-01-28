@@ -80,6 +80,16 @@ _option) {
             value(element.style);
             continue;
         }
+        if (key === "classList") {
+            if (typeof value === "string") {
+                element.classList.add(name);
+            }
+            else {
+                for (const name of value) {
+                    element.classList.add(name);
+                }
+            }
+        }
         element.setAttribute(key, String(value));
     }
     const children = properties === null || properties === void 0 ? void 0 : properties.children;
@@ -690,17 +700,21 @@ function getRouteTags(route) {
 }
 
 ;// CONCATENATED MODULE: ./source/styles.module.css
-const cssText = ".import-text-input-5a7181ff62b4d5988502f1d06745370271df8300 {\r\n    position: fixed;\r\n    top: 0;\r\n    left: 0;\r\n    width: 100%;\r\n    height: 100%;\r\n    z-index: 10000;\r\n\r\n    display: flex;\r\n    justify-content: center;\r\n    align-items: center;\r\n}\r\n.import-text-input-5a7181ff62b4d5988502f1d06745370271df8300.hidden-3421db79400c77950ddfbda0b576ec0e5ff1ebc0 {\r\n    display: none;\r\n}\r\ninput.editable-text-97b1a03d5b8953ed9955b19f27234658feb2822e {\r\n    border: none;\r\n    background: none;\r\n    font-size: 16px;\r\n    color: black;\r\n}\r\n\r\n.spot-label-518e33793043bf823b267f672670623a81117e25 {\r\n    color: #FFFFBB;\r\n    font-size: 11px;\r\n    line-height: 12px;\r\n    text-align: center;\r\n    padding: 2px;\r\n    overflow: hidden;\r\n    white-space: nowrap;\r\n    text-overflow: ellipsis;\r\n    text-shadow: 1px 1px #000, 1px -1px #000, -1px 1px #000, -1px -1px #000, 0 0 5px #000;\r\n    pointer-events: none;\r\n}\r\n\r\n.properties-editor-b73ccd7741d3fce6866c85a38b685c0f5a9dadda textarea,\r\n.properties-editor-b73ccd7741d3fce6866c85a38b685c0f5a9dadda input {\r\n    font-family: Arial, Helvetica, sans-serif;\r\n}\r\n\r\n.route-list-container-aa03694ac3d9c8c2bd31f0e51478e4cdf48857c3 {\r\n    max-height: 10rem;\r\n    overflow: scroll;\r\n}\r\n.route-list-df4fecd4665abc3b388642f8af2a3636e3e735e9 [class~=ui-selecting] {\r\n    background: #FECA40;\r\n}\r\n.route-list-df4fecd4665abc3b388642f8af2a3636e3e735e9 [class~=ui-selected] {\r\n    background: #F39814;\r\n    color: white;\r\n}\r\n.route-list-df4fecd4665abc3b388642f8af2a3636e3e735e9 {\r\n    list-style-type: none;\r\n    margin: 0;\r\n    padding: 0;\r\n    width: 60%;\r\n}\r\n.route-list-df4fecd4665abc3b388642f8af2a3636e3e735e9 li {\r\n    margin: 3px;\r\n    padding: 0.4em;\r\n    height: 18px;\r\n    cursor: pointer;\r\n}\r\n\r\n.auto-complete-list-ab45e938918afaad828b76c178ce9bd6582f15a1 {\r\n    position: absolute;\r\n    background-color: #f9f9f9;\r\n    min-width: 160px;\r\n    box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);\r\n    padding: 12px 16px;\r\n    z-index: 1;\r\n}\r\n.auto-complete-list-ab45e938918afaad828b76c178ce9bd6582f15a1 .auto-complete-list-item-e5e7053c77c06bce42b5082578789d87c74d77cb {\r\n    color: black;\r\n    padding: 12px 16px;\r\n    text-decoration: none;\r\n    display: block;\r\n}\r\n.auto-complete-list-ab45e938918afaad828b76c178ce9bd6582f15a1 .auto-complete-list-item-e5e7053c77c06bce42b5082578789d87c74d77cb:hover {\r\n    background-color: #ddd;\r\n}\r\n";
+const cssText = ".import-text-input-a323c7b88f7c51e517983dd9192b268b29d00b46 {\r\n    position: fixed;\r\n    top: 0;\r\n    left: 0;\r\n    width: 100%;\r\n    height: 100%;\r\n    z-index: 10000;\r\n\r\n    display: flex;\r\n    justify-content: center;\r\n    align-items: center;\r\n}\r\n\r\n.import-text-input-a323c7b88f7c51e517983dd9192b268b29d00b46.hidden-7a533c45ca9c5013cc00dfe0588c6757307bc996 {\r\n    display: none;\r\n}\r\n\r\ninput.editable-text-65971de367b1dd04eb094ac98810e1b8b4653946 {\r\n    border: none;\r\n    background: none;\r\n    font-size: 16px;\r\n    color: black;\r\n}\r\n\r\n.spot-label-ad740c4df586bbf047989fd5d18ce1aed7b97bac {\r\n    color: #FFFFBB;\r\n    font-size: 11px;\r\n    line-height: 12px;\r\n    text-align: center;\r\n    padding: 2px;\r\n    overflow: hidden;\r\n    white-space: nowrap;\r\n    text-overflow: ellipsis;\r\n    text-shadow: 1px 1px #000, 1px -1px #000, -1px 1px #000, -1px -1px #000, 0 0 5px #000;\r\n    pointer-events: none;\r\n}\r\n\r\n.properties-editor-cb2dbf8dbba67bffa293ba7908cd7ec88fbe785c {\r\n    display: flex;\r\n    flex-direction: column;\r\n    resize: both;\r\n    overflow: auto;\r\n    max-width: 100%;\r\n    max-height: 100vh;\r\n}\r\n.route-list-container-60af73d1155fe013734e3977188715f2b46057f5 {\r\n    flex-grow: 1;\r\n    overflow: auto;\r\n}\r\n\r\n.properties-editor-cb2dbf8dbba67bffa293ba7908cd7ec88fbe785c textarea,\r\n.properties-editor-cb2dbf8dbba67bffa293ba7908cd7ec88fbe785c input {\r\n    font-family: Arial, Helvetica, sans-serif;\r\n}\r\n\r\n.query-input-field-ac9c62b3df99d9171bdc4158f42beeca4ec49b20 {\r\n    height: 1.5em;\r\n}\r\n\r\n.route-list-0b75d16a2a4098ba2da255d689f039004cefcd26 .selecting-855cf7326d8ef127b299243736f2c2350bd81ecb {\r\n    background: #FECA40;\r\n}\r\n\r\n.route-list-0b75d16a2a4098ba2da255d689f039004cefcd26 .selected-f1b27bddecb97be60f431dc0497b1014b426a4df {\r\n    background: #F39814;\r\n    color: white;\r\n}\r\n\r\n.route-list-0b75d16a2a4098ba2da255d689f039004cefcd26 {\r\n    list-style-type: none;\r\n    margin: 0;\r\n    padding: 0;\r\n    width: 60%;\r\n}\r\n\r\n.route-list-0b75d16a2a4098ba2da255d689f039004cefcd26 li {\r\n    margin: 3px;\r\n    padding: 0.4em;\r\n    height: 18px;\r\n    cursor: pointer;\r\n}\r\n\r\n.auto-complete-list-611adf0f7ad7052535586561e841390754941967 {\r\n    position: absolute;\r\n    background-color: #f9f9f9;\r\n    min-width: 160px;\r\n    box-shadow: 0px 8px 16px 0px rgba(0, 0, 0, 0.2);\r\n    padding: 12px 16px;\r\n    z-index: 1;\r\n}\r\n\r\n.auto-complete-list-611adf0f7ad7052535586561e841390754941967 .auto-complete-list-item-d5e58cf5c64669a5368cbbe2a5e6c6a033a6407d {\r\n    color: black;\r\n    padding: 12px 16px;\r\n    text-decoration: none;\r\n    display: block;\r\n}\r\n\r\n.auto-complete-list-611adf0f7ad7052535586561e841390754941967 .auto-complete-list-item-d5e58cf5c64669a5368cbbe2a5e6c6a033a6407d:hover {\r\n    background-color: #ddd;\r\n}\r\n\r\n\r\n/* アコーディオン */\r\n/* マーカー */\r\n.accordion-efadf75ff5a4aecf48cf538df94650e1fffa5235>summary::-webkit-details-marker {\r\n    display: none;\r\n}\r\n\r\n.accordion-efadf75ff5a4aecf48cf538df94650e1fffa5235>summary::before {\r\n    content: \"\";\r\n    position: absolute;\r\n    width: 6px;\r\n    height: 6px;\r\n    border-top: 2px solid #fff;\r\n    border-right: 2px solid #fff;\r\n\r\n    transform: rotate(225deg);\r\n    top: calc(50% - 3px);\r\n    right: 20px;\r\n}\r\n\r\n/* 閉じているとき */\r\n.accordion-efadf75ff5a4aecf48cf538df94650e1fffa5235>summary {\r\n    cursor: grab;\r\n    display: block;\r\n    height: auto;\r\n    padding: 1em;\r\n    width: auto;\r\n    height: auto;\r\n\r\n    background: #019bc656;\r\n    border: solid 1px #00000000\r\n}\r\n\r\n.accordion-efadf75ff5a4aecf48cf538df94650e1fffa5235>* {\r\n    backface-visibility: hidden;\r\n    transform: translateZ(0);\r\n    transition: all 0.3s;\r\n}\r\n\r\n.accordion-efadf75ff5a4aecf48cf538df94650e1fffa5235> :not(summary) {\r\n    margin-bottom: 10px;\r\n    padding: 0 20px;\r\n    border: solid 1px #00000000;\r\n}\r\n\r\n/* 開いたとき */\r\n.accordion-efadf75ff5a4aecf48cf538df94650e1fffa5235[open]>summary {\r\n    background: #c6880156;\r\n}\r\n\r\n.accordion-efadf75ff5a4aecf48cf538df94650e1fffa5235[open]>summary::before {\r\n    transform: rotate(135deg);\r\n}\r\n\r\n.accordion-efadf75ff5a4aecf48cf538df94650e1fffa5235[open]> :not(summary) {\r\n    padding: 20px;\r\n    transition: all 0.3s;\r\n\r\n    border: solid 1px #c6880156;\r\n}\r\n";
 /* harmony default export */ const styles_module = ({
-    "import-text-input": "import-text-input-5a7181ff62b4d5988502f1d06745370271df8300",
-    hidden: "hidden-3421db79400c77950ddfbda0b576ec0e5ff1ebc0",
-    "editable-text": "editable-text-97b1a03d5b8953ed9955b19f27234658feb2822e",
-    "spot-label": "spot-label-518e33793043bf823b267f672670623a81117e25",
-    "properties-editor": "properties-editor-b73ccd7741d3fce6866c85a38b685c0f5a9dadda",
-    "route-list-container": "route-list-container-aa03694ac3d9c8c2bd31f0e51478e4cdf48857c3",
-    "route-list": "route-list-df4fecd4665abc3b388642f8af2a3636e3e735e9",
-    "auto-complete-list": "auto-complete-list-ab45e938918afaad828b76c178ce9bd6582f15a1",
-    "auto-complete-list-item": "auto-complete-list-item-e5e7053c77c06bce42b5082578789d87c74d77cb",
+    "import-text-input": "import-text-input-a323c7b88f7c51e517983dd9192b268b29d00b46",
+    hidden: "hidden-7a533c45ca9c5013cc00dfe0588c6757307bc996",
+    "editable-text": "editable-text-65971de367b1dd04eb094ac98810e1b8b4653946",
+    "spot-label": "spot-label-ad740c4df586bbf047989fd5d18ce1aed7b97bac",
+    "properties-editor": "properties-editor-cb2dbf8dbba67bffa293ba7908cd7ec88fbe785c",
+    "route-list-container": "route-list-container-60af73d1155fe013734e3977188715f2b46057f5",
+    "query-input-field": "query-input-field-ac9c62b3df99d9171bdc4158f42beeca4ec49b20",
+    "route-list": "route-list-0b75d16a2a4098ba2da255d689f039004cefcd26",
+    selecting: "selecting-855cf7326d8ef127b299243736f2c2350bd81ecb",
+    selected: "selected-f1b27bddecb97be60f431dc0497b1014b426a4df",
+    "auto-complete-list": "auto-complete-list-611adf0f7ad7052535586561e841390754941967",
+    "auto-complete-list-item": "auto-complete-list-item-d5e58cf5c64669a5368cbbe2a5e6c6a033a6407d",
+    accordion: "accordion-efadf75ff5a4aecf48cf538df94650e1fffa5235",
 });
 
 ;// CONCATENATED MODULE: ../gas-drivetunnel/source/schemas.ts
@@ -1375,10 +1389,10 @@ function createQuery(expression) {
 
 
 function createQueryEditor(options) {
-    var _a, _b, _c;
+    var _a, _b, _c, _d, _e;
     // TODO: 入力補完
     const completionsContainer = (jsx("div", { class: (_b = (_a = options === null || options === void 0 ? void 0 : options.classNames) === null || _a === void 0 ? void 0 : _a.autoCompleteList) !== null && _b !== void 0 ? _b : "" }));
-    const inputField = addListeners((jsx("textarea", { placeholder: (_c = options === null || options === void 0 ? void 0 : options.placeholder) !== null && _c !== void 0 ? _c : "" })), {
+    const inputField = addListeners((jsx("textarea", { class: (_d = (_c = options === null || options === void 0 ? void 0 : options.classNames) === null || _c === void 0 ? void 0 : _c.inputField) !== null && _d !== void 0 ? _d : "", placeholder: (_e = options === null || options === void 0 ? void 0 : options.placeholder) !== null && _e !== void 0 ? _e : "" })), {
         input() {
             var _a, _b, _c, _d, _e;
             (_a = options === null || options === void 0 ? void 0 : options.onInput) === null || _a === void 0 ? void 0 : _a.call(options, this);
@@ -1749,12 +1763,12 @@ function asyncMain() {
             updateSelectedRouteInfo();
             queueSetRouteCommandDelayed(3000, newRoute);
         }
-        const addRouteElement = addListeners(jsx("a", { children: "\uD83D\uDEB6\uD83C\uDFFD\u65B0\u3057\u3044\u30EB\u30FC\u30C8\u3092\u8FFD\u52A0" }), {
+        const addRouteElement = addListeners(jsx("button", { children: "\uD83D\uDEB6\uD83C\uDFFD\u30EB\u30FC\u30C8\u4F5C\u6210" }), {
             click() {
                 onAddRouteButtonClick("route");
             },
         });
-        const addSpotElement = addListeners(jsx("a", { children: "\uD83D\uDCCD\u65B0\u3057\u3044\u30B9\u30DD\u30C3\u30C8\u3092\u8FFD\u52A0" }), {
+        const addSpotElement = addListeners(jsx("button", { children: "\uD83D\uDCCD\u30B9\u30DD\u30C3\u30C8\u4F5C\u6210" }), {
             click() {
                 onAddRouteButtonClick("spot");
             },
@@ -1797,7 +1811,7 @@ function asyncMain() {
                 },
             },
         });
-        const deleteSelectedRouteElement = addListeners(jsx("a", { children: "\uD83D\uDDD1\uFE0F\u9078\u629E\u4E2D\u306E\u30EB\u30FC\u30C8\u3092\u524A\u9664" }), {
+        const deleteSelectedRouteElement = addListeners(jsx("button", { children: "\uD83D\uDDD1\uFE0F\u524A\u9664" }), {
             click() {
                 const routeId = (state.deleteRouteId = state.selectedRouteId);
                 if (state.routes === "routes-unloaded" || routeId == null)
@@ -1811,19 +1825,16 @@ function asyncMain() {
         });
         function moveToBound(bounds) {
             isMapAutoMoving = true;
-            if (map.getZoom() < map.getBoundsZoom(bounds, true)) {
-                map.fitBounds(bounds);
-            }
-            else {
-                map.panInsideBounds(bounds);
-            }
+            map.panInsideBounds(bounds);
             isMapAutoMoving = false;
         }
-        const moveToRouteElement = addListeners(jsx("a", { children: "\uD83C\uDFAF\u9078\u629E\u4E2D\u306E\u30EB\u30FC\u30C8\u307E\u3067\u79FB\u52D5" }), {
+        const moveToRouteElement = addListeners(jsx("button", { children: "\uD83C\uDFAF\u30B9\u30AF\u30ED\u30FC\u30EB\u3057\u3066\u8868\u793A" }), {
             click() {
                 const route = getSelectedRoute();
                 if (route == null)
                     return;
+                route.listItem.scrollIntoView();
+                onListItemClicked(route.listItem);
                 moveToBound(L.latLngBounds(parseCoordinates(route.route.coordinates)));
             },
         });
@@ -1900,25 +1911,28 @@ function asyncMain() {
             saveQueryHistory(queryText);
         }
         const elementToRouteId = new WeakMap();
+        function onListItemClicked(element) {
+            var _a, _b;
+            const listItems = (_b = (_a = element.parentElement) === null || _a === void 0 ? void 0 : _a.getElementsByTagName("li")) !== null && _b !== void 0 ? _b : [];
+            for (const listItem of listItems) {
+                listItem.classList.remove(styles_module.selected);
+            }
+            element.classList.add(styles_module.selected);
+            const routeId = elementToRouteId.get(element);
+            if (routeId == null)
+                return;
+            selectedRouteListItemUpdated([routeId]);
+        }
         function createRouteListItem(route) {
-            const listItem = (jsx("li", { class: "ui-widget-content", children: route.routeName }));
+            const listItem = addListeners((jsx("li", { class: "ui-widget-content", children: route.routeName })), {
+                click() {
+                    onListItemClicked(this);
+                },
+            });
             elementToRouteId.set(listItem, route.routeId);
             return listItem;
         }
         const routeListElement = (jsx("ol", { class: styles_module["route-list"] }));
-        $(routeListElement).selectable({
-            stop() {
-                const routeIds = [];
-                for (const selectedListItem of routeListElement.querySelectorAll(".ui-selected")) {
-                    const routeId = elementToRouteId.get(selectedListItem);
-                    if (routeId == null) {
-                        continue;
-                    }
-                    routeIds.push(routeId);
-                }
-                selectedRouteListItemUpdated(routeIds);
-            },
-        });
         const setQueryExpressionCancelScope = createAsyncCancelScope(handleAsyncError);
         function setQueryExpressionDelayed(delayMilliseconds, queryText) {
             setQueryExpressionCancelScope((signal) => iitc_plugin_pgo_route_helper_awaiter(this, void 0, void 0, function* () {
@@ -1929,6 +1943,7 @@ function asyncMain() {
         }
         const routeQueryEditorElement = createQueryEditor({
             classNames: {
+                inputField: styles_module["query-input-field"],
                 autoCompleteList: styles_module["auto-complete-list"],
                 autoCompleteListItem: styles_module["auto-complete-list-item"],
             },
@@ -1947,18 +1962,19 @@ function asyncMain() {
                 setQueryExpressionDelayed(500, e.value);
             },
         });
-        const routeListContainer = (jsxs("div", { children: [routeQueryEditorElement, jsx("div", { class: `${styles_module["route-list-container"]}`, children: routeListElement })] }));
-        const editorElement = (jsxs("div", { id: "pgo-route-helper-editor", class: styles_module["properties-editor"], children: [jsx("div", { children: titleElement }), jsx("div", { children: descriptionElement }), jsx("div", { children: notesElement }), jsx("div", { children: coordinatesElement }), jsx("div", { children: lengthElement }), jsx("div", { children: addListeners(jsx("input", { class: styles_module["editable-text"], type: "text", placeholder: "\u30E6\u30FC\u30B6\u30FC\u540D", value: config.userId }), {
-                        change() {
-                            // TODO:
-                            console.log("user name changed");
-                        },
-                    }) }), jsx("div", { children: addRouteElement }), jsx("div", { children: addSpotElement }), jsx("div", { children: deleteSelectedRouteElement }), jsx("div", { children: moveToRouteElement }), routeListContainer, reportElement] }));
+        const selectedRouteButtonContainer = (jsxs("span", { children: [addRouteElement, addSpotElement, deleteSelectedRouteElement, moveToRouteElement] }));
+        const selectedRouteEditorContainer = (jsxs("details", { open: true, class: styles_module.accordion, children: [jsx("summary", { children: titleElement }), jsxs("div", { children: [jsx("div", { children: descriptionElement }), jsx("div", { children: notesElement }), jsx("div", { children: coordinatesElement }), jsx("div", { children: lengthElement }), jsx("div", { children: addListeners(jsx("input", { class: styles_module["editable-text"], type: "text", placeholder: "\u30E6\u30FC\u30B6\u30FC\u540D", value: config.userId }), {
+                                change() {
+                                    // TODO:
+                                    console.log("user name changed");
+                                },
+                            }) }), selectedRouteButtonContainer] })] }));
+        const editorElement = (jsxs("div", { id: "pgo-route-helper-editor", class: styles_module["properties-editor"], children: [selectedRouteEditorContainer, routeQueryEditorElement, jsx("div", { class: styles_module["route-list-container"], children: routeListElement }), reportElement] }));
         document.body.append(editorElement);
+        $(selectedRouteButtonContainer).buttonset();
         const editor = $(editorElement).dialog({
             autoOpen: false,
             title: "ルート",
-            resizable: true,
             height: "auto",
             width: "auto",
         });

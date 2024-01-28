@@ -356,7 +356,12 @@ async function asyncMain() {
 
     const titleElement = addListeners(
         (
-            <input type="text" placeholder="タイトル" readOnly></input>
+            <input
+                class={classNames.title}
+                type="text"
+                placeholder="タイトル"
+                readOnly
+            ></input>
         ) as HTMLInputElement,
         {
             input() {

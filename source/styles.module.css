@@ -50,7 +50,14 @@ input.editable-text {
 
 .properties-editor textarea,
 .properties-editor input {
+    box-sizing: border-box;
+    width: 100%;
+    resize: vertical;
+
     font-family: Arial, Helvetica, sans-serif;
+}
+.properties-editor input.title {
+    width: auto;
 }
 
 .query-input-field {
@@ -117,7 +124,7 @@ input.editable-text {
 
     transform: rotate(225deg);
     top: calc(50% - 3px);
-    right: 20px;
+    right: 1em;
 }
 
 /* 閉じているとき */
@@ -125,7 +132,7 @@ input.editable-text {
     cursor: grab;
     display: block;
     height: auto;
-    padding: 1em;
+    padding: 3px;
     width: auto;
     height: auto;
 
@@ -140,8 +147,8 @@ input.editable-text {
 }
 
 .accordion> :not(summary) {
-    margin-bottom: 10px;
-    padding: 0 20px;
+    margin-bottom: 6px;
+    padding: 0 3px;
     border: solid 1px #00000000;
 }
 
@@ -155,7 +162,7 @@ input.editable-text {
 }
 
 .accordion[open]> :not(summary) {
-    padding: 20px;
+    padding: 3px;
     transition: all 0.3s;
 
     border: solid 1px #c6880156;
