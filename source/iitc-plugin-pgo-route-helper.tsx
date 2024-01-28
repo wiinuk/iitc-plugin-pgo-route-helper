@@ -575,17 +575,16 @@ async function asyncMain() {
     );
     function moveToBound(bounds: L.LatLngBounds) {
         isMapAutoMoving = true;
-        if (map.getZoom() < map.getBoundsZoom(bounds, true)) {
-            map.fitBounds(bounds);
-        } else {
-            map.panInsideBounds(bounds);
-        }
+        map.panInsideBounds(bounds);
         isMapAutoMoving = false;
     }
     const moveToRouteElement = addListeners(<a>🎯選択中のルートまで移動</a>, {
         click() {
             const route = getSelectedRoute();
             if (route == null) return;
+
+            route.listItem.scrollIntoView();
+            onListItemClicked(route.listItem);
             moveToBound(
                 L.latLngBounds(parseCoordinates(route.route.coordinates))
             );
@@ -671,10 +670,29 @@ async function asyncMain() {
     }
 
     const elementToRouteId = new WeakMap<Element, string>();
+    function onListItemClicked(element: HTMLElement) {
+        const listItems =
+            element.parentElement?.getElementsByTagName("li") ?? [];
+        for (const listItem of listItems) {
+            listItem.classList.remove(classNames.selected);
+        }
+        element.classList.add(classNames.selected);
+
+        const routeId = elementToRouteId.get(element);
+        if (routeId == null) return;
+        selectedRouteListItemUpdated([routeId]);
+    }
     function createRouteListItem(route: Route) {
-        const listItem = (
-            <li class="ui-widget-content">{route.routeName}</li>
-        ) as HTMLLIElement;
+        const listItem = addListeners(
+            (
+                <li class="ui-widget-content">{route.routeName}</li>
+            ) as HTMLLIElement,
+            {
+                click() {
+                    onListItemClicked(this);
+                },
+            }
+        );
         elementToRouteId.set(listItem, route.routeId);
         return listItem;
     }
@@ -682,21 +700,6 @@ async function asyncMain() {
         <ol class={classNames["route-list"]}></ol>
     ) as HTMLOListElement;
 
-    $(routeListElement).selectable({
-        stop() {
-            const routeIds = [];
-            for (const selectedListItem of routeListElement.querySelectorAll(
-                ".ui-selected"
-            )) {
-                const routeId = elementToRouteId.get(selectedListItem);
-                if (routeId == null) {
-                    continue;
-                }
-                routeIds.push(routeId);
-            }
-            selectedRouteListItemUpdated(routeIds);
-        },
-    });
     const setQueryExpressionCancelScope =
         createAsyncCancelScope(handleAsyncError);
     function setQueryExpressionDelayed(

@@ -42,10 +42,10 @@ input.editable-text {
     max-height: 10rem;
     overflow: scroll;
 }
-.route-list [class~=ui-selecting] {
+.route-list .selecting {
     background: #FECA40;
 }
-.route-list [class~=ui-selected] {
+.route-list .selected {
     background: #F39814;
     color: white;
 }
