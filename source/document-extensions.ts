@@ -126,3 +126,18 @@ export function parseCssColor(
     result.a = a === undefined ? 1 : parseFloat(a);
     return result;
 }
+type HTMLEventListenerMap<E> = {
+    readonly [k in keyof HTMLElementEventMap]?: (
+        this: E,
+        event: HTMLElementEventMap[k]
+    ) => void;
+};
+export function addListeners<E extends HTMLElement>(
+    element: E,
+    eventListenerMap: HTMLEventListenerMap<E>
+) {
+    for (const [type, listener] of Object.entries(eventListenerMap)) {
+        element.addEventListener(type, listener as EventListener);
+    }
+    return element;
+}

@@ -1,6 +1,10 @@
-// spell-checker: ignore layeradd drivetunnel latlngschanged lngs latlng
+// spell-checker: ignore layeradd drivetunnel latlngschanged lngs latlng moveend
 import { z } from "../../gas-drivetunnel/source/json-schema";
-import { addStyle, waitElementLoaded } from "./document-extensions";
+import {
+    addListeners,
+    addStyle,
+    waitElementLoaded,
+} from "./document-extensions";
 import {
     coordinatesPattern,
     parseCoordinates,
@@ -28,6 +32,8 @@ import { createPolylineEditorPlugin } from "./polyline-editor";
 import jqueryUIPolyfillTouchEvents from "./jquery-ui-polyfill-touch-events";
 import type { LastOfArray } from "./type-level";
 import { getEmptyQuery, createQuery, type RouteQuery } from "./query";
+import { array } from "./json-spec";
+import { createQueryEditor } from "./query-editor";
 
 function handleAsyncError(promise: Promise<void>) {
     promise.catch((error: unknown) => {
@@ -47,35 +53,27 @@ export function main() {
     handleAsyncError(asyncMain());
 }
 
-type HTMLEventListenerMap<E> = {
-    readonly [k in keyof HTMLElementEventMap]?: (
-        this: E,
-        event: HTMLElementEventMap[k]
-    ) => void;
-};
-function addListeners<E extends HTMLElement>(
-    element: E,
-    eventListenerMap: HTMLEventListenerMap<E>
-) {
-    for (const [type, listener] of Object.entries(eventListenerMap)) {
-        element.addEventListener(type, listener as EventListener);
-    }
-    return element;
+function getConfigureSchemas() {
+    const configV1Properties = {
+        version: z.literal("1"),
+        userId: z.string().optional(),
+    };
+    const configV1Schema = z.strictObject(configV1Properties);
+    const configV2Properties = {
+        ...configV1Properties,
+        version: z.literal("2"),
+        apiRoot: z.string().optional(),
+    };
+    const configV2Schema = z.strictObject(configV2Properties);
+    const configV3Properties = {
+        ...configV2Properties,
+        version: z.literal("3"),
+        routeQueries: z.array(z.string()).optional(),
+    };
+    const configV3Schema = z.strictObject(configV3Properties);
+    return [configV1Schema, configV2Schema, configV3Schema] as const;
 }
-
-const configV1Properties = {
-    version: z.literal("1"),
-    userId: z.string().optional(),
-};
-const configV1Schema = z.strictObject(configV1Properties);
-const configV2Properties = {
-    ...configV1Properties,
-    version: z.literal("2"),
-    apiRoot: z.string().optional(),
-};
-const configV2Schema = z.strictObject(configV2Properties);
-const configSchemas = [configV1Schema, configV2Schema] as const;
-
+const configSchemas = getConfigureSchemas();
 const configVAnySchema = z.union(configSchemas);
 type ConfigVAny = z.infer<typeof configVAnySchema>;
 type Config = z.infer<LastOfArray<typeof configSchemas>>;
@@ -87,11 +85,18 @@ const storageConfigKey = "pgo-route-helper-config";
 function upgradeConfig(config: ConfigVAny): Config {
     switch (config.version) {
         case "1":
-            return {
+            return upgradeConfig({
                 ...config,
                 version: "2",
-            };
+                apiRoot: undefined,
+            });
         case "2":
+            return upgradeConfig({
+                ...config,
+                version: "3",
+                routeQueries: undefined,
+            });
+        case "3":
             return config;
     }
 }
@@ -105,7 +110,7 @@ function loadConfig(): Config {
         console.error(e);
     }
     return {
-        version: "2",
+        version: "3",
     };
 }
 function saveConfig(config: Config) {
@@ -175,12 +180,12 @@ async function asyncMain() {
         selectedRouteId: null | string;
         deleteRouteId: null | string;
         routes: "routes-unloaded" | Map<string, RouteWithView>;
-        routeListQuery: RouteQuery;
+        routeListQuery: Readonly<{ queryText: string; query: RouteQuery }>;
     } = {
         selectedRouteId: null,
         deleteRouteId: null,
         routes: "routes-unloaded",
-        routeListQuery: getEmptyQuery(),
+        routeListQuery: { queryText: "", query: getEmptyQuery() },
     };
 
     const progress = (
@@ -628,6 +633,20 @@ async function asyncMain() {
             moveToBound(bounds);
         }
     }
+    function saveQueryHistory(queryText: string) {
+        const maxHistoryCount = 10;
+        let history = config.routeQueries ?? [];
+        history = history.filter((q) => q.trim() !== queryText.trim());
+        history.push(queryText);
+        if (!history.includes(queryText.trim())) {
+            history.push(queryText);
+        }
+        if (maxHistoryCount < history.length) {
+            history = history.slice(-maxHistoryCount);
+        }
+        config.routeQueries = history;
+        saveConfig(config);
+    }
     function updateRoutesListItem(route: Route, listItem: HTMLLIElement) {
         listItem.innerText = route.routeName;
     }
@@ -639,13 +658,17 @@ async function asyncMain() {
         while (routeListElement.firstChild) {
             routeListElement.removeChild(routeListElement.firstChild);
         }
-        const { predicate } = state.routeListQuery;
+        const {
+            queryText,
+            query: { predicate },
+        } = state.routeListQuery;
         for (const { route, listItem } of state.routes.values()) {
             if (predicate(route)) {
                 updateRoutesListItem(route, listItem);
                 routeListElement.appendChild(listItem);
             }
         }
+        saveQueryHistory(queryText);
     }
 
     const elementToRouteId = new WeakMap<Element, string>();
@@ -679,27 +702,36 @@ async function asyncMain() {
         createAsyncCancelScope(handleAsyncError);
     function setQueryExpressionDelayed(
         delayMilliseconds: number,
-        expression: string
+        queryText: string
     ) {
         setQueryExpressionCancelScope(async (signal) => {
             await sleep(delayMilliseconds, { signal });
-            state.routeListQuery = createQuery(expression);
+            state.routeListQuery = { queryText, query: createQuery(queryText) };
             updateRoutesListElement();
         });
     }
-    const routeSearchInputElement = addListeners(
-        (
-            <input type="text" placeholder="🔍ルート検索"></input>
-        ) as HTMLInputElement,
-        {
-            input() {
-                setQueryExpressionDelayed(500, this.value);
-            },
-        }
-    );
+    const routeQueryEditorElement = createQueryEditor({
+        classNames: {
+            autoCompleteList: classNames["auto-complete-list"],
+            autoCompleteListItem: classNames["auto-complete-list-item"],
+        },
+        initialText: config.routeQueries?.at(-1) ?? "",
+        placeholder: "🔍ルート検索",
+        getCompletions() {
+            return config.routeQueries?.reverse()?.map((queryText) => {
+                return {
+                    displayText: queryText,
+                    complete: () => queryText,
+                };
+            });
+        },
+        onInput(e) {
+            setQueryExpressionDelayed(500, e.value);
+        },
+    });
     const routeListContainer = (
         <div>
-            {routeSearchInputElement}
+            {routeQueryEditorElement}
             <div class={`${classNames["route-list-container"]}`}>
                 {routeListElement}
             </div>
