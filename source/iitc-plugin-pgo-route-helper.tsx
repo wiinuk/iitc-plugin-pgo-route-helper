@@ -507,12 +507,12 @@ async function asyncMain() {
 
         queueSetRouteCommandDelayed(3000, newRoute);
     }
-    const addRouteElement = addListeners(<a>🚶🏽新しいルートを追加</a>, {
+    const addRouteElement = addListeners(<button>🚶🏽ルート作成</button>, {
         click() {
             onAddRouteButtonClick("route");
         },
     });
-    const addSpotElement = addListeners(<a>📍新しいスポットを追加</a>, {
+    const addSpotElement = addListeners(<button>📍スポット作成</button>, {
         click() {
             onAddRouteButtonClick("spot");
         },
@@ -558,27 +558,23 @@ async function asyncMain() {
             },
         },
     });
-    const deleteSelectedRouteElement = addListeners(
-        <a>🗑️選択中のルートを削除</a>,
-        {
-            click() {
-                const routeId = (state.deleteRouteId = state.selectedRouteId);
-                if (state.routes === "routes-unloaded" || routeId == null)
-                    return;
-                const view = state.routes.get(routeId);
-                if (view == null) return;
+    const deleteSelectedRouteElement = addListeners(<button>🗑️削除</button>, {
+        click() {
+            const routeId = (state.deleteRouteId = state.selectedRouteId);
+            if (state.routes === "routes-unloaded" || routeId == null) return;
+            const view = state.routes.get(routeId);
+            if (view == null) return;
 
-                deleteConfirmationElement.innerText = `${view.route.routeName} を削除しますか？`;
-                deleteConfirmation.dialog("open");
-            },
-        }
-    );
+            deleteConfirmationElement.innerText = `${view.route.routeName} を削除しますか？`;
+            deleteConfirmation.dialog("open");
+        },
+    });
     function moveToBound(bounds: L.LatLngBounds) {
         isMapAutoMoving = true;
         map.panInsideBounds(bounds);
         isMapAutoMoving = false;
     }
-    const moveToRouteElement = addListeners(<a>🎯選択中のルートまで移動</a>, {
+    const moveToRouteElement = addListeners(<button>🎯移動</button>, {
         click() {
             const route = getSelectedRoute();
             if (route == null) return;
@@ -732,12 +728,53 @@ async function asyncMain() {
         },
     });
     const routeListContainer = (
-        <div>
-            {routeQueryEditorElement}
-            <div class={`${classNames["route-list-container"]}`}>
-                {routeListElement}
+        <details open class={classNames.accordion}>
+            <summary>ルート一覧</summary>
+            <div>
+                {routeQueryEditorElement}
+                <div class={`${classNames["route-list-container"]}`}>
+                    {routeListElement}
+                </div>
             </div>
-        </div>
+        </details>
+    );
+
+    const selectedRouteButtonContainer = (
+        <span>
+            {addRouteElement}
+            {addSpotElement}
+            {deleteSelectedRouteElement}
+            {moveToRouteElement}
+        </span>
+    );
+
+    const selectedRouteEditorContainer = (
+        <details open class={classNames.accordion}>
+            <summary>{titleElement}</summary>
+            <div>
+                <div>{descriptionElement}</div>
+                <div>{notesElement}</div>
+                <div>{coordinatesElement}</div>
+                <div>{lengthElement}</div>
+                <div>
+                    {addListeners(
+                        <input
+                            class={classNames["editable-text"]}
+                            type="text"
+                            placeholder="ユーザー名"
+                            value={config.userId}
+                        />,
+                        {
+                            change() {
+                                // TODO:
+                                console.log("user name changed");
+                            },
+                        }
+                    )}
+                </div>
+                {selectedRouteButtonContainer}
+            </div>
+        </details>
     );
 
     const editorElement = (
@@ -745,41 +782,18 @@ async function asyncMain() {
             id="pgo-route-helper-editor"
             class={classNames["properties-editor"]}
         >
-            <div>{titleElement}</div>
-            <div>{descriptionElement}</div>
-            <div>{notesElement}</div>
-            <div>{coordinatesElement}</div>
-            <div>{lengthElement}</div>
-            <div>
-                {addListeners(
-                    <input
-                        class={classNames["editable-text"]}
-                        type="text"
-                        placeholder="ユーザー名"
-                        value={config.userId}
-                    />,
-                    {
-                        change() {
-                            // TODO:
-                            console.log("user name changed");
-                        },
-                    }
-                )}
-            </div>
-            <div>{addRouteElement}</div>
-            <div>{addSpotElement}</div>
-            <div>{deleteSelectedRouteElement}</div>
-            <div>{moveToRouteElement}</div>
+            {selectedRouteEditorContainer}
             {routeListContainer}
             {reportElement}
         </div>
     );
     document.body.append(editorElement);
 
+    $(selectedRouteButtonContainer).buttonset();
+
     const editor = $(editorElement).dialog({
         autoOpen: false,
         title: "ルート",
-        resizable: true,
         height: "auto",
         width: "auto",
     });

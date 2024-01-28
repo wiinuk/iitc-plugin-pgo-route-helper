@@ -10,9 +10,11 @@
     justify-content: center;
     align-items: center;
 }
+
 .import-text-input.hidden {
     display: none;
 }
+
 input.editable-text {
     border: none;
     background: none;
@@ -42,19 +44,23 @@ input.editable-text {
     max-height: 10rem;
     overflow: scroll;
 }
+
 .route-list .selecting {
     background: #FECA40;
 }
+
 .route-list .selected {
     background: #F39814;
     color: white;
 }
+
 .route-list {
     list-style-type: none;
     margin: 0;
     padding: 0;
     width: 60%;
 }
+
 .route-list li {
     margin: 3px;
     padding: 0.4em;
@@ -66,16 +72,74 @@ input.editable-text {
     position: absolute;
     background-color: #f9f9f9;
     min-width: 160px;
-    box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+    box-shadow: 0px 8px 16px 0px rgba(0, 0, 0, 0.2);
     padding: 12px 16px;
     z-index: 1;
 }
+
 .auto-complete-list .auto-complete-list-item {
     color: black;
     padding: 12px 16px;
     text-decoration: none;
     display: block;
 }
+
 .auto-complete-list .auto-complete-list-item:hover {
     background-color: #ddd;
+}
+
+
+/* アコーディオン */
+/* マーカー */
+.accordion > summary::-webkit-details-marker {
+    display: none;
+}
+.accordion > summary::before {
+    content: "";
+    position: absolute;
+    width: 6px;
+    height: 6px;
+    border-top: 2px solid #fff;
+    border-right: 2px solid #fff;
+
+    transform: rotate(225deg);
+    top: calc(50% - 3px);
+    right: 20px;
+}
+
+/* 閉じているとき */
+.accordion > summary {
+    cursor: grab;
+    display: block;
+    height: auto;
+    padding: 1em;
+    width: auto;
+    height: auto;
+
+    background: #019bc656;
+    border: solid 1px #00000000
+}
+.accordion > * {
+    backface-visibility: hidden;
+    transform: translateZ(0);
+    transition: all 0.3s;
+}
+.accordion > :not(summary) {
+    margin-bottom: 10px;
+    padding: 0 20px;
+    border: solid 1px #00000000;
+}
+
+/* 開いたとき */
+.accordion[open] > summary {
+    background: #c6880156;
+}
+.accordion[open] > summary::before {
+    transform: rotate(135deg);
+}
+.accordion[open] > :not(summary) {
+    padding: 20px;
+    transition: all 0.3s;
+
+    border: solid 1px #c6880156;
 }
