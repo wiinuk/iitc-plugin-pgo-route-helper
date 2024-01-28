@@ -574,18 +574,21 @@ async function asyncMain() {
         map.panInsideBounds(bounds);
         isMapAutoMoving = false;
     }
-    const moveToRouteElement = addListeners(<button>🎯移動</button>, {
-        click() {
-            const route = getSelectedRoute();
-            if (route == null) return;
+    const moveToRouteElement = addListeners(
+        <button>🎯スクロールして表示</button>,
+        {
+            click() {
+                const route = getSelectedRoute();
+                if (route == null) return;
 
-            route.listItem.scrollIntoView();
-            onListItemClicked(route.listItem);
-            moveToBound(
-                L.latLngBounds(parseCoordinates(route.route.coordinates))
-            );
-        },
-    });
+                route.listItem.scrollIntoView();
+                onListItemClicked(route.listItem);
+                moveToBound(
+                    L.latLngBounds(parseCoordinates(route.route.coordinates))
+                );
+            },
+        }
+    );
 
     let lastManualMapView: { center: L.LatLng; zoom: number } | null = null;
     let isMapAutoMoving = false;
@@ -710,6 +713,7 @@ async function asyncMain() {
     }
     const routeQueryEditorElement = createQueryEditor({
         classNames: {
+            inputField: classNames["query-input-field"],
             autoCompleteList: classNames["auto-complete-list"],
             autoCompleteListItem: classNames["auto-complete-list-item"],
         },
@@ -727,18 +731,6 @@ async function asyncMain() {
             setQueryExpressionDelayed(500, e.value);
         },
     });
-    const routeListContainer = (
-        <details open class={classNames.accordion}>
-            <summary>ルート一覧</summary>
-            <div>
-                {routeQueryEditorElement}
-                <div class={`${classNames["route-list-container"]}`}>
-                    {routeListElement}
-                </div>
-            </div>
-        </details>
-    );
-
     const selectedRouteButtonContainer = (
         <span>
             {addRouteElement}
@@ -783,7 +775,10 @@ async function asyncMain() {
             class={classNames["properties-editor"]}
         >
             {selectedRouteEditorContainer}
-            {routeListContainer}
+            {routeQueryEditorElement}
+            <div class={classNames["route-list-container"]}>
+                {routeListElement}
+            </div>
             {reportElement}
         </div>
     );

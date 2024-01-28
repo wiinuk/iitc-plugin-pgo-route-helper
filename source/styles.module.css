@@ -35,14 +35,26 @@ input.editable-text {
     pointer-events: none;
 }
 
+.properties-editor {
+    display: flex;
+    flex-direction: column;
+    resize: both;
+    overflow: auto;
+    max-width: 100%;
+    max-height: 100vh;
+}
+.route-list-container {
+    flex-grow: 1;
+    overflow: auto;
+}
+
 .properties-editor textarea,
 .properties-editor input {
     font-family: Arial, Helvetica, sans-serif;
 }
 
-.route-list-container {
-    max-height: 10rem;
-    overflow: scroll;
+.query-input-field {
+    height: 1.5em;
 }
 
 .route-list .selecting {
@@ -91,10 +103,11 @@ input.editable-text {
 
 /* アコーディオン */
 /* マーカー */
-.accordion > summary::-webkit-details-marker {
+.accordion>summary::-webkit-details-marker {
     display: none;
 }
-.accordion > summary::before {
+
+.accordion>summary::before {
     content: "";
     position: absolute;
     width: 6px;
@@ -108,7 +121,7 @@ input.editable-text {
 }
 
 /* 閉じているとき */
-.accordion > summary {
+.accordion>summary {
     cursor: grab;
     display: block;
     height: auto;
@@ -119,25 +132,29 @@ input.editable-text {
     background: #019bc656;
     border: solid 1px #00000000
 }
-.accordion > * {
+
+.accordion>* {
     backface-visibility: hidden;
     transform: translateZ(0);
     transition: all 0.3s;
 }
-.accordion > :not(summary) {
+
+.accordion> :not(summary) {
     margin-bottom: 10px;
     padding: 0 20px;
     border: solid 1px #00000000;
 }
 
 /* 開いたとき */
-.accordion[open] > summary {
+.accordion[open]>summary {
     background: #c6880156;
 }
-.accordion[open] > summary::before {
+
+.accordion[open]>summary::before {
     transform: rotate(135deg);
 }
-.accordion[open] > :not(summary) {
+
+.accordion[open]> :not(summary) {
     padding: 20px;
     transition: all 0.3s;
 

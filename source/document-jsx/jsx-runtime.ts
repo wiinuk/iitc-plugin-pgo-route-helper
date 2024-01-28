@@ -52,7 +52,7 @@ type ElementProperties<TName extends keyof KnownElementTagNameMap> = {
         TName,
         k
     >["name"]]?: KnownAttributeNameAndType<TName, k>["type"];
-} & KnownExtendedAttributes<TName>;
+} & KnownExtendedAttributes<TName> & { readonly classList?: readonly string[] };
 
 type falsy = false | null | undefined | 0 | "" | void;
 interface JsxOption {
@@ -81,6 +81,15 @@ export function jsxs<TName extends keyof KnownElementTagNameMap>(
         if (key === "style" && typeof value === "function") {
             value(element.style);
             continue;
+        }
+        if (key === "classList") {
+            if (typeof value === "string") {
+                element.classList.add(name);
+            } else {
+                for (const name of value as readonly string[]) {
+                    element.classList.add(name);
+                }
+            }
         }
         element.setAttribute(key, String(value));
     }

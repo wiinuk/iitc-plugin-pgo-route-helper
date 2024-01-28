@@ -10,6 +10,7 @@ export function createQueryEditor(
         initialText?: string;
         placeholder?: string;
         classNames?: Readonly<{
+            inputField?: string;
             autoCompleteList: string;
             autoCompleteListItem: string;
         }>;
@@ -28,7 +29,10 @@ export function createQueryEditor(
     );
     const inputField = addListeners(
         (
-            <textarea placeholder={options?.placeholder ?? ""}>{}</textarea>
+            <textarea
+                class={options?.classNames?.inputField ?? ""}
+                placeholder={options?.placeholder ?? ""}
+            ></textarea>
         ) as HTMLTextAreaElement,
         {
             input() {
