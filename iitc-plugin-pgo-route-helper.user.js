@@ -6,7 +6,7 @@
 // @downloadURL  https://github.com/wiinuk/iitc-plugin-pgo-route-helper/raw/master/iitc-plugin-pgo-route-helper.user.js
 // @updateURL    https://github.com/wiinuk/iitc-plugin-pgo-route-helper/raw/master/iitc-plugin-pgo-route-helper.user.js
 // @homepageURL  https://github.com/wiinuk/iitc-plugin-pgo-route-helper
-// @version      0.9.1
+// @version      0.9.2
 // @description  IITC plugin to assist in Pokémon GO route creation.
 // @author       Wiinuk
 // @include      https://*.ingress.com/intel*
@@ -697,6 +697,12 @@ function getRouteTags(route) {
         return tags;
     }
     return undefined;
+}
+function setRouteIsTemplate(route, isTemplate) {
+    route.data["isTemplate"] = isTemplate || undefined;
+}
+function getRouteIsTemplate(route) {
+    return route.data["isTemplate"] === true;
 }
 
 ;// CONCATENATED MODULE: ./source/styles.module.css
@@ -1426,7 +1432,7 @@ var iitc_plugin_pgo_route_helper_awaiter = (undefined && undefined.__awaiter) ||
     });
 };
 
-// spell-checker: ignore layeradd drivetunnel latlngschanged lngs latlng moveend
+// spell-checker: ignore layeradd drivetunnel latlngschanged lngs latlng moveend buttonset
 
 
 
@@ -1759,6 +1765,21 @@ function asyncMain() {
                 note: "",
             };
             setRouteKind(newRoute, kind);
+            // テンプレートから各種データをコピー
+            let templateRoute;
+            routes.forEach((route) => {
+                if (getRouteIsTemplate(route.route)) {
+                    templateRoute = route;
+                }
+            });
+            if (templateRoute && getRouteKind(templateRoute.route) === kind) {
+                const r = templateRoute.route;
+                newRoute.routeName = r.routeName;
+                newRoute.data = structuredClone(r.data);
+                newRoute.description = r.description;
+                newRoute.note = r.note;
+                setRouteIsTemplate(newRoute, false);
+            }
             addRouteView(routes, newRoute);
             state.selectedRouteId = newRoute.routeId;
             updateSelectedRouteInfo();
@@ -1837,6 +1858,27 @@ function asyncMain() {
                 route.listItem.scrollIntoView();
                 onListItemClicked(route.listItem);
                 moveToBound(L.latLngBounds(parseCoordinates(route.route.coordinates)));
+            },
+        });
+        const setAsTemplateElement = addListeners(jsx("button", { children: "\uD83D\uDCD1\u30C6\u30F3\u30D7\u30EC\u30FC\u30C8\u3068\u3057\u3066\u8A2D\u5B9A" }), {
+            click() {
+                const selectedRoute = getSelectedRoute();
+                if (selectedRoute == null)
+                    return;
+                const routes = state.routes !== "routes-unloaded" && state.routes;
+                if (!routes) {
+                    return;
+                }
+                for (const { route } of routes.values()) {
+                    if (getRouteIsTemplate(route)) {
+                        setRouteIsTemplate(route, false);
+                        queueSetRouteCommandDelayed(3000, route);
+                        updateRouteView(route.routeId);
+                    }
+                }
+                setRouteIsTemplate(selectedRoute.route, true);
+                queueSetRouteCommandDelayed(3000, selectedRoute.route);
+                updateSelectedRouteInfo();
             },
         });
         let lastManualMapView = null;
@@ -1963,7 +2005,7 @@ function asyncMain() {
                 setQueryExpressionDelayed(500, e.value);
             },
         });
-        const selectedRouteButtonContainer = (jsxs("span", { children: [addRouteElement, addSpotElement, deleteSelectedRouteElement, moveToRouteElement] }));
+        const selectedRouteButtonContainer = (jsxs("span", { children: [addRouteElement, addSpotElement, deleteSelectedRouteElement, moveToRouteElement, setAsTemplateElement] }));
         const selectedRouteEditorContainer = (jsxs("details", { open: true, class: styles_module.accordion, children: [jsx("summary", { children: titleElement }), jsxs("div", { children: [jsx("div", { children: descriptionElement }), jsx("div", { children: notesElement }), jsx("div", { children: coordinatesElement }), jsx("div", { children: lengthElement }), jsx("div", { children: addListeners(jsx("input", { class: styles_module["editable-text"], type: "text", placeholder: "\u30E6\u30FC\u30B6\u30FC\u540D", value: config.userId }), {
                                 change() {
                                     // TODO:
@@ -1993,14 +2035,24 @@ function asyncMain() {
             }
             return (_a = state.routes.get(state.selectedRouteId)) !== null && _a !== void 0 ? _a : standard_extensions_error `internal error`;
         }
+        function updateRouteView(routeId) {
+            var _a, _b;
+            const route = state.routes !== "routes-unloaded" && state.routes.get(routeId);
+            if (!route)
+                return;
+            route.coordinatesEditor.update(route.route);
+            updateRoutesListItem(route.route, route.listItem);
+            if (((_b = (_a = getSelectedRoute()) === null || _a === void 0 ? void 0 : _a.route) === null || _b === void 0 ? void 0 : _b.routeId) === routeId) {
+                setEditorElements(route.route);
+            }
+        }
         function updateSelectedRouteInfo() {
-            const selectedRoute = getSelectedRoute();
-            if (selectedRoute == null) {
+            const routeId = state.selectedRouteId;
+            if (routeId == null) {
+                setEditorElements(undefined);
                 return;
             }
-            setEditorElements(selectedRoute.route);
-            selectedRoute.coordinatesEditor.update(selectedRoute.route);
-            updateRoutesListItem(selectedRoute.route, selectedRoute.listItem);
+            updateRouteView(routeId);
         }
         function createRouteView({ routeId, coordinates }, routeMap) {
             const layer = polylineEditor(parseCoordinates(coordinates), {
