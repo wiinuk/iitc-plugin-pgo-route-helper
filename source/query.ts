@@ -1,19 +1,17 @@
 // spell-checker: ignore drivetunnel
 import { z } from "../../gas-drivetunnel/source/json-schema";
-import type {
-    Json,
-    Schema,
-} from "../../gas-drivetunnel/source/json-schema-core";
+import type { Json as MutableJson } from "../../gas-drivetunnel/source/json-schema-core";
+import { evaluateExpression, type Expression } from "./query-expression";
 import {
     getRouteKind,
     getRouteTags,
     type Coordinate,
     type Route,
 } from "./route";
-import { exhaustive } from "./standard-extensions";
+import type { Json } from "./standard-extensions";
 
 function eachJsonStrings(
-    json: Json,
+    json: MutableJson,
     action: (text: string) => "break" | undefined
 ) {
     if (json === null) return;
@@ -74,6 +72,8 @@ function includesAmbiguousTextInRoute(route: Route, word: string) {
 
 interface UnitQuery {
     predicate(route: Route): boolean;
+    getTitle(route: Route): string | null;
+    getDescription(route: Route): string | null;
 }
 export interface RouteQuery {
     initialize(environment: QueryEnvironment): UnitQuery;
@@ -81,6 +81,12 @@ export interface RouteQuery {
 const emptyUnit: UnitQuery = {
     predicate() {
         return true;
+    },
+    getTitle() {
+        return null;
+    },
+    getDescription() {
+        return null;
     },
 };
 export function getEmptyQuery(): RouteQuery {
@@ -90,10 +96,13 @@ export function getEmptyQuery(): RouteQuery {
         },
     };
 }
-export type QueryCreateResult = { query: RouteQuery; diagnostics: string[] };
-function createSimpleQuery(expression: string): RouteQuery {
-    const words = expression.split(/\s+/);
+export type QueryCreateResult = {
+    query: () => RouteQuery;
+    diagnostics: string[];
+};
+function includes(words: readonly string[]): RouteQuery {
     const unit: UnitQuery = {
+        ...emptyUnit,
         predicate(route) {
             for (const word of words) {
                 if (!includesAmbiguousTextInRoute(route, word)) {
@@ -109,7 +118,11 @@ function createSimpleQuery(expression: string): RouteQuery {
         },
     };
 }
-function tryParseJson(text: string): Json | undefined {
+
+function createSimpleQuery(expression: string): RouteQuery {
+    return includes(expression.split(/\s+/));
+}
+function tryParseJson(text: string): MutableJson | undefined {
     try {
         return JSON.parse(text);
     } catch {
@@ -122,38 +135,6 @@ function toStrictJson(text: string) {
         .replace(/,\s*\]/g, `]`);
 }
 
-type JsonQuery = Variable | Includes | And | Or | Not | With;
-type Variable = "reachable";
-type Includes = readonly ["includes", string];
-type And = readonly ["and", JsonQuery[]];
-type Or = readonly ["or", JsonQuery[]];
-type Not = readonly ["not", JsonQuery];
-type With = readonly [
-    "with",
-    { location?: readonly [number, number] | null },
-    JsonQuery
-];
-
-function createJsonQuerySyntaxSchema() {
-    const query: Schema<JsonQuery> = z.delayed(() =>
-        z.union([variables, includes, and, or, not, with_])
-    );
-    const variables = z.literal("reachable");
-    const includes = z.tuple([z.literal("includes"), z.string()]);
-    const and = z.tuple([z.literal("and"), z.array(query)]);
-    const or = z.tuple([z.literal("or"), z.array(query)]);
-    const not = z.tuple([z.literal("not"), query]);
-    const command = z.strictObject({
-        location: z.union([
-            z.tuple([z.number(), z.number()]).optional(),
-            z.null(),
-        ]),
-    });
-    const with_ = z.tuple([z.literal("with"), command, query]);
-    return query;
-}
-const jsonQuerySyntaxSchema = createJsonQuerySyntaxSchema();
-
 const reachable: RouteQuery = {
     initialize({ getUserCoordinate, distance }) {
         const userCoordinate = getUserCoordinate();
@@ -161,6 +142,7 @@ const reachable: RouteQuery = {
             return emptyUnit;
         }
         return {
+            ...emptyUnit,
             predicate(route) {
                 return (
                     getRouteKind(route) === "spot" &&
@@ -170,82 +152,103 @@ const reachable: RouteQuery = {
         };
     },
 };
-function jsonSyntaxToQuery(syntax: JsonQuery): RouteQuery {
-    if (typeof syntax === "string") {
-        switch (syntax) {
-            case "reachable":
-                return reachable;
-            default:
-                return exhaustive(syntax);
+
+const library = {
+    ["tag?"](route: Route, tagNames: readonly string[]) {
+        const tags = getRouteTags(route);
+        if (tags === undefined) return false;
+        for (const name of tagNames) {
+            if (name in tags) return true;
         }
-    }
-    if (syntax[0] === "includes") {
-        const query = normalize(syntax[1]);
+        return false;
+    },
+    concat(strings: readonly string[]) {
+        return strings.join("");
+    },
+    getTitle(route: Route) {
+        return route.routeName;
+    },
+    getDescription(route: Route) {
+        return route.description;
+    },
+    includes(...words: string[]) {
+        return includes(words);
+    },
+    reachable,
+    and(...queries: RouteQuery[]): RouteQuery {
         return {
-            initialize() {
+            initialize(e) {
+                const units = queries.map((q) => q.initialize(e));
                 return {
-                    predicate(route) {
-                        return includesAmbiguousTextInRoute(route, query);
+                    ...emptyUnit,
+                    predicate(r) {
+                        return units.every((u) => u.predicate(r));
                     },
                 };
             },
         };
-    }
-    if (syntax[0] === "and") {
-        const queries = syntax[1].map(jsonSyntaxToQuery);
+    },
+    or(...queries: RouteQuery[]): RouteQuery {
         return {
             initialize(e) {
-                const unitQueries = queries.map((q) => q.initialize(e));
+                const units = queries.map((q) => q.initialize(e));
                 return {
-                    predicate(route) {
-                        return unitQueries.every((u) => u.predicate(route));
+                    ...emptyUnit,
+                    predicate(r) {
+                        return units.some((u) => u.predicate(r));
                     },
                 };
             },
         };
-    }
-    if (syntax[0] === "or") {
-        const queries = syntax[1].map(jsonSyntaxToQuery);
+    },
+    not(query: RouteQuery): RouteQuery {
         return {
             initialize(e) {
-                const unitQueries = queries.map((q) => q.initialize(e));
+                const { predicate } = query.initialize(e);
                 return {
-                    predicate(route) {
-                        return unitQueries.some((u) => u.predicate(route));
+                    ...emptyUnit,
+                    predicate(r) {
+                        return !predicate(r);
                     },
                 };
             },
         };
-    }
-    if (syntax[0] === "not") {
-        const query = jsonSyntaxToQuery(syntax[1]);
+    },
+    withTitle(
+        getTitle: (route: Route) => string,
+        query: RouteQuery
+    ): RouteQuery {
         return {
             initialize(e) {
-                const unit = query.initialize(e);
                 return {
-                    predicate(route) {
-                        return !unit.predicate(route);
-                    },
+                    ...query.initialize(e),
+                    getTitle,
                 };
             },
         };
-    }
-    if (syntax[0] === "with") {
-        const command = syntax[1];
-        const scope = jsonSyntaxToQuery(syntax[2]);
+    },
+    withDescription(
+        getDescription: (route: Route) => string,
+        query: RouteQuery
+    ): RouteQuery {
         return {
             initialize(e) {
-                const { location } = command;
-                return scope.initialize({
-                    ...e,
-                    getUserCoordinate() {
-                        return location ?? e.getUserCoordinate();
-                    },
-                });
+                return {
+                    ...query.initialize(e),
+                    getDescription,
+                };
             },
         };
-    }
-    return exhaustive(syntax);
+    },
+};
+function evaluateWithLibrary(expression: Expression) {
+    const getUnresolved = (name: string) => {
+        if (name in library) {
+            return (library as Record<string, unknown>)[name];
+        }
+        throw new Error(`Unresolved name "${name}"`);
+    };
+    return evaluateExpression(expression, null, getUnresolved);
 }
 
 export interface QueryEnvironment {
@@ -254,24 +257,18 @@ export interface QueryEnvironment {
     distance(c1: Coordinate, c2: Coordinate): number;
 }
 export function createQuery(expression: string): QueryCreateResult {
-    const json = tryParseJson(toStrictJson(expression));
-    if (json == null || typeof json !== "object" || typeof json !== "string") {
-        return { query: createSimpleQuery(expression), diagnostics: [] };
+    const json = tryParseJson(toStrictJson(expression)) as Json | undefined;
+    if (
+        json == null ||
+        !(typeof json === "object" || typeof json === "string")
+    ) {
+        return { query: () => createSimpleQuery(expression), diagnostics: [] };
     }
-    let jsonSyntax;
-    try {
-        jsonSyntax = jsonQuerySyntaxSchema.parse(json);
-    } catch (e) {
-        const diagnostics =
-            z
-                .errorAsValidationDiagnostics(e)
-                ?.map(
-                    (d) =>
-                        `at .${d.path?.join(".")}: expected: (${
-                            d.expected
-                        }), actual: (${d.actual}): (${d.message})`
-                ) ?? [];
-        return { query: getEmptyQuery(), diagnostics };
-    }
-    return { query: jsonSyntaxToQuery(jsonSyntax), diagnostics: [] };
+    return {
+        query: () => {
+            // TODO: 静的チェックする
+            return evaluateWithLibrary(json) as RouteQuery;
+        },
+        diagnostics: [],
+    };
 }

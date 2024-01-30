@@ -14,6 +14,12 @@ export function exhaustive(value: never) {
     return error`unexpected value: ${value}`;
 }
 
+export type Primitive = undefined | null | boolean | number | string | bigint;
+export type Json =
+    | Exclude<Primitive, undefined | bigint>
+    | readonly Json[]
+    | { readonly [key: string]: Json };
+
 export type cast<T, K> = T extends K ? T : K;
 export type Writable<T> = {
     -readonly [k in keyof T]: T[k];

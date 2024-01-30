@@ -60,7 +60,7 @@ input.editable-text {
     width: auto;
 }
 
-.query-input-field {
+.properties-editor textarea.query-input-field {
     font-family: Menlo, Monaco, 'Courier New', Courier, monospace;
     height: 1.5em;
 }

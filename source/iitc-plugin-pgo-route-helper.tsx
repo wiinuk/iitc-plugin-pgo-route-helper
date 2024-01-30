@@ -43,18 +43,19 @@ import {
 } from "./query";
 import { createQueryEditor } from "./query-editor";
 
+function reportError(error: unknown) {
+    console.error(error);
+    if (
+        error != null &&
+        typeof error === "object" &&
+        "stack" in error &&
+        typeof error.stack === "string"
+    ) {
+        console.error(error.stack);
+    }
+}
 function handleAsyncError(promise: Promise<void>) {
-    promise.catch((error: unknown) => {
-        console.error(error);
-        if (
-            error != null &&
-            typeof error === "object" &&
-            "stack" in error &&
-            typeof error.stack === "string"
-        ) {
-            console.error(error.stack);
-        }
-    });
+    promise.catch(reportError);
 }
 
 export function main() {
@@ -194,12 +195,15 @@ async function asyncMain() {
         selectedRouteId: null | string;
         deleteRouteId: null | string;
         routes: "routes-unloaded" | Map<string, RouteWithView>;
-        routeListQuery: Readonly<{ queryText: string; query: RouteQuery }>;
+        routeListQuery: Readonly<{
+            queryText: string;
+            query: () => RouteQuery;
+        }>;
     } = {
         selectedRouteId: null,
         deleteRouteId: null,
         routes: "routes-unloaded",
-        routeListQuery: { queryText: "", query: getEmptyQuery() },
+        routeListQuery: { queryText: "", query: getEmptyQuery },
     };
 
     const progress = (
@@ -221,6 +225,7 @@ async function asyncMain() {
                   type: "query-parse-error-occurred";
                   messages: readonly string[];
               }
+            | { type: "query-evaluation-error"; error: unknown }
     ) => {
         console.log(JSON.stringify(message));
 
@@ -263,13 +268,18 @@ async function asyncMain() {
                 break;
             }
             case "query-parse-completed": {
-                reportElement.innerText = "クエリ解析完了";
+                reportElement.innerText = "クエリ構文チェック完了";
                 break;
             }
             case "query-parse-error-occurred": {
-                reportElement.innerText = `クエリ解析エラー: ${(
+                reportElement.innerText = `クエリ構文エラー: ${(
                     message.messages satisfies readonly string[]
                 ).join(", ")}`;
+                break;
+            }
+            case "query-evaluation-error": {
+                reportElement.innerText = String(message.error);
+                reportError(message.error);
                 break;
             }
             default:
@@ -751,6 +761,18 @@ async function asyncMain() {
         },
     };
 
+    function protectedCallQueryFunction<R>(
+        action: () => R,
+        defaultValue: () => R
+    ) {
+        try {
+            return action();
+        } catch (error) {
+            progress({ type: "query-evaluation-error", error });
+            return defaultValue();
+        }
+    }
+
     function updateRoutesListElement() {
         if (state.routes === "routes-unloaded") {
             return;
@@ -764,13 +786,18 @@ async function asyncMain() {
 
         const routes = [...state.routes.values()].map((r) => r.route);
 
-        const { predicate } = query.initialize({
-            ...defaultEnvironment,
-            routes,
-        });
+        const environment = { ...defaultEnvironment, routes };
+        const { predicate } = protectedCallQueryFunction(
+            () => query().initialize(environment),
+            () => getEmptyQuery().initialize(environment)
+        );
 
         for (const { route, listItem } of state.routes.values()) {
-            if (predicate(route)) {
+            const r = protectedCallQueryFunction(
+                () => predicate(route),
+                () => false
+            );
+            if (r) {
                 updateRoutesListItem(route, listItem);
                 routeListElement.appendChild(listItem);
             }
