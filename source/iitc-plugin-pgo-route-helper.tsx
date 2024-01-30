@@ -27,6 +27,7 @@ import {
     exhaustive,
     pipe,
     ignore,
+    getOrFailureSymbol,
 } from "./standard-extensions";
 import classNames, { cssText } from "./styles.module.css";
 import * as remote from "./remote";
@@ -34,7 +35,12 @@ import { isIITCMobile } from "./environment";
 import { createPolylineEditorPlugin } from "./polyline-editor";
 import jqueryUIPolyfillTouchEvents from "./jquery-ui-polyfill-touch-events";
 import type { LastOfArray } from "./type-level";
-import { getEmptyQuery, createQuery, type RouteQuery } from "./query";
+import {
+    getEmptyQuery,
+    createQuery,
+    type RouteQuery,
+    type QueryEnvironment,
+} from "./query";
 import { createQueryEditor } from "./query-editor";
 
 function handleAsyncError(promise: Promise<void>) {
@@ -210,6 +216,11 @@ async function asyncMain() {
                   type: "downloading";
               }
             | { type: "downloaded"; routeCount: number }
+            | { type: "query-parse-completed" }
+            | {
+                  type: "query-parse-error-occurred";
+                  messages: readonly string[];
+              }
     ) => {
         console.log(JSON.stringify(message));
 
@@ -249,6 +260,16 @@ async function asyncMain() {
             }
             case "downloaded": {
                 reportElement.innerText = `${message.routeCount} 個のルートを受信しました。`;
+                break;
+            }
+            case "query-parse-completed": {
+                reportElement.innerText = "クエリ解析完了";
+                break;
+            }
+            case "query-parse-error-occurred": {
+                reportElement.innerText = `クエリ解析エラー: ${(
+                    message.messages satisfies readonly string[]
+                ).join(", ")}`;
                 break;
             }
             default:
@@ -479,12 +500,12 @@ async function asyncMain() {
             case "route": {
                 const bound = map.getBounds();
                 const c1 = getMiddleCoordinate(
-                        bound.getCenter(),
-                        bound.getNorthEast()
+                    bound.getCenter(),
+                    bound.getNorthEast()
                 );
                 const c2 = getMiddleCoordinate(
-                        bound.getCenter(),
-                        bound.getSouthWest()
+                    bound.getCenter(),
+                    bound.getSouthWest()
                 );
                 coordinates = [
                     latLngToCoordinate(c1),
@@ -705,6 +726,31 @@ async function asyncMain() {
     function updateRoutesListItem(route: Route, listItem: HTMLLIElement) {
         listItem.innerText = route.routeName;
     }
+
+    const tempLatLng1 = L.latLng(0, 0);
+    const tempLatLng2 = L.latLng(0, 0);
+    const defaultEnvironment: QueryEnvironment = {
+        routes: [],
+        distance(c1, c2) {
+            tempLatLng1.lat = c1[0];
+            tempLatLng1.lng = c1[1];
+            tempLatLng2.lat = c2[0];
+            tempLatLng2.lng = c2[1];
+            return tempLatLng1.distanceTo(tempLatLng2);
+        },
+        getUserCoordinate() {
+            const userLatLng = getOrFailureSymbol(
+                window.plugin,
+                "userLocation",
+                "user",
+                "latlng"
+            );
+            const coordinate =
+                userLatLng instanceof L.LatLng ? userLatLng : map.getCenter();
+            return latLngToCoordinate(coordinate);
+        },
+    };
+
     function updateRoutesListElement() {
         if (state.routes === "routes-unloaded") {
             return;
@@ -713,10 +759,16 @@ async function asyncMain() {
         while (routeListElement.firstChild) {
             routeListElement.removeChild(routeListElement.firstChild);
         }
-        const {
-            queryText,
-            query: { predicate },
-        } = state.routeListQuery;
+
+        const { queryText, query } = state.routeListQuery;
+
+        const routes = [...state.routes.values()].map((r) => r.route);
+
+        const { predicate } = query.initialize({
+            ...defaultEnvironment,
+            routes,
+        });
+
         for (const { route, listItem } of state.routes.values()) {
             if (predicate(route)) {
                 updateRoutesListItem(route, listItem);
@@ -765,7 +817,18 @@ async function asyncMain() {
     ) {
         setQueryExpressionCancelScope(async (signal) => {
             await sleep(delayMilliseconds, { signal });
-            state.routeListQuery = { queryText, query: createQuery(queryText) };
+            const { query, diagnostics } = createQuery(queryText);
+            if (0 !== diagnostics.length) {
+                progress({
+                    type: "query-parse-error-occurred",
+                    messages: diagnostics,
+                });
+            } else {
+                progress({
+                    type: "query-parse-completed",
+                });
+            }
+            state.routeListQuery = { queryText, query };
             updateRoutesListElement();
         });
     }
