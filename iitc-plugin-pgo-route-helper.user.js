@@ -6,7 +6,7 @@
 // @downloadURL  https://github.com/wiinuk/iitc-plugin-pgo-route-helper/raw/master/iitc-plugin-pgo-route-helper.user.js
 // @updateURL    https://github.com/wiinuk/iitc-plugin-pgo-route-helper/raw/master/iitc-plugin-pgo-route-helper.user.js
 // @homepageURL  https://github.com/wiinuk/iitc-plugin-pgo-route-helper
-// @version      0.9.2
+// @version      0.9.3
 // @description  IITC plugin to assist in Pokémon GO route creation.
 // @author       Wiinuk
 // @include      https://*.ingress.com/intel*
@@ -147,11 +147,26 @@ function wrap(validate) {
     return new Schema(validate);
 }
 class ValidationError extends Error {
-    constructor(message) {
+    constructor(message, path, expected, actual) {
         super(message);
+        this.path = path;
+        this.expected = expected;
+        this.actual = actual;
     }
     get name() {
         return "ValidationError";
+    }
+}
+function errorAsValidationDiagnostics(error) {
+    if (error instanceof ValidationError) {
+        return [
+            {
+                message: error.message,
+                path: error.path,
+                expected: error.expected,
+                actual: error.actual,
+            },
+        ];
     }
 }
 function validationError(path, expected, actual) {
@@ -159,7 +174,7 @@ function validationError(path, expected, actual) {
         path,
         expected,
         actual,
-    }));
+    }), path, expected, actual);
 }
 function record(keySchema, valueSchema) {
     return wrap((target, path, seen) => {
@@ -217,10 +232,10 @@ function strictObject(shape) {
     });
 }
 function literal(value) {
-    const json = String(literal);
+    const expected = typeof value === "string" ? JSON.stringify(value) : String(value);
     return wrap((target, path) => {
         if (target !== value) {
-            throw validationError(path, json, typeof value === "object" ? "object" : String(target));
+            throw validationError(path, expected, typeof value === "object" ? "object" : String(target));
         }
         return target;
     });
@@ -304,11 +319,11 @@ function array(elementSchema) {
         return target;
     });
 }
-const errorsCaches = [];
+const errorsCache = [];
 function union(schemas) {
     return wrap((target, path, seen) => {
         var _a;
-        const errors = (_a = errorsCaches.pop()) !== null && _a !== void 0 ? _a : [];
+        const errors = (_a = errorsCache.pop()) !== null && _a !== void 0 ? _a : [];
         try {
             for (const schema of schemas) {
                 try {
@@ -317,18 +332,21 @@ function union(schemas) {
                 }
                 catch (e) {
                     if (e instanceof ValidationError) {
-                        errors.push(e.message);
+                        errors.push(e);
                     }
                 }
             }
+            if (errors[0] !== undefined && errors.length === 1) {
+                throw errors[0];
+            }
             throw new ValidationError(JSON.stringify({
                 path,
-                errors: errors.map((message) => JSON.parse(message)),
-            }));
+                errors: errors.map((e) => JSON.parse(e.message)),
+            }), path, `Union<[${errors.map((e) => e.expected).join(", ")}}]>`, typeof target);
         }
         finally {
             errors.length = 0;
-            errorsCaches.push(errors);
+            errorsCache.push(errors);
         }
     });
 }
@@ -391,158 +409,23 @@ let jsonSchemaCache;
 function json() {
     return (jsonSchemaCache !== null && jsonSchemaCache !== void 0 ? jsonSchemaCache : (jsonSchemaCache = createJsonSchema()));
 }
+function delayed(createSchema) {
+    let schema;
+    return wrap((target, path, seen) => {
+        return (schema !== null && schema !== void 0 ? schema : (schema = createSchema()))._validate(target, path, seen);
+    });
+}
+function function_() {
+    return wrap((target, path, seen) => {
+        if (typeof target === "function") {
+            return target;
+        }
+        throw validationError(path, "Function", typeof target);
+    });
+}
 
 ;// CONCATENATED MODULE: ./package.json
 const package_namespaceObject = {};
-;// CONCATENATED MODULE: ./source/document-extensions.ts
-var __awaiter = (undefined && undefined.__awaiter) || function (thisArg, _arguments, P, generator) {
-    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
-    return new (P || (P = Promise))(function (resolve, reject) {
-        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-    });
-};
-
-
-function waitElementLoaded() {
-    if (document.readyState !== "loading") {
-        return Promise.resolve();
-    }
-    return new Promise((resolve) => document.addEventListener("DOMContentLoaded", () => resolve()));
-}
-let styleElement = null;
-function addStyle(cssOrTemplate, ...substitutions) {
-    const css = typeof cssOrTemplate === "string"
-        ? cssOrTemplate
-        : String.raw(cssOrTemplate, ...substitutions);
-    if (styleElement == null) {
-        styleElement = document.createElement("style");
-        document.head.appendChild(styleElement);
-    }
-    styleElement.textContent += css + "\n";
-    document.head.appendChild(styleElement);
-}
-function addScript(url) {
-    return new Promise((onSuccess, onError) => {
-        const script = document.createElement("script");
-        script.onload = onSuccess;
-        script.onerror = onError;
-        document.head.appendChild(script);
-        script.src = url;
-    });
-}
-function loadPackageScript(name, path) {
-    return __awaiter(this, void 0, void 0, function* () {
-        function getVersion(dependency) {
-            var _a, _b;
-            if (dependency === "" || dependency === "*") {
-                return "latest";
-            }
-            for (const range of dependency.split("||")) {
-                // `2.2 - 3.5` = `>=2.2 <=3.5`
-                const version2 = (_a = /^([^\s]+)\s+-\s+([^\s]+)$/.exec(range)) === null || _a === void 0 ? void 0 : _a[1];
-                if (version2 != null) {
-                    return version2;
-                }
-                const singleVersion = (_b = /^\s*((~|^|>=|<=)?[^\s]+)\s*$/.exec(dependency)) === null || _b === void 0 ? void 0 : _b[0];
-                // `5.x`, `^5.2`, `~5.2`, `<=5.2`, `>5.2` などは cdn で処理されるので変換不要
-                if (singleVersion != null) {
-                    return singleVersion;
-                }
-                // `>=2.2 <=3.5` など複雑な指定子は非対応
-                return error `非対応のバージョン指定子 ( ${dependency} ) です。`;
-            }
-            return error `ここには来ない`;
-        }
-        function getPackageBaseUrl(name, dependency) {
-            // url
-            if (/^(https?:\/\/|file:)/.test(dependency)) {
-                return dependency;
-            }
-            // ローカルパス
-            if (/^(\.\.\/|~\/|\.\/|\/)/.test(dependency)) {
-                return `file:${dependency}`;
-            }
-            // git
-            if (/^git(\+(ssh|https))?:\/\//.test(dependency)) {
-                return error `git URL 依存関係は対応していません。`;
-            }
-            // github
-            if (/^[^\\]+\/.+$/.test(dependency)) {
-                return error `github URL 依存関係は対応していません。`;
-            }
-            // 普通のバージョン指定
-            const version = getVersion(dependency);
-            return `https://cdn.jsdelivr.net/npm/${name}@${version}`;
-        }
-        const dependency = packageJson.dependencies[name];
-        const baseUrl = getPackageBaseUrl(name, dependency);
-        const url = `${baseUrl}/${path}`;
-        yield addScript(url);
-        console.debug(`${url} からスクリプトを読み込みました`);
-        return;
-    });
-}
-let parseCssColorTemp = null;
-let parseCssColorRegex = null;
-function parseCssColor(cssColor, result = { r: 0, g: 0, b: 0, a: 0 }) {
-    const d = (parseCssColorTemp !== null && parseCssColorTemp !== void 0 ? parseCssColorTemp : (parseCssColorTemp = document.createElement("div")));
-    d.style.color = cssColor;
-    const m = d.style
-        .getPropertyValue("color")
-        .match((parseCssColorRegex !== null && parseCssColorRegex !== void 0 ? parseCssColorRegex : (parseCssColorRegex = /^rgba?\s*\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*(?:,\s*(\d+(?:\.\d+)?)\s*)?\)$/i)));
-    if (!m) {
-        return error `color "${cssColor}" is could not be parsed.`;
-    }
-    const [, r, g, b, a] = m;
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    result.r = parseInt(r);
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    result.g = parseInt(g);
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    result.b = parseInt(b);
-    result.a = a === undefined ? 1 : parseFloat(a);
-    return result;
-}
-function addListeners(element, eventListenerMap) {
-    for (const [type, listener] of Object.entries(eventListenerMap)) {
-        element.addEventListener(type, listener);
-    }
-    return element;
-}
-
-;// CONCATENATED MODULE: ./source/kml.ts
-const numberPattern = "\\d+(\\.\\d+)?\\s*";
-const commaPattern = ",\\s*";
-const pointPattern = numberPattern + commaPattern + numberPattern;
-const coordinatesPattern = new RegExp(`^\\s*${pointPattern}(${commaPattern}${pointPattern})*$`);
-// TODO: パースエラーを戻り値で伝える
-function parseCoordinates(kmlCoordinatesText) {
-    const tokens = kmlCoordinatesText.split(",");
-    const result = [];
-    for (let i = 1; i < tokens.length; i += 2) {
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        result.push([Number(tokens[i - 1]), Number(tokens[i])]);
-    }
-    return result;
-}
-function stringifyCoordinates(coordinates) {
-    return coordinates
-        .map((c) => {
-        let lat, lng;
-        if (Array.isArray(c)) {
-            [lat, lng] = c;
-        }
-        else {
-            ({ lat, lng } = c);
-        }
-        return `${lat},${lng}`;
-    })
-        .join(",");
-}
-
 ;// CONCATENATED MODULE: ./source/standard-extensions.ts
 function standard_extensions_error(template, ...substitutions) {
     const message = String.raw(template, ...substitutions.map((x) => typeof x === "string" ? x : JSON.stringify(x)));
@@ -673,6 +556,175 @@ function pipe(value, ...processes) {
     }
     return a;
 }
+const isArray = Array.isArray;
+const failureSymbol = Symbol("GetFailure");
+function getOrFailureSymbol(o, ...keys) {
+    function get(o, k) {
+        if (o === failureSymbol)
+            return o;
+        return typeof o === "object" && o !== null && k in o
+            ? o[k]
+            : failureSymbol;
+    }
+    for (let i = 0; i < keys.length; i++) {
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        o = get(o, keys[i]);
+    }
+    return o;
+}
+
+;// CONCATENATED MODULE: ./source/document-extensions.ts
+var __awaiter = (undefined && undefined.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+
+
+function waitElementLoaded() {
+    if (document.readyState !== "loading") {
+        return Promise.resolve();
+    }
+    return new Promise((resolve) => document.addEventListener("DOMContentLoaded", () => resolve()));
+}
+let styleElement = null;
+function addStyle(cssOrTemplate, ...substitutions) {
+    const css = typeof cssOrTemplate === "string"
+        ? cssOrTemplate
+        : String.raw(cssOrTemplate, ...substitutions);
+    if (styleElement == null) {
+        styleElement = document.createElement("style");
+        document.head.appendChild(styleElement);
+    }
+    styleElement.textContent += css + "\n";
+    document.head.appendChild(styleElement);
+}
+function addScript(url) {
+    return new Promise((onSuccess, onError) => {
+        const script = document.createElement("script");
+        script.onload = onSuccess;
+        script.onerror = onError;
+        document.head.appendChild(script);
+        script.src = url;
+    });
+}
+function loadPackageScript(name, path) {
+    return __awaiter(this, void 0, void 0, function* () {
+        function getVersion(dependency) {
+            var _a, _b;
+            if (dependency === "" || dependency === "*") {
+                return "latest";
+            }
+            for (const range of dependency.split("||")) {
+                // `2.2 - 3.5` = `>=2.2 <=3.5`
+                const version2 = (_a = /^([^\s]+)\s+-\s+([^\s]+)$/.exec(range)) === null || _a === void 0 ? void 0 : _a[1];
+                if (version2 != null) {
+                    return version2;
+                }
+                const singleVersion = (_b = /^\s*((~|^|>=|<=)?[^\s]+)\s*$/.exec(dependency)) === null || _b === void 0 ? void 0 : _b[0];
+                // `5.x`, `^5.2`, `~5.2`, `<=5.2`, `>5.2` などは cdn で処理されるので変換不要
+                if (singleVersion != null) {
+                    return singleVersion;
+                }
+                // `>=2.2 <=3.5` など複雑な指定子は非対応
+                return error `非対応のバージョン指定子 ( ${dependency} ) です。`;
+            }
+            return error `ここには来ない`;
+        }
+        function getPackageBaseUrl(name, dependency) {
+            // url
+            if (/^(https?:\/\/|file:)/.test(dependency)) {
+                return dependency;
+            }
+            // ローカルパス
+            if (/^(\.\.\/|~\/|\.\/|\/)/.test(dependency)) {
+                return `file:${dependency}`;
+            }
+            // git
+            if (/^git(\+(ssh|https))?:\/\//.test(dependency)) {
+                return error `git URL 依存関係は対応していません。`;
+            }
+            // github
+            if (/^[^\\]+\/.+$/.test(dependency)) {
+                return error `github URL 依存関係は対応していません。`;
+            }
+            // 普通のバージョン指定
+            const version = getVersion(dependency);
+            return `https://cdn.jsdelivr.net/npm/${name}@${version}`;
+        }
+        const dependency = packageJson.dependencies[name];
+        const baseUrl = getPackageBaseUrl(name, dependency);
+        const url = `${baseUrl}/${path}`;
+        yield addScript(url);
+        console.debug(`${url} からスクリプトを読み込みました`);
+        return;
+    });
+}
+let parseCssColorTemp = null;
+let parseCssColorRegex = null;
+function parseCssColor(cssColor, result = { r: 0, g: 0, b: 0, a: 0 }) {
+    const d = (parseCssColorTemp !== null && parseCssColorTemp !== void 0 ? parseCssColorTemp : (parseCssColorTemp = document.createElement("div")));
+    d.style.color = cssColor;
+    const m = d.style
+        .getPropertyValue("color")
+        .match((parseCssColorRegex !== null && parseCssColorRegex !== void 0 ? parseCssColorRegex : (parseCssColorRegex = /^rgba?\s*\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*(?:,\s*(\d+(?:\.\d+)?)\s*)?\)$/i)));
+    if (!m) {
+        return error `color "${cssColor}" is could not be parsed.`;
+    }
+    const [, r, g, b, a] = m;
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    result.r = parseInt(r);
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    result.g = parseInt(g);
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    result.b = parseInt(b);
+    result.a = a === undefined ? 1 : parseFloat(a);
+    return result;
+}
+function addListeners(element, eventListenerMap) {
+    for (const [type, listener] of Object.entries(eventListenerMap)) {
+        element.addEventListener(type, listener);
+    }
+    return element;
+}
+
+;// CONCATENATED MODULE: ./source/kml.ts
+
+const numberPattern = "\\d+(\\.\\d+)?\\s*";
+const commaPattern = ",\\s*";
+const pointPattern = numberPattern + commaPattern + numberPattern;
+const coordinatesPattern = new RegExp(`^\\s*${pointPattern}(${commaPattern}${pointPattern})*$`);
+// TODO: パースエラーを戻り値で伝える
+function parseCoordinates(kmlCoordinatesText) {
+    const tokens = kmlCoordinatesText.split(",");
+    const result = [];
+    for (let i = 1; i < tokens.length; i += 2) {
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        result.push([Number(tokens[i - 1]), Number(tokens[i])]);
+    }
+    if (result.length === 0) {
+        throw new Error();
+    }
+    return result;
+}
+function stringifyCoordinates(coordinates) {
+    return coordinates
+        .map((c) => {
+        let lat, lng;
+        if (isArray(c)) {
+            [lat, lng] = c;
+        }
+        else {
+            ({ lat, lng } = c);
+        }
+        return `${lat},${lng}`;
+    })
+        .join(",");
+}
 
 ;// CONCATENATED MODULE: ./source/route.ts
 
@@ -706,22 +758,22 @@ function getRouteIsTemplate(route) {
 }
 
 ;// CONCATENATED MODULE: ./source/styles.module.css
-const cssText = ".import-text-input-9a6a88e1e3aeff7035ae3e1403cc3dcdf29568f8 {\r\n    position: fixed;\r\n    top: 0;\r\n    left: 0;\r\n    width: 100%;\r\n    height: 100%;\r\n    z-index: 10000;\r\n\r\n    display: flex;\r\n    justify-content: center;\r\n    align-items: center;\r\n}\r\n\r\n.import-text-input-9a6a88e1e3aeff7035ae3e1403cc3dcdf29568f8.hidden-e3a885bdcef38910f1854db4f79713440bafb1a9 {\r\n    display: none;\r\n}\r\n\r\ninput.editable-text-7440018b5c4451e52d3ea777fe517d0b3cba35e8 {\r\n    border: none;\r\n    background: none;\r\n    font-size: 16px;\r\n    color: black;\r\n}\r\n\r\n.spot-label-e0015ca998db841416fd175a1194556017198713 {\r\n    color: #FFFFBB;\r\n    font-size: 11px;\r\n    line-height: 12px;\r\n    text-align: center;\r\n    padding: 2px;\r\n    overflow: hidden;\r\n    white-space: nowrap;\r\n    text-overflow: ellipsis;\r\n    text-shadow: 1px 1px #000, 1px -1px #000, -1px 1px #000, -1px -1px #000, 0 0 5px #000;\r\n    pointer-events: none;\r\n}\r\n\r\n.properties-editor-455288a0cb62475180f33672b7fa61b27ef3ef9f {\r\n    display: flex;\r\n    flex-direction: column;\r\n    resize: both;\r\n    overflow: auto;\r\n    max-width: 100%;\r\n    max-height: 100vh;\r\n}\r\n.route-list-container-6b5836a6ecee47db5c1fc8d1379487e955e18e32 {\r\n    flex-grow: 1;\r\n    overflow: auto;\r\n}\r\n\r\n.properties-editor-455288a0cb62475180f33672b7fa61b27ef3ef9f textarea,\r\n.properties-editor-455288a0cb62475180f33672b7fa61b27ef3ef9f input {\r\n    box-sizing: border-box;\r\n    width: 100%;\r\n    resize: vertical;\r\n\r\n    font-family: Arial, Helvetica, sans-serif;\r\n}\r\n.properties-editor-455288a0cb62475180f33672b7fa61b27ef3ef9f input.title-eecd54814a261b2768a200f5cceba73e4fe4d473 {\r\n    width: auto;\r\n}\r\n\r\n.query-input-field-eefa99047e2780d8d651c031f0546746e4b90343 {\r\n    height: 1.5em;\r\n}\r\n\r\n.route-list-9b66650db10a432b4d4030436b24484d157d5c0b .selecting-0b35621ce8303883a124cdf18b7a2e97d5a8bd2b {\r\n    background: #FECA40;\r\n}\r\n\r\n.route-list-9b66650db10a432b4d4030436b24484d157d5c0b .selected-0e7c6690deed50c05cee6685461242b5a019cd35 {\r\n    background: #F39814;\r\n    color: white;\r\n}\r\n\r\n.route-list-9b66650db10a432b4d4030436b24484d157d5c0b {\r\n    list-style-type: none;\r\n    margin: 0;\r\n    padding: 0;\r\n    width: 60%;\r\n}\r\n\r\n.route-list-9b66650db10a432b4d4030436b24484d157d5c0b li {\r\n    margin: 3px;\r\n    padding: 0.4em;\r\n    height: 18px;\r\n    cursor: pointer;\r\n}\r\n\r\n.auto-complete-list-f1bc8ac7a11adb5105967cf3f2d6a2f6b5e46b00 {\r\n    position: absolute;\r\n    background-color: #f9f9f9;\r\n    min-width: 160px;\r\n    box-shadow: 0px 8px 16px 0px rgba(0, 0, 0, 0.2);\r\n    padding: 12px 16px;\r\n    z-index: 1;\r\n}\r\n\r\n.auto-complete-list-f1bc8ac7a11adb5105967cf3f2d6a2f6b5e46b00 .auto-complete-list-item-2c6c9e7efa887f23473d9cb834df8a39e66c5f2b {\r\n    color: black;\r\n    padding: 12px 16px;\r\n    text-decoration: none;\r\n    display: block;\r\n}\r\n\r\n.auto-complete-list-f1bc8ac7a11adb5105967cf3f2d6a2f6b5e46b00 .auto-complete-list-item-2c6c9e7efa887f23473d9cb834df8a39e66c5f2b:hover {\r\n    background-color: #ddd;\r\n}\r\n\r\n\r\n/* アコーディオン */\r\n/* マーカー */\r\n.accordion-cdbd99e8a556ab368c2efe0343bc088d37d5575d>summary::-webkit-details-marker {\r\n    display: none;\r\n}\r\n\r\n.accordion-cdbd99e8a556ab368c2efe0343bc088d37d5575d>summary::before {\r\n    content: \"\";\r\n    position: absolute;\r\n    width: 6px;\r\n    height: 6px;\r\n    border-top: 2px solid #fff;\r\n    border-right: 2px solid #fff;\r\n\r\n    transform: rotate(225deg);\r\n    top: calc(50% - 3px);\r\n    right: 1em;\r\n}\r\n\r\n/* 閉じているとき */\r\n.accordion-cdbd99e8a556ab368c2efe0343bc088d37d5575d>summary {\r\n    cursor: grab;\r\n    display: block;\r\n    height: auto;\r\n    padding: 3px;\r\n    width: auto;\r\n    height: auto;\r\n\r\n    background: #019bc656;\r\n    border: solid 1px #00000000\r\n}\r\n\r\n.accordion-cdbd99e8a556ab368c2efe0343bc088d37d5575d>* {\r\n    backface-visibility: hidden;\r\n    transform: translateZ(0);\r\n    transition: all 0.3s;\r\n}\r\n\r\n.accordion-cdbd99e8a556ab368c2efe0343bc088d37d5575d> :not(summary) {\r\n    margin-bottom: 6px;\r\n    padding: 0 3px;\r\n    border: solid 1px #00000000;\r\n}\r\n\r\n/* 開いたとき */\r\n.accordion-cdbd99e8a556ab368c2efe0343bc088d37d5575d[open]>summary {\r\n    background: #c6880156;\r\n}\r\n\r\n.accordion-cdbd99e8a556ab368c2efe0343bc088d37d5575d[open]>summary::before {\r\n    transform: rotate(135deg);\r\n}\r\n\r\n.accordion-cdbd99e8a556ab368c2efe0343bc088d37d5575d[open]> :not(summary) {\r\n    padding: 3px;\r\n    transition: all 0.3s;\r\n\r\n    border: solid 1px #c6880156;\r\n}\r\n";
+const cssText = ".import-text-input-4faf957567e2c36abf951c2f464b065cc2286445 {\r\n    position: fixed;\r\n    top: 0;\r\n    left: 0;\r\n    width: 100%;\r\n    height: 100%;\r\n    z-index: 10000;\r\n\r\n    display: flex;\r\n    justify-content: center;\r\n    align-items: center;\r\n}\r\n\r\n.import-text-input-4faf957567e2c36abf951c2f464b065cc2286445.hidden-30b9075d5936cb11058ae157509e6c33ac7032b7 {\r\n    display: none;\r\n}\r\n\r\ninput.editable-text-05c916e1b0d076f73d4a8b23f0b1154433d52a96 {\r\n    border: none;\r\n    background: none;\r\n    font-size: 16px;\r\n    color: black;\r\n}\r\n\r\n.spot-label-4d92519a6cef8d245f399dad4f0eeb6991ed68e3 {\r\n    color: #FFFFBB;\r\n    font-size: 11px;\r\n    line-height: 12px;\r\n    text-align: center;\r\n    padding: 2px;\r\n    overflow: hidden;\r\n    white-space: nowrap;\r\n    text-overflow: ellipsis;\r\n    text-shadow: 1px 1px #000, 1px -1px #000, -1px 1px #000, -1px -1px #000, 0 0 5px #000;\r\n    pointer-events: none;\r\n}\r\n\r\n.properties-editor-5fa62ed0a3dfe4cee8c6b6e5196b67f6d56841a2 {\r\n    display: flex;\r\n    flex-direction: column;\r\n    resize: both;\r\n    overflow: auto;\r\n    max-width: 100%;\r\n    max-height: 100vh;\r\n}\r\n.route-list-container-210b872724a90fbe37700438d6e10110dc38f954 {\r\n    flex-grow: 1;\r\n    overflow: auto;\r\n}\r\n\r\n.properties-editor-5fa62ed0a3dfe4cee8c6b6e5196b67f6d56841a2 textarea,\r\n.properties-editor-5fa62ed0a3dfe4cee8c6b6e5196b67f6d56841a2 input {\r\n    box-sizing: border-box;\r\n    width: 100%;\r\n    resize: vertical;\r\n\r\n    font-family: Arial, Helvetica, sans-serif;\r\n}\r\n.properties-editor-5fa62ed0a3dfe4cee8c6b6e5196b67f6d56841a2 input.title-40f5a89442ca26e53f1cd91ddc7df20596c1192c {\r\n    width: auto;\r\n}\r\n\r\n.properties-editor-5fa62ed0a3dfe4cee8c6b6e5196b67f6d56841a2 textarea.query-input-field-4d0e23e96a2dd788951410a695fd3853af636087 {\r\n    font-family: Menlo, Monaco, 'Courier New', Courier, monospace;\r\n    height: 1.5em;\r\n}\r\n\r\n.route-list-5f8685abafa23e1bd15d3268fc5294f041282b3f .selecting-484ac696fc113316ee05e590e3f599bf44277db4 {\r\n    background: #FECA40;\r\n}\r\n\r\n.route-list-5f8685abafa23e1bd15d3268fc5294f041282b3f .selected-cfe6c81b76479c1b803ace406850f8daab42f685 {\r\n    background: #F39814;\r\n    color: white;\r\n}\r\n\r\n.route-list-5f8685abafa23e1bd15d3268fc5294f041282b3f {\r\n    list-style-type: none;\r\n    margin: 0;\r\n    padding: 0;\r\n    width: 60%;\r\n}\r\n\r\n.route-list-5f8685abafa23e1bd15d3268fc5294f041282b3f li {\r\n    margin: 3px;\r\n    padding: 0.4em;\r\n    height: 18px;\r\n    cursor: pointer;\r\n}\r\n\r\n.auto-complete-list-8188e158b09f9a13b1ec0fdaa82201da52249ef5 {\r\n    position: absolute;\r\n    background-color: #f9f9f9;\r\n    min-width: 160px;\r\n    box-shadow: 0px 8px 16px 0px rgba(0, 0, 0, 0.2);\r\n    padding: 12px 16px;\r\n    z-index: 1;\r\n}\r\n\r\n.auto-complete-list-8188e158b09f9a13b1ec0fdaa82201da52249ef5 .auto-complete-list-item-f06a0c1c3b57833f6691f4cb7db0f08ee4454fa4 {\r\n    color: black;\r\n    padding: 12px 16px;\r\n    text-decoration: none;\r\n    display: block;\r\n}\r\n\r\n.auto-complete-list-8188e158b09f9a13b1ec0fdaa82201da52249ef5 .auto-complete-list-item-f06a0c1c3b57833f6691f4cb7db0f08ee4454fa4:hover {\r\n    background-color: #ddd;\r\n}\r\n\r\n\r\n/* アコーディオン */\r\n/* マーカー */\r\n.accordion-7bda771204f44fa81df8ec025d5dcc2142108361>summary::-webkit-details-marker {\r\n    display: none;\r\n}\r\n\r\n.accordion-7bda771204f44fa81df8ec025d5dcc2142108361>summary::before {\r\n    content: \"\";\r\n    position: absolute;\r\n    width: 6px;\r\n    height: 6px;\r\n    border-top: 2px solid #fff;\r\n    border-right: 2px solid #fff;\r\n\r\n    transform: rotate(225deg);\r\n    top: calc(50% - 3px);\r\n    right: 1em;\r\n}\r\n\r\n/* 閉じているとき */\r\n.accordion-7bda771204f44fa81df8ec025d5dcc2142108361>summary {\r\n    cursor: grab;\r\n    display: block;\r\n    height: auto;\r\n    padding: 3px;\r\n    width: auto;\r\n    height: auto;\r\n\r\n    background: #019bc656;\r\n    border: solid 1px #00000000\r\n}\r\n\r\n.accordion-7bda771204f44fa81df8ec025d5dcc2142108361>* {\r\n    backface-visibility: hidden;\r\n    transform: translateZ(0);\r\n    transition: all 0.3s;\r\n}\r\n\r\n.accordion-7bda771204f44fa81df8ec025d5dcc2142108361> :not(summary) {\r\n    margin-bottom: 6px;\r\n    padding: 0 3px;\r\n    border: solid 1px #00000000;\r\n}\r\n\r\n/* 開いたとき */\r\n.accordion-7bda771204f44fa81df8ec025d5dcc2142108361[open]>summary {\r\n    background: #c6880156;\r\n}\r\n\r\n.accordion-7bda771204f44fa81df8ec025d5dcc2142108361[open]>summary::before {\r\n    transform: rotate(135deg);\r\n}\r\n\r\n.accordion-7bda771204f44fa81df8ec025d5dcc2142108361[open]> :not(summary) {\r\n    padding: 3px;\r\n    transition: all 0.3s;\r\n\r\n    border: solid 1px #c6880156;\r\n}\r\n";
 /* harmony default export */ const styles_module = ({
-    "import-text-input": "import-text-input-9a6a88e1e3aeff7035ae3e1403cc3dcdf29568f8",
-    hidden: "hidden-e3a885bdcef38910f1854db4f79713440bafb1a9",
-    "editable-text": "editable-text-7440018b5c4451e52d3ea777fe517d0b3cba35e8",
-    "spot-label": "spot-label-e0015ca998db841416fd175a1194556017198713",
-    "properties-editor": "properties-editor-455288a0cb62475180f33672b7fa61b27ef3ef9f",
-    "route-list-container": "route-list-container-6b5836a6ecee47db5c1fc8d1379487e955e18e32",
-    title: "title-eecd54814a261b2768a200f5cceba73e4fe4d473",
-    "query-input-field": "query-input-field-eefa99047e2780d8d651c031f0546746e4b90343",
-    "route-list": "route-list-9b66650db10a432b4d4030436b24484d157d5c0b",
-    selecting: "selecting-0b35621ce8303883a124cdf18b7a2e97d5a8bd2b",
-    selected: "selected-0e7c6690deed50c05cee6685461242b5a019cd35",
-    "auto-complete-list": "auto-complete-list-f1bc8ac7a11adb5105967cf3f2d6a2f6b5e46b00",
-    "auto-complete-list-item": "auto-complete-list-item-2c6c9e7efa887f23473d9cb834df8a39e66c5f2b",
-    accordion: "accordion-cdbd99e8a556ab368c2efe0343bc088d37d5575d",
+    "import-text-input": "import-text-input-4faf957567e2c36abf951c2f464b065cc2286445",
+    hidden: "hidden-30b9075d5936cb11058ae157509e6c33ac7032b7",
+    "editable-text": "editable-text-05c916e1b0d076f73d4a8b23f0b1154433d52a96",
+    "spot-label": "spot-label-4d92519a6cef8d245f399dad4f0eeb6991ed68e3",
+    "properties-editor": "properties-editor-5fa62ed0a3dfe4cee8c6b6e5196b67f6d56841a2",
+    "route-list-container": "route-list-container-210b872724a90fbe37700438d6e10110dc38f954",
+    title: "title-40f5a89442ca26e53f1cd91ddc7df20596c1192c",
+    "query-input-field": "query-input-field-4d0e23e96a2dd788951410a695fd3853af636087",
+    "route-list": "route-list-5f8685abafa23e1bd15d3268fc5294f041282b3f",
+    selecting: "selecting-484ac696fc113316ee05e590e3f599bf44277db4",
+    selected: "selected-cfe6c81b76479c1b803ace406850f8daab42f685",
+    "auto-complete-list": "auto-complete-list-8188e158b09f9a13b1ec0fdaa82201da52249ef5",
+    "auto-complete-list-item": "auto-complete-list-item-f06a0c1c3b57833f6691f4cb7db0f08ee4454fa4",
+    accordion: "accordion-7bda771204f44fa81df8ec025d5dcc2142108361",
 });
 
 ;// CONCATENATED MODULE: ../gas-drivetunnel/source/schemas.ts
@@ -1311,7 +1363,184 @@ function polyfill($) {
     };
 }
 
+;// CONCATENATED MODULE: ./source/assoc.ts
+function get(k, kvs) {
+    while (kvs !== null) {
+        if (Object.is(kvs[0], k)) {
+            return kvs[0];
+        }
+        kvs = kvs[1];
+    }
+    return;
+}
+function add(k, v, kvs) {
+    return [[k, v], kvs];
+}
+function append(kvs1, kvs2) {
+    let temp;
+    while (kvs1) {
+        (temp !== null && temp !== void 0 ? temp : (temp = [])).push(kvs1[0]);
+        kvs1 = kvs1[1];
+    }
+    let kv;
+    while ((kv = temp && temp.pop())) {
+        kvs2 = [kv, kvs2];
+    }
+    return kvs2;
+}
+function map(kvs, mapping) {
+    let tempKvs;
+    while (kvs) {
+        (tempKvs !== null && tempKvs !== void 0 ? tempKvs : (tempKvs = [])).push(kvs[0]);
+        kvs = kvs[1];
+    }
+    let result = null;
+    if (tempKvs) {
+        for (let i = tempKvs.length - 1; i >= 0; i--) {
+            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+            const kv = tempKvs[0];
+            const k = kv[0];
+            result = [[k, mapping(k, kv[1])], result];
+        }
+    }
+    return result;
+}
+
+;// CONCATENATED MODULE: ./source/query-expression.ts
+
+
+function throwFunctionExpressionError() {
+    throw new Error(`#function 形式には引数リストと式が必要です。例: ["#function", ["x", "y"], ["+", "x", "y"]]`);
+}
+function throwLetExpressionError() {
+    throw new Error(`#let 形式には要素1と要素2が必要です。例: ["#let", ["result", ["complexTask"]], "result"]`);
+}
+const query_expression_hasOwnProperty = Object.prototype.hasOwnProperty;
+function evaluateExpression(expression, variables, getUnresolved) {
+    switch (typeof expression) {
+        case "boolean":
+        case "number":
+            return expression;
+        case "string": {
+            const kv = get(expression, variables);
+            if (kv)
+                return kv[1];
+            return getUnresolved(expression);
+        }
+    }
+    if (!isArray(expression)) {
+        const result = Object.create(null);
+        for (const key in expression) {
+            if (query_expression_hasOwnProperty.call(expression, key)) {
+                result[key] = evaluateExpression(
+                // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+                expression[key], variables, getUnresolved);
+            }
+        }
+        return result;
+    }
+    switch (expression[0]) {
+        case "#quote": {
+            const [, ...rest] = expression;
+            return rest;
+        }
+        case "#list": {
+            const list = [];
+            for (let i = 1; i < expression.length; i++) {
+                list.push(evaluateExpression(
+                // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+                expression[i], variables, getUnresolved));
+            }
+            return list;
+        }
+        case "#strings": {
+            const list = [];
+            for (let i = 1; i < expression.length; i++) {
+                // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+                const c = expression[i];
+                list.push(typeof c === "string"
+                    ? c
+                    : evaluateExpression(c, variables, getUnresolved));
+            }
+            return list;
+        }
+        case "#if": {
+            const [, condition, ifNotFalsy, ifFalsy] = expression;
+            if (condition === undefined ||
+                ifNotFalsy === undefined ||
+                ifFalsy === undefined) {
+                throw new Error(`#if 形式には要素1から3が必要です。例: ["#if", "isEven", ["#", "this is even"], ["#", "this is odd"]]`);
+            }
+            return evaluateExpression(evaluateExpression(condition, variables, getUnresolved)
+                ? ifNotFalsy
+                : ifFalsy, variables, getUnresolved);
+        }
+        case "#function": {
+            const [, parameters, body] = expression;
+            if (parameters === undefined ||
+                !isArray(parameters) ||
+                body === undefined) {
+                return throwFunctionExpressionError();
+            }
+            for (const parameter of parameters) {
+                if (typeof parameter !== "string") {
+                    return throwFunctionExpressionError();
+                }
+            }
+            const ps = parameters;
+            return (...args) => {
+                let vs = variables;
+                for (let i = 0; i < parameters.length; i++) {
+                    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+                    vs = add(ps[i], args[i], vs);
+                }
+                return evaluateExpression(body, variables, getUnresolved);
+            };
+        }
+        case "#let": {
+            const [, bindings, scope] = expression;
+            if (!isArray(bindings) || scope === undefined) {
+                return throwLetExpressionError();
+            }
+            for (const binding of bindings) {
+                if (!isArray(binding)) {
+                    return throwLetExpressionError();
+                }
+                const [variable, value] = binding;
+                if (typeof variable !== "string" || value === undefined) {
+                    return throwLetExpressionError();
+                }
+                const v = evaluateExpression(value, variables, getUnresolved);
+                variables = add(variable, v, variables);
+            }
+            return evaluateExpression(scope, variables, getUnresolved);
+        }
+        default: {
+            const head = expression[0];
+            if (head === undefined) {
+                return [];
+            }
+            if (expression.length === 1 && typeof head === "string") {
+                return head;
+            }
+            const f = evaluateExpression(head, variables, getUnresolved);
+            const args = [];
+            for (let i = 1; i < expression.length; i++) {
+                const p = evaluateExpression(
+                // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+                expression[i], variables, getUnresolved);
+                args.push(p);
+            }
+            if (typeof f !== "function") {
+                throw new Error("関数ではない値を呼び出す事はできません。");
+            }
+            return f(...args);
+        }
+    }
+}
+
 ;// CONCATENATED MODULE: ./source/query.ts
+
 
 function eachJsonStrings(json, action) {
     if (json === null)
@@ -1357,38 +1586,185 @@ function eachRouteStrings(route, action) {
     }
     return eachJsonStrings(tags, action);
 }
-function getEmptyQuery() {
-    return {
-        predicate() {
-            return true;
-        },
-    };
-}
 function normalize(text) {
     return text.normalize("NFKC").toLowerCase();
 }
-function createQuery(expression) {
-    const words = expression.split(/\s+/);
-    for (let i = 0; i < words.length; i++) {
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        words[i] = normalize(words[i]);
-    }
+function includesAmbiguousTextInRoute(route, word) {
+    let success = false;
+    eachRouteStrings(route, (text) => {
+        if (normalize(text).includes(normalize(word))) {
+            success = true;
+            return "break";
+        }
+    });
+    return success;
+}
+const emptyUnit = {
+    predicate() {
+        return true;
+    },
+    getTitle() {
+        return null;
+    },
+    getDescription() {
+        return null;
+    },
+};
+function getEmptyQuery() {
     return {
-        predicate(route) {
-            for (const normalizedWord of words) {
-                let success = false;
-                eachRouteStrings(route, (text) => {
-                    if (normalize(text).includes(normalizedWord)) {
-                        success = true;
-                        return "break";
-                    }
-                });
-                if (!success) {
+        initialize() {
+            return emptyUnit;
+        },
+    };
+}
+function includes(words) {
+    const unit = Object.assign(Object.assign({}, emptyUnit), { predicate(route) {
+            for (const word of words) {
+                if (!includesAmbiguousTextInRoute(route, word)) {
                     return false;
                 }
             }
             return true;
+        } });
+    return {
+        initialize() {
+            return unit;
         },
+    };
+}
+function createSimpleQuery(expression) {
+    return includes(expression.split(/\s+/));
+}
+function tryParseJson(text) {
+    try {
+        return JSON.parse(text);
+    }
+    catch (_a) {
+        return;
+    }
+}
+function toStrictJson(text) {
+    return text
+        .replace(/([$_\w][$_\w\d]*)\s*:/g, `"$1":`)
+        .replace(/,\s*\]/g, `]`);
+}
+const reachable = {
+    initialize({ getUserCoordinate, distance }) {
+        const userCoordinate = getUserCoordinate();
+        if (userCoordinate == null)
+            return emptyUnit;
+        return Object.assign(Object.assign({}, emptyUnit), { predicate(route) {
+                return (getRouteKind(route) === "spot" &&
+                    distance(userCoordinate, route.coordinates[0]) < 9800);
+            } });
+    },
+};
+function reachableWith(options) {
+    return {
+        initialize({ getUserCoordinate, distance }) {
+            var _a;
+            const center = options.center || getUserCoordinate();
+            if (center == null)
+                return emptyUnit;
+            const radius = (_a = options.radius) !== null && _a !== void 0 ? _a : 9800;
+            return Object.assign(Object.assign({}, emptyUnit), { predicate(route) {
+                    return (getRouteKind(route) === "spot" &&
+                        distance(center, route.coordinates[0]) < radius);
+                } });
+        },
+    };
+}
+const library = {
+    ["tag?"](route, tagNames) {
+        const tags = getRouteTags(route);
+        if (tags === undefined)
+            return false;
+        for (const name of tagNames) {
+            if (name in tags)
+                return true;
+        }
+        return false;
+    },
+    concat(strings) {
+        return strings.join("");
+    },
+    getTitle(route) {
+        return route.routeName;
+    },
+    getDescription(route) {
+        return route.description;
+    },
+    includes(...words) {
+        return includes(words);
+    },
+    reachable,
+    reachableWith,
+    and(...queries) {
+        return {
+            initialize(e) {
+                const units = queries.map((q) => q.initialize(e));
+                return Object.assign(Object.assign({}, emptyUnit), { predicate(r) {
+                        return units.every((u) => u.predicate(r));
+                    } });
+            },
+        };
+    },
+    or(...queries) {
+        return {
+            initialize(e) {
+                const units = queries.map((q) => q.initialize(e));
+                return Object.assign(Object.assign({}, emptyUnit), { predicate(r) {
+                        return units.some((u) => u.predicate(r));
+                    } });
+            },
+        };
+    },
+    not(query) {
+        return {
+            initialize(e) {
+                const { predicate } = query.initialize(e);
+                return Object.assign(Object.assign({}, emptyUnit), { predicate(r) {
+                        return !predicate(r);
+                    } });
+            },
+        };
+    },
+    withTitle(getTitle, query) {
+        return {
+            initialize(e) {
+                return Object.assign(Object.assign({}, query.initialize(e)), { getTitle });
+            },
+        };
+    },
+    withDescription(getDescription, query) {
+        return {
+            initialize(e) {
+                return Object.assign(Object.assign({}, query.initialize(e)), { getDescription });
+            },
+        };
+    },
+};
+function evaluateWithLibrary(expression) {
+    const getUnresolved = (name) => {
+        if (name in library) {
+            return library[name];
+        }
+        throw new Error(`Unresolved name "${name}"`);
+    };
+    return evaluateExpression(expression, null, getUnresolved);
+}
+function createQuery(expression) {
+    const json = tryParseJson(toStrictJson(expression));
+    if (json == null ||
+        !(typeof json === "object" || typeof json === "string")) {
+        return { query: () => createSimpleQuery(expression), diagnostics: [] };
+    }
+    return {
+        query: () => {
+            // TODO: 静的チェックする
+            return evaluateWithLibrary(json);
+        },
+        diagnostics: [],
     };
 }
 
@@ -1445,16 +1821,17 @@ var iitc_plugin_pgo_route_helper_awaiter = (undefined && undefined.__awaiter) ||
 
 
 
+function reportError(error) {
+    console.error(error);
+    if (error != null &&
+        typeof error === "object" &&
+        "stack" in error &&
+        typeof error.stack === "string") {
+        console.error(error.stack);
+    }
+}
 function handleAsyncError(promise) {
-    promise.catch((error) => {
-        console.error(error);
-        if (error != null &&
-            typeof error === "object" &&
-            "stack" in error &&
-            typeof error.stack === "string") {
-            console.error(error.stack);
-        }
-    });
+    promise.catch(reportError);
 }
 function main() {
     handleAsyncError(asyncMain());
@@ -1516,6 +1893,12 @@ function waitLayerAdded(map, layer) {
         map.on("layeradd", onLayerAdd);
     });
 }
+function latLngToCoordinate({ lat, lng }) {
+    return [lat, lng];
+}
+function coordinateToLatLng([lat, lng]) {
+    return L.latLng(lat, lng);
+}
 function getMiddleCoordinate(p1, p2) {
     return L.latLngBounds(p1, p2).getCenter();
 }
@@ -1542,7 +1925,7 @@ function asyncMain() {
             selectedRouteId: null,
             deleteRouteId: null,
             routes: "routes-unloaded",
-            routeListQuery: { queryText: "", query: getEmptyQuery() },
+            routeListQuery: { queryText: "", query: getEmptyQuery },
         };
         const progress = (message) => {
             console.log(JSON.stringify(message));
@@ -1572,6 +1955,19 @@ function asyncMain() {
                 }
                 case "downloaded": {
                     reportElement.innerText = `${message.routeCount} 個のルートを受信しました。`;
+                    break;
+                }
+                case "query-parse-completed": {
+                    reportElement.innerText = "クエリ構文チェック完了";
+                    break;
+                }
+                case "query-parse-error-occurred": {
+                    reportElement.innerText = `クエリ構文エラー: ${(message.messages).join(", ")}`;
+                    break;
+                }
+                case "query-evaluation-error": {
+                    reportElement.innerText = String(message.error);
+                    reportError(message.error);
                     break;
                 }
                 default:
@@ -1628,7 +2024,7 @@ function asyncMain() {
                             "user-id": userId,
                             "route-id": routeId,
                             "route-name": routeName,
-                            coordinates,
+                            coordinates: stringifyCoordinates(coordinates),
                             description,
                             note,
                             data: JSON.stringify(data),
@@ -1681,15 +2077,14 @@ function asyncMain() {
                 if (!this.checkValidity()) {
                     return;
                 }
-                mergeSelectedRoute({ coordinates: this.value });
+                mergeSelectedRoute({
+                    coordinates: parseCoordinates(this.value),
+                });
             },
         });
         const lengthElement = jsx("div", {});
-        function calculateRouteLengthMeters(route) {
-            const coordinates = parseCoordinates(route.coordinates);
+        function calculateRouteLengthMeters({ coordinates }) {
             let point0 = coordinates[0];
-            if (point0 == null)
-                return 0;
             let lengthMeters = 0;
             for (let i = 1; i < coordinates.length; i++) {
                 // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
@@ -1722,7 +2117,7 @@ function asyncMain() {
                 notesElement.readOnly = false;
                 notesElement.value = route.note;
                 coordinatesElement.readOnly = false;
-                coordinatesElement.value = route.coordinates;
+                coordinatesElement.value = stringifyCoordinates(route.coordinates);
                 const lengthMeters = calculateRouteLengthMeters(route);
                 lengthElement.innerText = `${Math.round(lengthMeters * 100) / 100}m`;
             }
@@ -1739,15 +2134,17 @@ function asyncMain() {
             switch (kind) {
                 case "route": {
                     const bound = map.getBounds();
-                    coordinates = stringifyCoordinates([
-                        getMiddleCoordinate(bound.getCenter(), bound.getNorthEast()),
-                        getMiddleCoordinate(bound.getCenter(), bound.getSouthWest()),
-                    ]);
+                    const c1 = getMiddleCoordinate(bound.getCenter(), bound.getNorthEast());
+                    const c2 = getMiddleCoordinate(bound.getCenter(), bound.getSouthWest());
+                    coordinates = [
+                        latLngToCoordinate(c1),
+                        latLngToCoordinate(c2),
+                    ];
                     routeName = "新しいルート";
                     break;
                 }
                 case "spot": {
-                    coordinates = stringifyCoordinates([map.getCenter()]);
+                    coordinates = [latLngToCoordinate(map.getCenter())];
                     routeName = "新しいスポット";
                     break;
                 }
@@ -1857,7 +2254,7 @@ function asyncMain() {
                     return;
                 route.listItem.scrollIntoView();
                 onListItemClicked(route.listItem);
-                moveToBound(L.latLngBounds(parseCoordinates(route.route.coordinates)));
+                moveToBound(L.latLngBounds(route.route.coordinates.map(coordinateToLatLng)));
             },
         });
         const setAsTemplateElement = addListeners(jsx("button", { children: "\uD83D\uDCD1\u30C6\u30F3\u30D7\u30EC\u30FC\u30C8\u3068\u3057\u3066\u8A2D\u5B9A" }), {
@@ -1912,8 +2309,8 @@ function asyncMain() {
                     if (route == null) {
                         continue;
                     }
-                    for (const coordinate of parseCoordinates(route.route.coordinates)) {
-                        bounds.extend(coordinate);
+                    for (const coordinate of route.route.coordinates) {
+                        bounds.extend(coordinateToLatLng(coordinate));
                     }
                 }
                 moveToBound(bounds);
@@ -1937,6 +2334,32 @@ function asyncMain() {
         function updateRoutesListItem(route, listItem) {
             listItem.innerText = route.routeName;
         }
+        const tempLatLng1 = L.latLng(0, 0);
+        const tempLatLng2 = L.latLng(0, 0);
+        const defaultEnvironment = {
+            routes: [],
+            distance(c1, c2) {
+                tempLatLng1.lat = c1[0];
+                tempLatLng1.lng = c1[1];
+                tempLatLng2.lat = c2[0];
+                tempLatLng2.lng = c2[1];
+                return tempLatLng1.distanceTo(tempLatLng2);
+            },
+            getUserCoordinate() {
+                const userLatLng = getOrFailureSymbol(window.plugin, "userLocation", "user", "latlng");
+                const coordinate = userLatLng instanceof L.LatLng ? userLatLng : map.getCenter();
+                return latLngToCoordinate(coordinate);
+            },
+        };
+        function protectedCallQueryFunction(action, defaultValue) {
+            try {
+                return action();
+            }
+            catch (error) {
+                progress({ type: "query-evaluation-error", error });
+                return defaultValue();
+            }
+        }
         function updateRoutesListElement() {
             if (state.routes === "routes-unloaded") {
                 return;
@@ -1944,9 +2367,13 @@ function asyncMain() {
             while (routeListElement.firstChild) {
                 routeListElement.removeChild(routeListElement.firstChild);
             }
-            const { queryText, query: { predicate }, } = state.routeListQuery;
+            const { queryText, query } = state.routeListQuery;
+            const routes = [...state.routes.values()].map((r) => r.route);
+            const environment = Object.assign(Object.assign({}, defaultEnvironment), { routes });
+            const { predicate } = protectedCallQueryFunction(() => query().initialize(environment), () => getEmptyQuery().initialize(environment));
             for (const { route, listItem } of state.routes.values()) {
-                if (predicate(route)) {
+                const r = protectedCallQueryFunction(() => predicate(route), () => false);
+                if (r) {
                     updateRoutesListItem(route, listItem);
                     routeListElement.appendChild(listItem);
                 }
@@ -1980,7 +2407,19 @@ function asyncMain() {
         function setQueryExpressionDelayed(delayMilliseconds, queryText) {
             setQueryExpressionCancelScope((signal) => iitc_plugin_pgo_route_helper_awaiter(this, void 0, void 0, function* () {
                 yield sleep(delayMilliseconds, { signal });
-                state.routeListQuery = { queryText, query: createQuery(queryText) };
+                const { query, diagnostics } = createQuery(queryText);
+                if (0 !== diagnostics.length) {
+                    progress({
+                        type: "query-parse-error-occurred",
+                        messages: diagnostics,
+                    });
+                }
+                else {
+                    progress({
+                        type: "query-parse-completed",
+                    });
+                }
+                state.routeListQuery = { queryText, query };
                 updateRoutesListElement();
             }));
         }
@@ -2055,7 +2494,7 @@ function asyncMain() {
             updateRouteView(routeId);
         }
         function createRouteView({ routeId, coordinates }, routeMap) {
-            const layer = polylineEditor(parseCoordinates(coordinates), {
+            const layer = polylineEditor(coordinates.map(coordinateToLatLng), {
                 clickable: true,
                 color: "#5fd6ff",
             });
@@ -2091,9 +2530,8 @@ function asyncMain() {
             fillOpacity: 1.0,
         };
         function createSpotView(route, routeMap) {
-            var _a;
             const { routeId } = route;
-            const circle = L.circleMarker((_a = parseCoordinates(route.coordinates)[0]) !== null && _a !== void 0 ? _a : standard_extensions_error `internal error`, Object.assign({ className: `spot-circle spot-circle-${routeId}`, color: "#000", fillColor: "#3e9", weight: 5 }, spotCircleNormalStyle));
+            const circle = L.circleMarker(coordinateToLatLng(route.coordinates[0]), Object.assign({ className: `spot-circle spot-circle-${routeId}`, color: "#000", fillColor: "#3e9", weight: 5 }, spotCircleNormalStyle));
             let draggable = false;
             let dragging = false;
             function changeStyle() {
@@ -2128,7 +2566,7 @@ function asyncMain() {
                 map.dragging.enable();
                 map.off("mousemove", onDragging);
                 const { route } = (_a = routeMap.get(routeId)) !== null && _a !== void 0 ? _a : standard_extensions_error `internal error`;
-                route.coordinates = stringifyCoordinates([circle.getLatLng()]);
+                route.coordinates = [latLngToCoordinate(circle.getLatLng())];
                 if (latlngChanged) {
                     queueSetRouteCommandDelayed(3000, route);
                 }
@@ -2138,9 +2576,8 @@ function asyncMain() {
             });
             const group = L.featureGroup([circle, label]);
             function update(route) {
-                var _a;
                 label.setIcon(createSpotLabel(route.routeName));
-                const coordinate0 = (_a = parseCoordinates(route.coordinates)[0]) !== null && _a !== void 0 ? _a : standard_extensions_error `internal error`;
+                const coordinate0 = coordinateToLatLng(route.coordinates[0]);
                 circle.setLatLng(coordinate0);
                 label.setLatLng(coordinate0);
             }
@@ -2188,7 +2625,7 @@ function asyncMain() {
             });
             for (const route of routeList) {
                 yield microYield();
-                addRouteView(routeMap, route);
+                addRouteView(routeMap, Object.assign(Object.assign({}, route), { coordinates: parseCoordinates(route.coordinates) }));
                 console.debug(`ルート: '${route.routeName}' ( ${route.routeId} ) を読み込みました`);
             }
         }
