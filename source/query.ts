@@ -136,7 +136,7 @@ type With = readonly [
 
 function createJsonQuerySyntaxSchema() {
     const query: Schema<JsonQuery> = z.delayed(() =>
-        z.union([variables, includes, and, not, with_])
+        z.union([variables, includes, and, or, not, with_])
     );
     const variables = z.literal("reachable");
     const includes = z.tuple([z.literal("includes"), z.string()]);
