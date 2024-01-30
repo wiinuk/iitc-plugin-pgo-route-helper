@@ -97,6 +97,7 @@ export function getEmptyQuery(): RouteQuery {
 }
 export type QueryCreateResult = {
     query: () => RouteQuery;
+    syntax: "words" | "parentheses";
     diagnostics: string[];
 };
 function includes(words: readonly string[]): RouteQuery {
@@ -281,13 +282,18 @@ export function createQuery(expression: string): QueryCreateResult {
         json == null ||
         !(typeof json === "object" || typeof json === "string")
     ) {
-        return { query: () => createSimpleQuery(expression), diagnostics: [] };
+        return {
+            query: () => createSimpleQuery(expression),
+            syntax: "words",
+            diagnostics: [],
+        };
     }
     return {
         query: () => {
             // TODO: 静的チェックする
             return evaluateWithLibrary(json) as RouteQuery;
         },
+        syntax: "parentheses",
         diagnostics: [],
     };
 }

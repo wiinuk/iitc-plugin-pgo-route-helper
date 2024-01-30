@@ -1,4 +1,4 @@
-// spell-checker: ignore layeradd drivetunnel latlngschanged lngs latlng moveend buttonset
+// spell-checker: ignore layeradd drivetunnel latlngschanged lngs latlng buttonset
 import { z } from "../../gas-drivetunnel/source/json-schema";
 import {
     addListeners,
@@ -187,6 +187,7 @@ async function asyncMain() {
         readonly coordinatesEditor: Readonly<{
             layer: L.ILayer;
             update: (route: Route) => void;
+            highlight: (enabled: boolean) => void;
         }>;
         readonly listItem: HTMLLIElement;
     };
@@ -197,13 +198,13 @@ async function asyncMain() {
         routes: "routes-unloaded" | Map<string, RouteWithView>;
         routeListQuery: Readonly<{
             queryText: string;
-            query: () => RouteQuery;
+            query: undefined | (() => RouteQuery);
         }>;
     } = {
         selectedRouteId: null,
         deleteRouteId: null,
         routes: "routes-unloaded",
-        routeListQuery: { queryText: "", query: getEmptyQuery },
+        routeListQuery: { queryText: "", query: undefined },
     };
 
     const progress = (
@@ -220,7 +221,10 @@ async function asyncMain() {
                   type: "downloading";
               }
             | { type: "downloaded"; routeCount: number }
-            | { type: "query-parse-completed" }
+            | {
+                  type: "query-parse-completed";
+                  language: "words" | "parentheses" | undefined;
+              }
             | {
                   type: "query-parse-error-occurred";
                   messages: readonly string[];
@@ -268,7 +272,19 @@ async function asyncMain() {
                 break;
             }
             case "query-parse-completed": {
-                reportElement.innerText = "クエリ構文チェック完了";
+                switch (message.language) {
+                    case "words":
+                        reportElement.innerText = "通常検索";
+                        break;
+                    case "parentheses":
+                        reportElement.innerHTML = "式検索";
+                        break;
+                    case undefined:
+                        reportElement.innerHTML = "未検索";
+                        break;
+                    default:
+                        return exhaustive(message.language);
+                }
                 break;
             }
             case "query-parse-error-occurred": {
@@ -601,6 +617,7 @@ async function asyncMain() {
                 if (view == null) return;
 
                 routes.delete(deleteRouteId);
+                view.listItem.remove();
                 updateRoutesListElement();
                 map.removeLayer(view.coordinatesEditor.layer);
                 routeLayerGroup.removeLayer(view.coordinatesEditor.layer);
@@ -632,28 +649,24 @@ async function asyncMain() {
             deleteConfirmation.dialog("open");
         },
     });
-    function moveToBound(bounds: L.LatLngBounds) {
-        isMapAutoMoving = true;
-        map.panInsideBounds(bounds);
-        isMapAutoMoving = false;
-    }
-    const moveToRouteElement = addListeners(
-        <button>🎯スクロールして表示</button>,
-        {
-            click() {
-                const route = getSelectedRoute();
-                if (route == null) return;
+    function onMoveToSelectedElement(showListItem: boolean) {
+        const route = getSelectedRoute();
+        if (route == null) return;
 
-                route.listItem.scrollIntoView();
-                onListItemClicked(route.listItem);
-                moveToBound(
-                    L.latLngBounds(
-                        route.route.coordinates.map(coordinateToLatLng)
-                    )
-                );
-            },
+        if (showListItem) {
+            route.listItem.scrollIntoView();
         }
-    );
+        onListItemClicked(route.listItem);
+        const bounds = L.latLngBounds(
+            route.route.coordinates.map(coordinateToLatLng)
+        );
+        map.panInsideBounds(bounds);
+    }
+    const moveToRouteElement = addListeners(<button>🎯地図で表示</button>, {
+        click() {
+            onMoveToSelectedElement(true);
+        },
+    });
     const setAsTemplateElement = addListeners(
         <button>📑テンプレートとして設定</button>,
         {
@@ -681,16 +694,6 @@ async function asyncMain() {
         }
     );
 
-    let lastManualMapView: { center: L.LatLng; zoom: number } | null = null;
-    let isMapAutoMoving = false;
-    map.on("moveend", () => {
-        if (!isMapAutoMoving) {
-            lastManualMapView = {
-                center: map.getCenter(),
-                zoom: map.getZoom(),
-            };
-        }
-    });
     function selectedRouteListItemUpdated(selectedRouteIds: readonly string[]) {
         if (state.routes === "routes-unloaded") {
             return;
@@ -698,26 +701,6 @@ async function asyncMain() {
 
         state.selectedRouteId = selectedRouteIds[0] ?? null;
         updateSelectedRouteInfo();
-
-        if (state.selectedRouteId == null) {
-            if (lastManualMapView != null) {
-                isMapAutoMoving = true;
-                map.setView(lastManualMapView.center, lastManualMapView.zoom);
-                isMapAutoMoving = false;
-            }
-        } else {
-            const bounds = L.latLngBounds([]);
-            for (const routeId of selectedRouteIds) {
-                const route = state.routes.get(routeId);
-                if (route == null) {
-                    continue;
-                }
-                for (const coordinate of route.route.coordinates) {
-                    bounds.extend(coordinateToLatLng(coordinate));
-                }
-            }
-            moveToBound(bounds);
-        }
     }
     function saveQueryHistory(queryText: string) {
         const maxHistoryCount = 10;
@@ -777,29 +760,35 @@ async function asyncMain() {
         if (state.routes === "routes-unloaded") {
             return;
         }
-
-        while (routeListElement.firstChild) {
-            routeListElement.removeChild(routeListElement.firstChild);
-        }
-
         const { queryText, query } = state.routeListQuery;
 
         const routes = [...state.routes.values()].map((r) => r.route);
+        const queryUndefined = query === undefined;
+        const getQuery = queryUndefined ? getEmptyQuery : query;
 
         const environment = { ...defaultEnvironment, routes };
         const { predicate } = protectedCallQueryFunction(
-            () => query().initialize(environment),
+            () => getQuery().initialize(environment),
             () => getEmptyQuery().initialize(environment)
         );
 
-        for (const { route, listItem } of state.routes.values()) {
+        for (const {
+            route,
+            listItem,
+            coordinatesEditor,
+        } of state.routes.values()) {
             const r = protectedCallQueryFunction(
                 () => predicate(route),
                 () => false
             );
             if (r) {
-                updateRoutesListItem(route, listItem);
-                routeListElement.appendChild(listItem);
+                listItem.classList.remove(classNames.hidden);
+            } else {
+                listItem.classList.add(classNames.hidden);
+            }
+            updateRoutesListItem(route, listItem);
+            if (!queryUndefined) {
+                coordinatesEditor.highlight(r);
             }
         }
         saveQueryHistory(queryText);
@@ -807,9 +796,8 @@ async function asyncMain() {
 
     const elementToRouteId = new WeakMap<Element, string>();
     function onListItemClicked(element: HTMLElement) {
-        const listItems =
-            element.parentElement?.getElementsByTagName("li") ?? [];
-        for (const listItem of listItems) {
+        if (state.routes === "routes-unloaded") return;
+        for (const { listItem } of state.routes.values()) {
             listItem.classList.remove(classNames.selected);
         }
         element.classList.add(classNames.selected);
@@ -826,6 +814,9 @@ async function asyncMain() {
             {
                 click() {
                     onListItemClicked(this);
+                },
+                dblclick() {
+                    onMoveToSelectedElement(false);
                 },
             }
         );
@@ -844,18 +835,27 @@ async function asyncMain() {
     ) {
         setQueryExpressionCancelScope(async (signal) => {
             await sleep(delayMilliseconds, { signal });
-            const { query, diagnostics } = createQuery(queryText);
-            if (0 !== diagnostics.length) {
-                progress({
-                    type: "query-parse-error-occurred",
-                    messages: diagnostics,
-                });
-            } else {
+            if (queryText.trim() === "") {
+                state.routeListQuery === undefined;
                 progress({
                     type: "query-parse-completed",
+                    language: undefined,
                 });
+            } else {
+                const { query, diagnostics, syntax } = createQuery(queryText);
+                if (0 !== diagnostics.length) {
+                    progress({
+                        type: "query-parse-error-occurred",
+                        messages: diagnostics,
+                    });
+                } else {
+                    progress({
+                        type: "query-parse-completed",
+                        language: syntax,
+                    });
+                }
+                state.routeListQuery = { queryText, query };
             }
-            state.routeListQuery = { queryText, query };
             updateRoutesListElement();
         });
     }
@@ -999,7 +999,7 @@ async function asyncMain() {
             updateSelectedRouteInfo();
             queueSetRouteCommandDelayed(3000, route);
         });
-        return { layer, update: ignore };
+        return { layer, update: ignore, highlight: ignore };
     }
     const maxTitleWidth = 160;
     const maxTitleHeight = 46;
@@ -1011,14 +1011,23 @@ async function asyncMain() {
             iconSize: [maxTitleWidth, maxTitleHeight],
         });
     }
-    const spotCircleNormalStyle: L.PathOptions = {
-        opacity: 0.3,
-        fillOpacity: 0.8,
-    } as const;
-    const spotCircleSelectedStyle: L.PathOptions = {
-        opacity: 1.0,
-        fillOpacity: 1.0,
-    };
+    function setSpotCircleNormalStyle(s: L.PathOptions) {
+        s.color = "#000";
+        s.weight = 5;
+        s.opacity = 0.3;
+        s.fillOpacity = 0.8;
+        return s;
+    }
+    function setSpotCircleSelectedStyle(s: L.PathOptions) {
+        s.opacity = 1.0;
+        s.fillOpacity = 1.0;
+        return s;
+    }
+    function setSpotCircleHighlightStyle(s: L.PathOptions) {
+        s.color = "#fcff3f";
+        s.opacity = 1;
+        return s;
+    }
     function createSpotView(
         route: Route,
         routeMap: Map<string, RouteWithView>
@@ -1026,22 +1035,20 @@ async function asyncMain() {
         const { routeId } = route;
         const circle = L.circleMarker(
             coordinateToLatLng(route.coordinates[0]),
-            {
+            setSpotCircleNormalStyle({
                 className: `spot-circle spot-circle-${routeId}`,
-                color: "#000",
                 fillColor: "#3e9",
-                weight: 5,
-                ...spotCircleNormalStyle,
-            }
+            })
         );
+        let highlighted = false;
         let draggable = false;
         let dragging = false;
+        const style: L.PathOptions = {};
         function changeStyle() {
-            if (draggable) {
-                circle.setStyle(spotCircleSelectedStyle);
-            } else {
-                circle.setStyle(spotCircleNormalStyle);
-            }
+            setSpotCircleNormalStyle(style);
+            if (draggable) setSpotCircleSelectedStyle(style);
+            if (highlighted) setSpotCircleHighlightStyle(style);
+            circle.setStyle(style);
         }
         const onDragging = (e: L.LeafletMouseEvent) => {
             circle.setLatLng(e.latlng);
@@ -1084,7 +1091,11 @@ async function asyncMain() {
             circle.setLatLng(coordinate0);
             label.setLatLng(coordinate0);
         }
-        return { layer: group, update };
+        function highlight(enabled: boolean) {
+            highlighted = enabled;
+            changeStyle();
+        }
+        return { layer: group, update, highlight };
     }
 
     function addRouteView(routeMap: Map<string, RouteWithView>, route: Route) {
@@ -1107,6 +1118,7 @@ async function asyncMain() {
 
         const listItem = createRouteListItem(route);
 
+        routeListElement.appendChild(listItem);
         routeMap.set(routeId, {
             route,
             coordinatesEditor: view,

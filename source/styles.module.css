@@ -11,7 +11,7 @@
     align-items: center;
 }
 
-.import-text-input.hidden {
+.hidden {
     display: none;
 }
 
