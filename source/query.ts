@@ -1,5 +1,4 @@
 // spell-checker: ignore drivetunnel
-import { z } from "../../gas-drivetunnel/source/json-schema";
 import type { Json as MutableJson } from "../../gas-drivetunnel/source/json-schema-core";
 import { evaluateExpression, type Expression } from "./query-expression";
 import {
@@ -138,9 +137,7 @@ function toStrictJson(text: string) {
 const reachable: RouteQuery = {
     initialize({ getUserCoordinate, distance }) {
         const userCoordinate = getUserCoordinate();
-        if (userCoordinate == null) {
-            return emptyUnit;
-        }
+        if (userCoordinate == null) return emptyUnit;
         return {
             ...emptyUnit,
             predicate(route) {
@@ -152,7 +149,28 @@ const reachable: RouteQuery = {
         };
     },
 };
+function reachableWith(options: {
+    radius?: number;
+    center?: Coordinate;
+}): RouteQuery {
+    return {
+        initialize({ getUserCoordinate, distance }) {
+            const center = options.center || getUserCoordinate();
+            if (center == null) return emptyUnit;
+            const radius = options.radius ?? 9800;
 
+            return {
+                ...emptyUnit,
+                predicate(route) {
+                    return (
+                        getRouteKind(route) === "spot" &&
+                        distance(center, route.coordinates[0]) < radius
+                    );
+                },
+            };
+        },
+    };
+}
 const library = {
     ["tag?"](route: Route, tagNames: readonly string[]) {
         const tags = getRouteTags(route);
@@ -175,6 +193,7 @@ const library = {
         return includes(words);
     },
     reachable,
+    reachableWith,
     and(...queries: RouteQuery[]): RouteQuery {
         return {
             initialize(e) {

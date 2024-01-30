@@ -12,6 +12,7 @@ function throwLetExpressionError() {
         `#let 形式には要素1と要素2が必要です。例: ["#let", ["result", ["complexTask"]], "result"]`
     );
 }
+const hasOwnProperty = Object.prototype.hasOwnProperty;
 export function evaluateExpression(
     expression: Expression,
     variables: Assoc.Assoc<string, unknown>,
@@ -28,7 +29,18 @@ export function evaluateExpression(
         }
     }
     if (!isArray(expression)) {
-        return structuredClone(expression);
+        const result = Object.create(null);
+        for (const key in expression) {
+            if (hasOwnProperty.call(expression, key)) {
+                result[key] = evaluateExpression(
+                    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+                    expression[key]!,
+                    variables,
+                    getUnresolved
+                );
+            }
+        }
+        return result;
     }
     switch (expression[0]) {
         case "#quote": {
