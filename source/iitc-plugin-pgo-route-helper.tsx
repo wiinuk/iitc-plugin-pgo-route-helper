@@ -17,6 +17,7 @@ import {
     type RouteKind,
     getRouteIsTemplate,
     setRouteIsTemplate,
+    type Coordinate,
 } from "./route";
 import {
     error,
@@ -132,6 +133,12 @@ function waitLayerAdded(map: L.Map, layer: L.ILayer) {
     });
 }
 
+function latLngToCoordinate({ lat, lng }: L.LatLng): Coordinate {
+    return [lat, lng];
+}
+function coordinateToLatLng([lat, lng]: Coordinate): L.LatLng {
+    return L.latLng(lat, lng);
+}
 function getMiddleCoordinate(
     p1: L.LatLngExpression,
     p2: L.LatLngExpression
@@ -321,7 +328,7 @@ async function asyncMain() {
                         "user-id": userId,
                         "route-id": routeId,
                         "route-name": routeName,
-                        coordinates,
+                        coordinates: stringifyCoordinates(coordinates),
                         description,
                         note,
                         data: JSON.stringify(data),
@@ -405,16 +412,16 @@ async function asyncMain() {
                 if (!this.checkValidity()) {
                     return;
                 }
-                mergeSelectedRoute({ coordinates: this.value });
+                mergeSelectedRoute({
+                    coordinates: parseCoordinates(this.value),
+                });
             },
         }
     );
     const lengthElement = <div></div>;
 
-    function calculateRouteLengthMeters(route: Route) {
-        const coordinates = parseCoordinates(route.coordinates);
+    function calculateRouteLengthMeters({ coordinates }: Route) {
         let point0 = coordinates[0];
-        if (point0 == null) return 0;
 
         let lengthMeters = 0;
         for (let i = 1; i < coordinates.length; i++) {
@@ -447,7 +454,7 @@ async function asyncMain() {
             notesElement.readOnly = false;
             notesElement.value = route.note;
             coordinatesElement.readOnly = false;
-            coordinatesElement.value = route.coordinates;
+            coordinatesElement.value = stringifyCoordinates(route.coordinates);
             const lengthMeters = calculateRouteLengthMeters(route);
             lengthElement.innerText = `${
                 Math.round(lengthMeters * 100) / 100
@@ -471,21 +478,23 @@ async function asyncMain() {
         switch (kind) {
             case "route": {
                 const bound = map.getBounds();
-                coordinates = stringifyCoordinates([
-                    getMiddleCoordinate(
+                const c1 = getMiddleCoordinate(
                         bound.getCenter(),
                         bound.getNorthEast()
-                    ),
-                    getMiddleCoordinate(
+                );
+                const c2 = getMiddleCoordinate(
                         bound.getCenter(),
                         bound.getSouthWest()
-                    ),
-                ]);
+                );
+                coordinates = [
+                    latLngToCoordinate(c1),
+                    latLngToCoordinate(c2),
+                ] as const;
                 routeName = "新しいルート";
                 break;
             }
             case "spot": {
-                coordinates = stringifyCoordinates([map.getCenter()]);
+                coordinates = [latLngToCoordinate(map.getCenter())] as const;
                 routeName = "新しいスポット";
                 break;
             }
@@ -607,7 +616,9 @@ async function asyncMain() {
                 route.listItem.scrollIntoView();
                 onListItemClicked(route.listItem);
                 moveToBound(
-                    L.latLngBounds(parseCoordinates(route.route.coordinates))
+                    L.latLngBounds(
+                        route.route.coordinates.map(coordinateToLatLng)
+                    )
                 );
             },
         }
@@ -670,10 +681,8 @@ async function asyncMain() {
                 if (route == null) {
                     continue;
                 }
-                for (const coordinate of parseCoordinates(
-                    route.route.coordinates
-                )) {
-                    bounds.extend(coordinate);
+                for (const coordinate of route.route.coordinates) {
+                    bounds.extend(coordinateToLatLng(coordinate));
                 }
             }
             moveToBound(bounds);
@@ -885,7 +894,7 @@ async function asyncMain() {
         { routeId, coordinates }: Route,
         routeMap: Map<string, RouteWithView>
     ) {
-        const layer = polylineEditor(parseCoordinates(coordinates), {
+        const layer = polylineEditor(coordinates.map(coordinateToLatLng), {
             clickable: true,
             color: "#5fd6ff",
         });
@@ -926,7 +935,7 @@ async function asyncMain() {
     ) {
         const { routeId } = route;
         const circle = L.circleMarker(
-            parseCoordinates(route.coordinates)[0] ?? error`internal error`,
+            coordinateToLatLng(route.coordinates[0]),
             {
                 className: `spot-circle spot-circle-${routeId}`,
                 color: "#000",
@@ -968,7 +977,7 @@ async function asyncMain() {
             map.off("mousemove", onDragging);
 
             const { route } = routeMap.get(routeId) ?? error`internal error`;
-            route.coordinates = stringifyCoordinates([circle.getLatLng()]);
+            route.coordinates = [latLngToCoordinate(circle.getLatLng())];
 
             if (latlngChanged) {
                 queueSetRouteCommandDelayed(3000, route);
@@ -981,8 +990,7 @@ async function asyncMain() {
 
         function update(route: Route) {
             label.setIcon(createSpotLabel(route.routeName));
-            const coordinate0 =
-                parseCoordinates(route.coordinates)[0] ?? error`internal error`;
+            const coordinate0 = coordinateToLatLng(route.coordinates[0]);
             circle.setLatLng(coordinate0);
             label.setLatLng(coordinate0);
         }
@@ -1040,7 +1048,10 @@ async function asyncMain() {
         });
         for (const route of routeList) {
             await doOtherTasks();
-            addRouteView(routeMap, route);
+            addRouteView(routeMap, {
+                ...route,
+                coordinates: parseCoordinates(route.coordinates),
+            });
             console.debug(
                 `ルート: '${route.routeName}' ( ${route.routeId} ) を読み込みました`
             );

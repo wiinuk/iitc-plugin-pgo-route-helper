@@ -1,4 +1,5 @@
-import type { Coordinate } from "./route";
+import type { Coordinate, Coordinates1 } from "./route";
+import { isArray } from "./standard-extensions";
 
 const numberPattern = "\\d+(\\.\\d+)?\\s*";
 const commaPattern = ",\\s*";
@@ -14,18 +15,16 @@ export function parseCoordinates(kmlCoordinatesText: string) {
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         result.push([Number(tokens[i - 1]!), Number(tokens[i]!)]);
     }
-    return result;
+    if (result.length === 0) {
+        throw new Error();
+    }
+    return result as [Coordinate, ...Coordinate[]] as Coordinates1;
 }
-export function stringifyCoordinates(
-    coordinates: readonly (
-        | Readonly<{ lat: number; lng: number }>
-        | Coordinate
-    )[]
-) {
+export function stringifyCoordinates(coordinates: Coordinates1) {
     return coordinates
         .map((c) => {
             let lat, lng;
-            if (Array.isArray(c)) {
+            if (isArray(c)) {
                 [lat, lng] = c;
             } else {
                 ({ lat, lng } = c);

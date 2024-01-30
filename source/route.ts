@@ -1,10 +1,11 @@
 // spell-checker: ignore drivetunnel
 import type { Json } from "../../gas-drivetunnel/source/json-schema-core";
 import type { Route as RemoteRoute } from "../../gas-drivetunnel/source/schemas";
-import { exhaustive } from "./standard-extensions";
-export type Route = RemoteRoute;
+import { exhaustive, type SetProperty } from "./standard-extensions";
+export type Route = SetProperty<RemoteRoute, "coordinates", Coordinates1>;
 export type Uuid = string;
-export type Coordinate = [number, number];
+export type Coordinate = readonly [number, number];
+export type Coordinates1 = readonly [Coordinate, ...Coordinate[]];
 export type RouteKind = "route" | "spot";
 export function getRouteKind(route: Route): RouteKind {
     return route.data["kind"] === "spot" ? "spot" : "route";

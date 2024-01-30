@@ -229,3 +229,27 @@ export function pipe<T, Ps extends readonly PipeProcess[]>(
     }
     return a as Pipe<T, Ps>;
 }
+
+export type SetProperty<O, K extends keyof O, V> = {
+    [k in keyof O | K]: k extends K ? V : O[k];
+};
+
+export const isArray = Array.isArray as (x: unknown) => x is readonly unknown[];
+
+export const failureSymbol = Symbol("GetFailure");
+export function getOrFailureSymbol(
+    o: unknown,
+    ...keys: (string | number | symbol)[]
+) {
+    function get(o: unknown, k: string | number | symbol) {
+        if (o === failureSymbol) return o;
+        return typeof o === "object" && o !== null && k in o
+            ? (o as Record<string | number | symbol, unknown>)[k]
+            : failureSymbol;
+    }
+    for (let i = 0; i < keys.length; i++) {
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        o = get(o, keys[i]!);
+    }
+    return o;
+}
