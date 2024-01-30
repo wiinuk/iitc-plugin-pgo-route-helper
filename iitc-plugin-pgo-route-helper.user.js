@@ -6,7 +6,7 @@
 // @downloadURL  https://github.com/wiinuk/iitc-plugin-pgo-route-helper/raw/master/iitc-plugin-pgo-route-helper.user.js
 // @updateURL    https://github.com/wiinuk/iitc-plugin-pgo-route-helper/raw/master/iitc-plugin-pgo-route-helper.user.js
 // @homepageURL  https://github.com/wiinuk/iitc-plugin-pgo-route-helper
-// @version      0.9.3
+// @version      0.9.4
 // @description  IITC plugin to assist in Pokémon GO route creation.
 // @author       Wiinuk
 // @include      https://*.ingress.com/intel*
@@ -758,22 +758,22 @@ function getRouteIsTemplate(route) {
 }
 
 ;// CONCATENATED MODULE: ./source/styles.module.css
-const cssText = ".import-text-input-4faf957567e2c36abf951c2f464b065cc2286445 {\r\n    position: fixed;\r\n    top: 0;\r\n    left: 0;\r\n    width: 100%;\r\n    height: 100%;\r\n    z-index: 10000;\r\n\r\n    display: flex;\r\n    justify-content: center;\r\n    align-items: center;\r\n}\r\n\r\n.import-text-input-4faf957567e2c36abf951c2f464b065cc2286445.hidden-30b9075d5936cb11058ae157509e6c33ac7032b7 {\r\n    display: none;\r\n}\r\n\r\ninput.editable-text-05c916e1b0d076f73d4a8b23f0b1154433d52a96 {\r\n    border: none;\r\n    background: none;\r\n    font-size: 16px;\r\n    color: black;\r\n}\r\n\r\n.spot-label-4d92519a6cef8d245f399dad4f0eeb6991ed68e3 {\r\n    color: #FFFFBB;\r\n    font-size: 11px;\r\n    line-height: 12px;\r\n    text-align: center;\r\n    padding: 2px;\r\n    overflow: hidden;\r\n    white-space: nowrap;\r\n    text-overflow: ellipsis;\r\n    text-shadow: 1px 1px #000, 1px -1px #000, -1px 1px #000, -1px -1px #000, 0 0 5px #000;\r\n    pointer-events: none;\r\n}\r\n\r\n.properties-editor-5fa62ed0a3dfe4cee8c6b6e5196b67f6d56841a2 {\r\n    display: flex;\r\n    flex-direction: column;\r\n    resize: both;\r\n    overflow: auto;\r\n    max-width: 100%;\r\n    max-height: 100vh;\r\n}\r\n.route-list-container-210b872724a90fbe37700438d6e10110dc38f954 {\r\n    flex-grow: 1;\r\n    overflow: auto;\r\n}\r\n\r\n.properties-editor-5fa62ed0a3dfe4cee8c6b6e5196b67f6d56841a2 textarea,\r\n.properties-editor-5fa62ed0a3dfe4cee8c6b6e5196b67f6d56841a2 input {\r\n    box-sizing: border-box;\r\n    width: 100%;\r\n    resize: vertical;\r\n\r\n    font-family: Arial, Helvetica, sans-serif;\r\n}\r\n.properties-editor-5fa62ed0a3dfe4cee8c6b6e5196b67f6d56841a2 input.title-40f5a89442ca26e53f1cd91ddc7df20596c1192c {\r\n    width: auto;\r\n}\r\n\r\n.properties-editor-5fa62ed0a3dfe4cee8c6b6e5196b67f6d56841a2 textarea.query-input-field-4d0e23e96a2dd788951410a695fd3853af636087 {\r\n    font-family: Menlo, Monaco, 'Courier New', Courier, monospace;\r\n    height: 1.5em;\r\n}\r\n\r\n.route-list-5f8685abafa23e1bd15d3268fc5294f041282b3f .selecting-484ac696fc113316ee05e590e3f599bf44277db4 {\r\n    background: #FECA40;\r\n}\r\n\r\n.route-list-5f8685abafa23e1bd15d3268fc5294f041282b3f .selected-cfe6c81b76479c1b803ace406850f8daab42f685 {\r\n    background: #F39814;\r\n    color: white;\r\n}\r\n\r\n.route-list-5f8685abafa23e1bd15d3268fc5294f041282b3f {\r\n    list-style-type: none;\r\n    margin: 0;\r\n    padding: 0;\r\n    width: 60%;\r\n}\r\n\r\n.route-list-5f8685abafa23e1bd15d3268fc5294f041282b3f li {\r\n    margin: 3px;\r\n    padding: 0.4em;\r\n    height: 18px;\r\n    cursor: pointer;\r\n}\r\n\r\n.auto-complete-list-8188e158b09f9a13b1ec0fdaa82201da52249ef5 {\r\n    position: absolute;\r\n    background-color: #f9f9f9;\r\n    min-width: 160px;\r\n    box-shadow: 0px 8px 16px 0px rgba(0, 0, 0, 0.2);\r\n    padding: 12px 16px;\r\n    z-index: 1;\r\n}\r\n\r\n.auto-complete-list-8188e158b09f9a13b1ec0fdaa82201da52249ef5 .auto-complete-list-item-f06a0c1c3b57833f6691f4cb7db0f08ee4454fa4 {\r\n    color: black;\r\n    padding: 12px 16px;\r\n    text-decoration: none;\r\n    display: block;\r\n}\r\n\r\n.auto-complete-list-8188e158b09f9a13b1ec0fdaa82201da52249ef5 .auto-complete-list-item-f06a0c1c3b57833f6691f4cb7db0f08ee4454fa4:hover {\r\n    background-color: #ddd;\r\n}\r\n\r\n\r\n/* アコーディオン */\r\n/* マーカー */\r\n.accordion-7bda771204f44fa81df8ec025d5dcc2142108361>summary::-webkit-details-marker {\r\n    display: none;\r\n}\r\n\r\n.accordion-7bda771204f44fa81df8ec025d5dcc2142108361>summary::before {\r\n    content: \"\";\r\n    position: absolute;\r\n    width: 6px;\r\n    height: 6px;\r\n    border-top: 2px solid #fff;\r\n    border-right: 2px solid #fff;\r\n\r\n    transform: rotate(225deg);\r\n    top: calc(50% - 3px);\r\n    right: 1em;\r\n}\r\n\r\n/* 閉じているとき */\r\n.accordion-7bda771204f44fa81df8ec025d5dcc2142108361>summary {\r\n    cursor: grab;\r\n    display: block;\r\n    height: auto;\r\n    padding: 3px;\r\n    width: auto;\r\n    height: auto;\r\n\r\n    background: #019bc656;\r\n    border: solid 1px #00000000\r\n}\r\n\r\n.accordion-7bda771204f44fa81df8ec025d5dcc2142108361>* {\r\n    backface-visibility: hidden;\r\n    transform: translateZ(0);\r\n    transition: all 0.3s;\r\n}\r\n\r\n.accordion-7bda771204f44fa81df8ec025d5dcc2142108361> :not(summary) {\r\n    margin-bottom: 6px;\r\n    padding: 0 3px;\r\n    border: solid 1px #00000000;\r\n}\r\n\r\n/* 開いたとき */\r\n.accordion-7bda771204f44fa81df8ec025d5dcc2142108361[open]>summary {\r\n    background: #c6880156;\r\n}\r\n\r\n.accordion-7bda771204f44fa81df8ec025d5dcc2142108361[open]>summary::before {\r\n    transform: rotate(135deg);\r\n}\r\n\r\n.accordion-7bda771204f44fa81df8ec025d5dcc2142108361[open]> :not(summary) {\r\n    padding: 3px;\r\n    transition: all 0.3s;\r\n\r\n    border: solid 1px #c6880156;\r\n}\r\n";
+const cssText = ".import-text-input-7e2d8746aec6fe75502480ac3cb8b9eefcf1e261 {\r\n    position: fixed;\r\n    top: 0;\r\n    left: 0;\r\n    width: 100%;\r\n    height: 100%;\r\n    z-index: 10000;\r\n\r\n    display: flex;\r\n    justify-content: center;\r\n    align-items: center;\r\n}\r\n\r\n.hidden-cac5f386425d7170a5e774668df9f4ed4f95868e {\r\n    display: none;\r\n}\r\n\r\ninput.editable-text-5412a24bce9195f967404ec05c3960cad7248352 {\r\n    border: none;\r\n    background: none;\r\n    font-size: 16px;\r\n    color: black;\r\n}\r\n\r\n.spot-label-443f83425acc0be603a19f4fcf74c5fc099f6bb5 {\r\n    color: #FFFFBB;\r\n    font-size: 11px;\r\n    line-height: 12px;\r\n    text-align: center;\r\n    padding: 2px;\r\n    overflow: hidden;\r\n    white-space: nowrap;\r\n    text-overflow: ellipsis;\r\n    text-shadow: 1px 1px #000, 1px -1px #000, -1px 1px #000, -1px -1px #000, 0 0 5px #000;\r\n    pointer-events: none;\r\n}\r\n\r\n.properties-editor-9874f45bc4d18026e83b06d70ffd5ba2cbd21ff7 {\r\n    display: flex;\r\n    flex-direction: column;\r\n    resize: both;\r\n    overflow: auto;\r\n    max-width: 100%;\r\n    max-height: 100vh;\r\n}\r\n.route-list-container-127002c3762bb061f5ea010faf55fcfe64d55b33 {\r\n    flex-grow: 1;\r\n    overflow: auto;\r\n}\r\n\r\n.properties-editor-9874f45bc4d18026e83b06d70ffd5ba2cbd21ff7 textarea,\r\n.properties-editor-9874f45bc4d18026e83b06d70ffd5ba2cbd21ff7 input {\r\n    box-sizing: border-box;\r\n    width: 100%;\r\n    resize: vertical;\r\n\r\n    font-family: Arial, Helvetica, sans-serif;\r\n}\r\n.properties-editor-9874f45bc4d18026e83b06d70ffd5ba2cbd21ff7 input.title-ff18db26366051345bbed1ecbed378d895cc8f3a {\r\n    width: auto;\r\n}\r\n\r\n.properties-editor-9874f45bc4d18026e83b06d70ffd5ba2cbd21ff7 textarea.query-input-field-f2948b3c94f9b4f62e20a88f6c3fa71edd983cba {\r\n    font-family: Menlo, Monaco, 'Courier New', Courier, monospace;\r\n    height: 1.5em;\r\n}\r\n\r\n.route-list-76d9daf5aed7e7fc2c8923248f315a5c4e5a7285 .selecting-cf04ccfb96faf578e7a25e80c48633dfd3137e40 {\r\n    background: #FECA40;\r\n}\r\n\r\n.route-list-76d9daf5aed7e7fc2c8923248f315a5c4e5a7285 .selected-87af788819d60b980c4acd265a9a0b37e4fd46f2 {\r\n    background: #F39814;\r\n    color: white;\r\n}\r\n\r\n.route-list-76d9daf5aed7e7fc2c8923248f315a5c4e5a7285 {\r\n    list-style-type: none;\r\n    margin: 0;\r\n    padding: 0;\r\n    width: 60%;\r\n}\r\n\r\n.route-list-76d9daf5aed7e7fc2c8923248f315a5c4e5a7285 li {\r\n    margin: 3px;\r\n    padding: 0.4em;\r\n    height: 18px;\r\n    cursor: pointer;\r\n}\r\n\r\n.auto-complete-list-77c78bcbe17d1fc52bb612d4b4cbaaae207181b1 {\r\n    position: absolute;\r\n    background-color: #f9f9f9;\r\n    min-width: 160px;\r\n    box-shadow: 0px 8px 16px 0px rgba(0, 0, 0, 0.2);\r\n    padding: 12px 16px;\r\n    z-index: 1;\r\n}\r\n\r\n.auto-complete-list-77c78bcbe17d1fc52bb612d4b4cbaaae207181b1 .auto-complete-list-item-6fc9ecbb9b1f82110fb8e2fdc6ba7ec41c025399 {\r\n    color: black;\r\n    padding: 12px 16px;\r\n    text-decoration: none;\r\n    display: block;\r\n}\r\n\r\n.auto-complete-list-77c78bcbe17d1fc52bb612d4b4cbaaae207181b1 .auto-complete-list-item-6fc9ecbb9b1f82110fb8e2fdc6ba7ec41c025399:hover {\r\n    background-color: #ddd;\r\n}\r\n\r\n\r\n/* アコーディオン */\r\n/* マーカー */\r\n.accordion-1edb50b922af142cffff4fd9f1cd6317d950c8f6>summary::-webkit-details-marker {\r\n    display: none;\r\n}\r\n\r\n.accordion-1edb50b922af142cffff4fd9f1cd6317d950c8f6>summary::before {\r\n    content: \"\";\r\n    position: absolute;\r\n    width: 6px;\r\n    height: 6px;\r\n    border-top: 2px solid #fff;\r\n    border-right: 2px solid #fff;\r\n\r\n    transform: rotate(225deg);\r\n    top: calc(50% - 3px);\r\n    right: 1em;\r\n}\r\n\r\n/* 閉じているとき */\r\n.accordion-1edb50b922af142cffff4fd9f1cd6317d950c8f6>summary {\r\n    cursor: grab;\r\n    display: block;\r\n    height: auto;\r\n    padding: 3px;\r\n    width: auto;\r\n    height: auto;\r\n\r\n    background: #019bc656;\r\n    border: solid 1px #00000000\r\n}\r\n\r\n.accordion-1edb50b922af142cffff4fd9f1cd6317d950c8f6>* {\r\n    backface-visibility: hidden;\r\n    transform: translateZ(0);\r\n    transition: all 0.3s;\r\n}\r\n\r\n.accordion-1edb50b922af142cffff4fd9f1cd6317d950c8f6> :not(summary) {\r\n    margin-bottom: 6px;\r\n    padding: 0 3px;\r\n    border: solid 1px #00000000;\r\n}\r\n\r\n/* 開いたとき */\r\n.accordion-1edb50b922af142cffff4fd9f1cd6317d950c8f6[open]>summary {\r\n    background: #c6880156;\r\n}\r\n\r\n.accordion-1edb50b922af142cffff4fd9f1cd6317d950c8f6[open]>summary::before {\r\n    transform: rotate(135deg);\r\n}\r\n\r\n.accordion-1edb50b922af142cffff4fd9f1cd6317d950c8f6[open]> :not(summary) {\r\n    padding: 3px;\r\n    transition: all 0.3s;\r\n\r\n    border: solid 1px #c6880156;\r\n}\r\n";
 /* harmony default export */ const styles_module = ({
-    "import-text-input": "import-text-input-4faf957567e2c36abf951c2f464b065cc2286445",
-    hidden: "hidden-30b9075d5936cb11058ae157509e6c33ac7032b7",
-    "editable-text": "editable-text-05c916e1b0d076f73d4a8b23f0b1154433d52a96",
-    "spot-label": "spot-label-4d92519a6cef8d245f399dad4f0eeb6991ed68e3",
-    "properties-editor": "properties-editor-5fa62ed0a3dfe4cee8c6b6e5196b67f6d56841a2",
-    "route-list-container": "route-list-container-210b872724a90fbe37700438d6e10110dc38f954",
-    title: "title-40f5a89442ca26e53f1cd91ddc7df20596c1192c",
-    "query-input-field": "query-input-field-4d0e23e96a2dd788951410a695fd3853af636087",
-    "route-list": "route-list-5f8685abafa23e1bd15d3268fc5294f041282b3f",
-    selecting: "selecting-484ac696fc113316ee05e590e3f599bf44277db4",
-    selected: "selected-cfe6c81b76479c1b803ace406850f8daab42f685",
-    "auto-complete-list": "auto-complete-list-8188e158b09f9a13b1ec0fdaa82201da52249ef5",
-    "auto-complete-list-item": "auto-complete-list-item-f06a0c1c3b57833f6691f4cb7db0f08ee4454fa4",
-    accordion: "accordion-7bda771204f44fa81df8ec025d5dcc2142108361",
+    "import-text-input": "import-text-input-7e2d8746aec6fe75502480ac3cb8b9eefcf1e261",
+    hidden: "hidden-cac5f386425d7170a5e774668df9f4ed4f95868e",
+    "editable-text": "editable-text-5412a24bce9195f967404ec05c3960cad7248352",
+    "spot-label": "spot-label-443f83425acc0be603a19f4fcf74c5fc099f6bb5",
+    "properties-editor": "properties-editor-9874f45bc4d18026e83b06d70ffd5ba2cbd21ff7",
+    "route-list-container": "route-list-container-127002c3762bb061f5ea010faf55fcfe64d55b33",
+    title: "title-ff18db26366051345bbed1ecbed378d895cc8f3a",
+    "query-input-field": "query-input-field-f2948b3c94f9b4f62e20a88f6c3fa71edd983cba",
+    "route-list": "route-list-76d9daf5aed7e7fc2c8923248f315a5c4e5a7285",
+    selecting: "selecting-cf04ccfb96faf578e7a25e80c48633dfd3137e40",
+    selected: "selected-87af788819d60b980c4acd265a9a0b37e4fd46f2",
+    "auto-complete-list": "auto-complete-list-77c78bcbe17d1fc52bb612d4b4cbaaae207181b1",
+    "auto-complete-list-item": "auto-complete-list-item-6fc9ecbb9b1f82110fb8e2fdc6ba7ec41c025399",
+    accordion: "accordion-1edb50b922af142cffff4fd9f1cd6317d950c8f6",
 });
 
 ;// CONCATENATED MODULE: ../gas-drivetunnel/source/schemas.ts
@@ -1757,13 +1757,18 @@ function createQuery(expression) {
     const json = tryParseJson(toStrictJson(expression));
     if (json == null ||
         !(typeof json === "object" || typeof json === "string")) {
-        return { query: () => createSimpleQuery(expression), diagnostics: [] };
+        return {
+            query: () => createSimpleQuery(expression),
+            syntax: "words",
+            diagnostics: [],
+        };
     }
     return {
         query: () => {
             // TODO: 静的チェックする
             return evaluateWithLibrary(json);
         },
+        syntax: "parentheses",
         diagnostics: [],
     };
 }
@@ -1808,7 +1813,7 @@ var iitc_plugin_pgo_route_helper_awaiter = (undefined && undefined.__awaiter) ||
     });
 };
 
-// spell-checker: ignore layeradd drivetunnel latlngschanged lngs latlng moveend buttonset
+// spell-checker: ignore layeradd drivetunnel latlngschanged lngs latlng buttonset
 
 
 
@@ -1925,7 +1930,7 @@ function asyncMain() {
             selectedRouteId: null,
             deleteRouteId: null,
             routes: "routes-unloaded",
-            routeListQuery: { queryText: "", query: getEmptyQuery },
+            routeListQuery: { queryText: "", query: undefined },
         };
         const progress = (message) => {
             console.log(JSON.stringify(message));
@@ -1958,7 +1963,19 @@ function asyncMain() {
                     break;
                 }
                 case "query-parse-completed": {
-                    reportElement.innerText = "クエリ構文チェック完了";
+                    switch (message.language) {
+                        case "words":
+                            reportElement.innerText = "通常検索";
+                            break;
+                        case "parentheses":
+                            reportElement.innerHTML = "式検索";
+                            break;
+                        case undefined:
+                            reportElement.innerHTML = "未検索";
+                            break;
+                        default:
+                            return exhaustive(message.language);
+                    }
                     break;
                 }
                 case "query-parse-error-occurred": {
@@ -2210,6 +2227,7 @@ function asyncMain() {
                     if (view == null)
                         return;
                     routes.delete(deleteRouteId);
+                    view.listItem.remove();
                     updateRoutesListElement();
                     map.removeLayer(view.coordinatesEditor.layer);
                     routeLayerGroup.removeLayer(view.coordinatesEditor.layer);
@@ -2242,19 +2260,20 @@ function asyncMain() {
                 deleteConfirmation.dialog("open");
             },
         });
-        function moveToBound(bounds) {
-            isMapAutoMoving = true;
-            map.panInsideBounds(bounds);
-            isMapAutoMoving = false;
-        }
-        const moveToRouteElement = addListeners(jsx("button", { children: "\uD83C\uDFAF\u30B9\u30AF\u30ED\u30FC\u30EB\u3057\u3066\u8868\u793A" }), {
-            click() {
-                const route = getSelectedRoute();
-                if (route == null)
-                    return;
+        function onMoveToSelectedElement(showListItem) {
+            const route = getSelectedRoute();
+            if (route == null)
+                return;
+            if (showListItem) {
                 route.listItem.scrollIntoView();
-                onListItemClicked(route.listItem);
-                moveToBound(L.latLngBounds(route.route.coordinates.map(coordinateToLatLng)));
+            }
+            onListItemClicked(route.listItem);
+            const bounds = L.latLngBounds(route.route.coordinates.map(coordinateToLatLng));
+            map.panInsideBounds(bounds);
+        }
+        const moveToRouteElement = addListeners(jsx("button", { children: "\uD83C\uDFAF\u5730\u56F3\u3067\u8868\u793A" }), {
+            click() {
+                onMoveToSelectedElement(true);
             },
         });
         const setAsTemplateElement = addListeners(jsx("button", { children: "\uD83D\uDCD1\u30C6\u30F3\u30D7\u30EC\u30FC\u30C8\u3068\u3057\u3066\u8A2D\u5B9A" }), {
@@ -2278,16 +2297,6 @@ function asyncMain() {
                 updateSelectedRouteInfo();
             },
         });
-        let lastManualMapView = null;
-        let isMapAutoMoving = false;
-        map.on("moveend", () => {
-            if (!isMapAutoMoving) {
-                lastManualMapView = {
-                    center: map.getCenter(),
-                    zoom: map.getZoom(),
-                };
-            }
-        });
         function selectedRouteListItemUpdated(selectedRouteIds) {
             var _a;
             if (state.routes === "routes-unloaded") {
@@ -2295,26 +2304,6 @@ function asyncMain() {
             }
             state.selectedRouteId = (_a = selectedRouteIds[0]) !== null && _a !== void 0 ? _a : null;
             updateSelectedRouteInfo();
-            if (state.selectedRouteId == null) {
-                if (lastManualMapView != null) {
-                    isMapAutoMoving = true;
-                    map.setView(lastManualMapView.center, lastManualMapView.zoom);
-                    isMapAutoMoving = false;
-                }
-            }
-            else {
-                const bounds = L.latLngBounds([]);
-                for (const routeId of selectedRouteIds) {
-                    const route = state.routes.get(routeId);
-                    if (route == null) {
-                        continue;
-                    }
-                    for (const coordinate of route.route.coordinates) {
-                        bounds.extend(coordinateToLatLng(coordinate));
-                    }
-                }
-                moveToBound(bounds);
-            }
         }
         function saveQueryHistory(queryText) {
             var _a;
@@ -2364,27 +2353,32 @@ function asyncMain() {
             if (state.routes === "routes-unloaded") {
                 return;
             }
-            while (routeListElement.firstChild) {
-                routeListElement.removeChild(routeListElement.firstChild);
-            }
             const { queryText, query } = state.routeListQuery;
             const routes = [...state.routes.values()].map((r) => r.route);
+            const queryUndefined = query === undefined;
+            const getQuery = queryUndefined ? getEmptyQuery : query;
             const environment = Object.assign(Object.assign({}, defaultEnvironment), { routes });
-            const { predicate } = protectedCallQueryFunction(() => query().initialize(environment), () => getEmptyQuery().initialize(environment));
-            for (const { route, listItem } of state.routes.values()) {
+            const { predicate } = protectedCallQueryFunction(() => getQuery().initialize(environment), () => getEmptyQuery().initialize(environment));
+            for (const { route, listItem, coordinatesEditor, } of state.routes.values()) {
                 const r = protectedCallQueryFunction(() => predicate(route), () => false);
                 if (r) {
-                    updateRoutesListItem(route, listItem);
-                    routeListElement.appendChild(listItem);
+                    listItem.classList.remove(styles_module.hidden);
+                }
+                else {
+                    listItem.classList.add(styles_module.hidden);
+                }
+                updateRoutesListItem(route, listItem);
+                if (!queryUndefined) {
+                    coordinatesEditor.highlight(r);
                 }
             }
             saveQueryHistory(queryText);
         }
         const elementToRouteId = new WeakMap();
         function onListItemClicked(element) {
-            var _a, _b;
-            const listItems = (_b = (_a = element.parentElement) === null || _a === void 0 ? void 0 : _a.getElementsByTagName("li")) !== null && _b !== void 0 ? _b : [];
-            for (const listItem of listItems) {
+            if (state.routes === "routes-unloaded")
+                return;
+            for (const { listItem } of state.routes.values()) {
                 listItem.classList.remove(styles_module.selected);
             }
             element.classList.add(styles_module.selected);
@@ -2398,6 +2392,9 @@ function asyncMain() {
                 click() {
                     onListItemClicked(this);
                 },
+                dblclick() {
+                    onMoveToSelectedElement(false);
+                },
             });
             elementToRouteId.set(listItem, route.routeId);
             return listItem;
@@ -2407,19 +2404,29 @@ function asyncMain() {
         function setQueryExpressionDelayed(delayMilliseconds, queryText) {
             setQueryExpressionCancelScope((signal) => iitc_plugin_pgo_route_helper_awaiter(this, void 0, void 0, function* () {
                 yield sleep(delayMilliseconds, { signal });
-                const { query, diagnostics } = createQuery(queryText);
-                if (0 !== diagnostics.length) {
+                if (queryText.trim() === "") {
+                    state.routeListQuery === undefined;
                     progress({
-                        type: "query-parse-error-occurred",
-                        messages: diagnostics,
+                        type: "query-parse-completed",
+                        language: undefined,
                     });
                 }
                 else {
-                    progress({
-                        type: "query-parse-completed",
-                    });
+                    const { query, diagnostics, syntax } = createQuery(queryText);
+                    if (0 !== diagnostics.length) {
+                        progress({
+                            type: "query-parse-error-occurred",
+                            messages: diagnostics,
+                        });
+                    }
+                    else {
+                        progress({
+                            type: "query-parse-completed",
+                            language: syntax,
+                        });
+                    }
+                    state.routeListQuery = { queryText, query };
                 }
-                state.routeListQuery = { queryText, query };
                 updateRoutesListElement();
             }));
         }
@@ -2509,7 +2516,7 @@ function asyncMain() {
                 updateSelectedRouteInfo();
                 queueSetRouteCommandDelayed(3000, route);
             });
-            return { layer, update: ignore };
+            return { layer, update: ignore, highlight: ignore };
         }
         const maxTitleWidth = 160;
         const maxTitleHeight = 46;
@@ -2521,26 +2528,40 @@ function asyncMain() {
                 iconSize: [maxTitleWidth, maxTitleHeight],
             });
         }
-        const spotCircleNormalStyle = {
-            opacity: 0.3,
-            fillOpacity: 0.8,
-        };
-        const spotCircleSelectedStyle = {
-            opacity: 1.0,
-            fillOpacity: 1.0,
-        };
+        function setSpotCircleNormalStyle(s) {
+            s.color = "#000";
+            s.weight = 5;
+            s.opacity = 0.3;
+            s.fillOpacity = 0.8;
+            return s;
+        }
+        function setSpotCircleSelectedStyle(s) {
+            s.opacity = 1.0;
+            s.fillOpacity = 1.0;
+            return s;
+        }
+        function setSpotCircleHighlightStyle(s) {
+            s.color = "#fcff3f";
+            s.opacity = 1;
+            return s;
+        }
         function createSpotView(route, routeMap) {
             const { routeId } = route;
-            const circle = L.circleMarker(coordinateToLatLng(route.coordinates[0]), Object.assign({ className: `spot-circle spot-circle-${routeId}`, color: "#000", fillColor: "#3e9", weight: 5 }, spotCircleNormalStyle));
+            const circle = L.circleMarker(coordinateToLatLng(route.coordinates[0]), setSpotCircleNormalStyle({
+                className: `spot-circle spot-circle-${routeId}`,
+                fillColor: "#3e9",
+            }));
+            let highlighted = false;
             let draggable = false;
             let dragging = false;
+            const style = {};
             function changeStyle() {
-                if (draggable) {
-                    circle.setStyle(spotCircleSelectedStyle);
-                }
-                else {
-                    circle.setStyle(spotCircleNormalStyle);
-                }
+                setSpotCircleNormalStyle(style);
+                if (draggable)
+                    setSpotCircleSelectedStyle(style);
+                if (highlighted)
+                    setSpotCircleHighlightStyle(style);
+                circle.setStyle(style);
             }
             const onDragging = (e) => {
                 circle.setLatLng(e.latlng);
@@ -2581,7 +2602,11 @@ function asyncMain() {
                 circle.setLatLng(coordinate0);
                 label.setLatLng(coordinate0);
             }
-            return { layer: group, update };
+            function highlight(enabled) {
+                highlighted = enabled;
+                changeStyle();
+            }
+            return { layer: group, update, highlight };
         }
         function addRouteView(routeMap, route) {
             const { routeId } = route;
@@ -2600,6 +2625,7 @@ function asyncMain() {
             }
             routeLayerGroup.addLayer(view.layer);
             const listItem = createRouteListItem(route);
+            routeListElement.appendChild(listItem);
             routeMap.set(routeId, {
                 route,
                 coordinatesEditor: view,
