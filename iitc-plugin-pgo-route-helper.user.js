@@ -6,7 +6,7 @@
 // @downloadURL  https://github.com/wiinuk/iitc-plugin-pgo-route-helper/raw/master/iitc-plugin-pgo-route-helper.user.js
 // @updateURL    https://github.com/wiinuk/iitc-plugin-pgo-route-helper/raw/master/iitc-plugin-pgo-route-helper.user.js
 // @homepageURL  https://github.com/wiinuk/iitc-plugin-pgo-route-helper
-// @version      0.9.4
+// @version      0.9.5
 // @description  IITC plugin to assist in Pokémon GO route creation.
 // @author       Wiinuk
 // @include      https://*.ingress.com/intel*
@@ -758,22 +758,22 @@ function getRouteIsTemplate(route) {
 }
 
 ;// CONCATENATED MODULE: ./source/styles.module.css
-const cssText = ".import-text-input-7e2d8746aec6fe75502480ac3cb8b9eefcf1e261 {\r\n    position: fixed;\r\n    top: 0;\r\n    left: 0;\r\n    width: 100%;\r\n    height: 100%;\r\n    z-index: 10000;\r\n\r\n    display: flex;\r\n    justify-content: center;\r\n    align-items: center;\r\n}\r\n\r\n.hidden-cac5f386425d7170a5e774668df9f4ed4f95868e {\r\n    display: none;\r\n}\r\n\r\ninput.editable-text-5412a24bce9195f967404ec05c3960cad7248352 {\r\n    border: none;\r\n    background: none;\r\n    font-size: 16px;\r\n    color: black;\r\n}\r\n\r\n.spot-label-443f83425acc0be603a19f4fcf74c5fc099f6bb5 {\r\n    color: #FFFFBB;\r\n    font-size: 11px;\r\n    line-height: 12px;\r\n    text-align: center;\r\n    padding: 2px;\r\n    overflow: hidden;\r\n    white-space: nowrap;\r\n    text-overflow: ellipsis;\r\n    text-shadow: 1px 1px #000, 1px -1px #000, -1px 1px #000, -1px -1px #000, 0 0 5px #000;\r\n    pointer-events: none;\r\n}\r\n\r\n.properties-editor-9874f45bc4d18026e83b06d70ffd5ba2cbd21ff7 {\r\n    display: flex;\r\n    flex-direction: column;\r\n    resize: both;\r\n    overflow: auto;\r\n    max-width: 100%;\r\n    max-height: 100vh;\r\n}\r\n.route-list-container-127002c3762bb061f5ea010faf55fcfe64d55b33 {\r\n    flex-grow: 1;\r\n    overflow: auto;\r\n}\r\n\r\n.properties-editor-9874f45bc4d18026e83b06d70ffd5ba2cbd21ff7 textarea,\r\n.properties-editor-9874f45bc4d18026e83b06d70ffd5ba2cbd21ff7 input {\r\n    box-sizing: border-box;\r\n    width: 100%;\r\n    resize: vertical;\r\n\r\n    font-family: Arial, Helvetica, sans-serif;\r\n}\r\n.properties-editor-9874f45bc4d18026e83b06d70ffd5ba2cbd21ff7 input.title-ff18db26366051345bbed1ecbed378d895cc8f3a {\r\n    width: auto;\r\n}\r\n\r\n.properties-editor-9874f45bc4d18026e83b06d70ffd5ba2cbd21ff7 textarea.query-input-field-f2948b3c94f9b4f62e20a88f6c3fa71edd983cba {\r\n    font-family: Menlo, Monaco, 'Courier New', Courier, monospace;\r\n    height: 1.5em;\r\n}\r\n\r\n.route-list-76d9daf5aed7e7fc2c8923248f315a5c4e5a7285 .selecting-cf04ccfb96faf578e7a25e80c48633dfd3137e40 {\r\n    background: #FECA40;\r\n}\r\n\r\n.route-list-76d9daf5aed7e7fc2c8923248f315a5c4e5a7285 .selected-87af788819d60b980c4acd265a9a0b37e4fd46f2 {\r\n    background: #F39814;\r\n    color: white;\r\n}\r\n\r\n.route-list-76d9daf5aed7e7fc2c8923248f315a5c4e5a7285 {\r\n    list-style-type: none;\r\n    margin: 0;\r\n    padding: 0;\r\n    width: 60%;\r\n}\r\n\r\n.route-list-76d9daf5aed7e7fc2c8923248f315a5c4e5a7285 li {\r\n    margin: 3px;\r\n    padding: 0.4em;\r\n    height: 18px;\r\n    cursor: pointer;\r\n}\r\n\r\n.auto-complete-list-77c78bcbe17d1fc52bb612d4b4cbaaae207181b1 {\r\n    position: absolute;\r\n    background-color: #f9f9f9;\r\n    min-width: 160px;\r\n    box-shadow: 0px 8px 16px 0px rgba(0, 0, 0, 0.2);\r\n    padding: 12px 16px;\r\n    z-index: 1;\r\n}\r\n\r\n.auto-complete-list-77c78bcbe17d1fc52bb612d4b4cbaaae207181b1 .auto-complete-list-item-6fc9ecbb9b1f82110fb8e2fdc6ba7ec41c025399 {\r\n    color: black;\r\n    padding: 12px 16px;\r\n    text-decoration: none;\r\n    display: block;\r\n}\r\n\r\n.auto-complete-list-77c78bcbe17d1fc52bb612d4b4cbaaae207181b1 .auto-complete-list-item-6fc9ecbb9b1f82110fb8e2fdc6ba7ec41c025399:hover {\r\n    background-color: #ddd;\r\n}\r\n\r\n\r\n/* アコーディオン */\r\n/* マーカー */\r\n.accordion-1edb50b922af142cffff4fd9f1cd6317d950c8f6>summary::-webkit-details-marker {\r\n    display: none;\r\n}\r\n\r\n.accordion-1edb50b922af142cffff4fd9f1cd6317d950c8f6>summary::before {\r\n    content: \"\";\r\n    position: absolute;\r\n    width: 6px;\r\n    height: 6px;\r\n    border-top: 2px solid #fff;\r\n    border-right: 2px solid #fff;\r\n\r\n    transform: rotate(225deg);\r\n    top: calc(50% - 3px);\r\n    right: 1em;\r\n}\r\n\r\n/* 閉じているとき */\r\n.accordion-1edb50b922af142cffff4fd9f1cd6317d950c8f6>summary {\r\n    cursor: grab;\r\n    display: block;\r\n    height: auto;\r\n    padding: 3px;\r\n    width: auto;\r\n    height: auto;\r\n\r\n    background: #019bc656;\r\n    border: solid 1px #00000000\r\n}\r\n\r\n.accordion-1edb50b922af142cffff4fd9f1cd6317d950c8f6>* {\r\n    backface-visibility: hidden;\r\n    transform: translateZ(0);\r\n    transition: all 0.3s;\r\n}\r\n\r\n.accordion-1edb50b922af142cffff4fd9f1cd6317d950c8f6> :not(summary) {\r\n    margin-bottom: 6px;\r\n    padding: 0 3px;\r\n    border: solid 1px #00000000;\r\n}\r\n\r\n/* 開いたとき */\r\n.accordion-1edb50b922af142cffff4fd9f1cd6317d950c8f6[open]>summary {\r\n    background: #c6880156;\r\n}\r\n\r\n.accordion-1edb50b922af142cffff4fd9f1cd6317d950c8f6[open]>summary::before {\r\n    transform: rotate(135deg);\r\n}\r\n\r\n.accordion-1edb50b922af142cffff4fd9f1cd6317d950c8f6[open]> :not(summary) {\r\n    padding: 3px;\r\n    transition: all 0.3s;\r\n\r\n    border: solid 1px #c6880156;\r\n}\r\n";
+const cssText = ".import-text-input-0f3bde8ee8a16aef8b568bdcba64c15ae3ebb473 {\r\n    position: fixed;\r\n    top: 0;\r\n    left: 0;\r\n    width: 100%;\r\n    height: 100%;\r\n    z-index: 10000;\r\n\r\n    display: flex;\r\n    justify-content: center;\r\n    align-items: center;\r\n}\r\n\r\n.hidden-6d022c31bf61c323d2b7cb97231966c07399aa1d {\r\n    display: none;\r\n}\r\n\r\ninput.editable-text-fda5c378d1ba5644ddaba7ba58a2c56619f16ef9 {\r\n    border: none;\r\n    background: none;\r\n    font-size: 16px;\r\n    color: black;\r\n}\r\n\r\n.spot-label-c7e75e38e1a20fc10d800714fc5ba0a2c3a891ef {\r\n    color: #FFFFBB;\r\n    font-size: 11px;\r\n    line-height: 12px;\r\n    text-align: center;\r\n    padding: 2px;\r\n    overflow: hidden;\r\n    white-space: nowrap;\r\n    text-overflow: ellipsis;\r\n    text-shadow: 1px 1px #000, 1px -1px #000, -1px 1px #000, -1px -1px #000, 0 0 5px #000;\r\n    pointer-events: none;\r\n}\r\n\r\n.properties-editor-eba9c0a9780e4be64ecb133aaf190a60a10cf553 {\r\n    display: flex;\r\n    flex-direction: column;\r\n    resize: both;\r\n    overflow: auto;\r\n    max-width: 100%;\r\n    max-height: 100vh;\r\n}\r\n.route-list-container-8268fd5b65fa49ac68b3ef6bcd3bafe60f8b91b8 {\r\n    flex-grow: 1;\r\n    overflow: auto;\r\n}\r\n\r\n.properties-editor-eba9c0a9780e4be64ecb133aaf190a60a10cf553 textarea,\r\n.properties-editor-eba9c0a9780e4be64ecb133aaf190a60a10cf553 input {\r\n    box-sizing: border-box;\r\n    width: 100%;\r\n    resize: vertical;\r\n\r\n    font-family: Arial, Helvetica, sans-serif;\r\n}\r\n.properties-editor-eba9c0a9780e4be64ecb133aaf190a60a10cf553 input.title-c2d91ee7f43befb8336776e0455a2ced7e5541ec {\r\n    width: auto;\r\n}\r\n\r\n.properties-editor-eba9c0a9780e4be64ecb133aaf190a60a10cf553 textarea.query-input-field-97d643ddd39e0ac31b1ca6bf2408b7bb149f3f55 {\r\n    font-family: Menlo, Monaco, 'Courier New', Courier, monospace;\r\n    height: 1.5em;\r\n}\r\n\r\n.route-list-9aeb7c282389c3c895710b5db7c6ad75c27b9b53 .selecting-553e0c12db30dd6dd88e3b6b04d1fd70efaee944 {\r\n    background: #FECA40;\r\n}\r\n\r\n.route-list-9aeb7c282389c3c895710b5db7c6ad75c27b9b53 .selected-f6ada44c3bd1269a6d3cff87618f4bb418f18a8b {\r\n    background: #F39814;\r\n    color: white;\r\n}\r\n\r\n.route-list-9aeb7c282389c3c895710b5db7c6ad75c27b9b53 {\r\n    list-style-type: none;\r\n    margin: 0;\r\n    padding: 0;\r\n}\r\n\r\n.route-list-9aeb7c282389c3c895710b5db7c6ad75c27b9b53 li {\r\n    margin: 3px;\r\n    padding: 0.4em;\r\n    height: 18px;\r\n    cursor: pointer;\r\n    user-select: none;\r\n}\r\n\r\n.auto-complete-list-856887868ad8a42dc6274f34d973885b8d6ba821 {\r\n    position: absolute;\r\n    background-color: #f9f9f9;\r\n    min-width: 160px;\r\n    box-shadow: 0px 8px 16px 0px rgba(0, 0, 0, 0.2);\r\n    padding: 12px 16px;\r\n    z-index: 1;\r\n}\r\n\r\n.auto-complete-list-856887868ad8a42dc6274f34d973885b8d6ba821 .auto-complete-list-item-39316a154fca9b9dbf6eff12ba2c26bb2e49b28c {\r\n    color: black;\r\n    padding: 12px 16px;\r\n    text-decoration: none;\r\n    display: block;\r\n}\r\n\r\n.auto-complete-list-856887868ad8a42dc6274f34d973885b8d6ba821 .auto-complete-list-item-39316a154fca9b9dbf6eff12ba2c26bb2e49b28c:hover {\r\n    background-color: #ddd;\r\n}\r\n\r\n\r\n/* アコーディオン */\r\n/* マーカー */\r\n.accordion-e0fa04aea802ad6a6426fd4e5862446b69b7f8b6>summary::-webkit-details-marker {\r\n    display: none;\r\n}\r\n\r\n.accordion-e0fa04aea802ad6a6426fd4e5862446b69b7f8b6>summary::before {\r\n    content: \"\";\r\n    position: absolute;\r\n    width: 6px;\r\n    height: 6px;\r\n    border-top: 2px solid #fff;\r\n    border-right: 2px solid #fff;\r\n\r\n    transform: rotate(225deg);\r\n    top: calc(50% - 3px);\r\n    right: 1em;\r\n}\r\n\r\n/* 閉じているとき */\r\n.accordion-e0fa04aea802ad6a6426fd4e5862446b69b7f8b6>summary {\r\n    cursor: grab;\r\n    display: block;\r\n    height: auto;\r\n    padding: 3px;\r\n    width: auto;\r\n    height: auto;\r\n\r\n    background: #019bc656;\r\n    border: solid 1px #00000000\r\n}\r\n\r\n.accordion-e0fa04aea802ad6a6426fd4e5862446b69b7f8b6>* {\r\n    backface-visibility: hidden;\r\n    transform: translateZ(0);\r\n    transition: all 0.3s;\r\n}\r\n\r\n.accordion-e0fa04aea802ad6a6426fd4e5862446b69b7f8b6> :not(summary) {\r\n    margin-bottom: 6px;\r\n    padding: 0 3px;\r\n    border: solid 1px #00000000;\r\n}\r\n\r\n/* 開いたとき */\r\n.accordion-e0fa04aea802ad6a6426fd4e5862446b69b7f8b6[open]>summary {\r\n    background: #c6880156;\r\n}\r\n\r\n.accordion-e0fa04aea802ad6a6426fd4e5862446b69b7f8b6[open]>summary::before {\r\n    transform: rotate(135deg);\r\n}\r\n\r\n.accordion-e0fa04aea802ad6a6426fd4e5862446b69b7f8b6[open]> :not(summary) {\r\n    padding: 3px;\r\n    transition: all 0.3s;\r\n\r\n    border: solid 1px #c6880156;\r\n}\r\n";
 /* harmony default export */ const styles_module = ({
-    "import-text-input": "import-text-input-7e2d8746aec6fe75502480ac3cb8b9eefcf1e261",
-    hidden: "hidden-cac5f386425d7170a5e774668df9f4ed4f95868e",
-    "editable-text": "editable-text-5412a24bce9195f967404ec05c3960cad7248352",
-    "spot-label": "spot-label-443f83425acc0be603a19f4fcf74c5fc099f6bb5",
-    "properties-editor": "properties-editor-9874f45bc4d18026e83b06d70ffd5ba2cbd21ff7",
-    "route-list-container": "route-list-container-127002c3762bb061f5ea010faf55fcfe64d55b33",
-    title: "title-ff18db26366051345bbed1ecbed378d895cc8f3a",
-    "query-input-field": "query-input-field-f2948b3c94f9b4f62e20a88f6c3fa71edd983cba",
-    "route-list": "route-list-76d9daf5aed7e7fc2c8923248f315a5c4e5a7285",
-    selecting: "selecting-cf04ccfb96faf578e7a25e80c48633dfd3137e40",
-    selected: "selected-87af788819d60b980c4acd265a9a0b37e4fd46f2",
-    "auto-complete-list": "auto-complete-list-77c78bcbe17d1fc52bb612d4b4cbaaae207181b1",
-    "auto-complete-list-item": "auto-complete-list-item-6fc9ecbb9b1f82110fb8e2fdc6ba7ec41c025399",
-    accordion: "accordion-1edb50b922af142cffff4fd9f1cd6317d950c8f6",
+    "import-text-input": "import-text-input-0f3bde8ee8a16aef8b568bdcba64c15ae3ebb473",
+    hidden: "hidden-6d022c31bf61c323d2b7cb97231966c07399aa1d",
+    "editable-text": "editable-text-fda5c378d1ba5644ddaba7ba58a2c56619f16ef9",
+    "spot-label": "spot-label-c7e75e38e1a20fc10d800714fc5ba0a2c3a891ef",
+    "properties-editor": "properties-editor-eba9c0a9780e4be64ecb133aaf190a60a10cf553",
+    "route-list-container": "route-list-container-8268fd5b65fa49ac68b3ef6bcd3bafe60f8b91b8",
+    title: "title-c2d91ee7f43befb8336776e0455a2ced7e5541ec",
+    "query-input-field": "query-input-field-97d643ddd39e0ac31b1ca6bf2408b7bb149f3f55",
+    "route-list": "route-list-9aeb7c282389c3c895710b5db7c6ad75c27b9b53",
+    selecting: "selecting-553e0c12db30dd6dd88e3b6b04d1fd70efaee944",
+    selected: "selected-f6ada44c3bd1269a6d3cff87618f4bb418f18a8b",
+    "auto-complete-list": "auto-complete-list-856887868ad8a42dc6274f34d973885b8d6ba821",
+    "auto-complete-list-item": "auto-complete-list-item-39316a154fca9b9dbf6eff12ba2c26bb2e49b28c",
+    accordion: "accordion-e0fa04aea802ad6a6426fd4e5862446b69b7f8b6",
 });
 
 ;// CONCATENATED MODULE: ../gas-drivetunnel/source/schemas.ts
@@ -1777,10 +1777,10 @@ function createQuery(expression) {
 
 
 function createQueryEditor(options) {
-    var _a, _b, _c, _d, _e;
+    var _a, _b, _c, _d, _e, _f;
     // TODO: 入力補完
     const completionsContainer = (jsx("div", { class: (_b = (_a = options === null || options === void 0 ? void 0 : options.classNames) === null || _a === void 0 ? void 0 : _a.autoCompleteList) !== null && _b !== void 0 ? _b : "" }));
-    const inputField = addListeners((jsx("textarea", { class: (_d = (_c = options === null || options === void 0 ? void 0 : options.classNames) === null || _c === void 0 ? void 0 : _c.inputField) !== null && _d !== void 0 ? _d : "", placeholder: (_e = options === null || options === void 0 ? void 0 : options.placeholder) !== null && _e !== void 0 ? _e : "" })), {
+    const inputField = addListeners((jsx("textarea", { class: (_d = (_c = options === null || options === void 0 ? void 0 : options.classNames) === null || _c === void 0 ? void 0 : _c.inputField) !== null && _d !== void 0 ? _d : "", placeholder: (_e = options === null || options === void 0 ? void 0 : options.placeholder) !== null && _e !== void 0 ? _e : "", children: (_f = options === null || options === void 0 ? void 0 : options.initialText) !== null && _f !== void 0 ? _f : "" })), {
         input() {
             var _a, _b, _c, _d, _e;
             (_a = options === null || options === void 0 ? void 0 : options.onInput) === null || _a === void 0 ? void 0 : _a.call(options, this);
@@ -1908,7 +1908,7 @@ function getMiddleCoordinate(p1, p2) {
     return L.latLngBounds(p1, p2).getCenter();
 }
 function asyncMain() {
-    var _a, _b, _c, _d;
+    var _a, _b, _c;
     return iitc_plugin_pgo_route_helper_awaiter(this, void 0, void 0, function* () {
         const window = (isIITCMobile ? globalThis : unsafeWindow);
         const { L = standard_extensions_error `leaflet を先に読み込んでください`, map = standard_extensions_error `デフォルトマップがありません`, document, $ = standard_extensions_error `JQuery を先に読み込んでください`, } = window;
@@ -1971,7 +1971,7 @@ function asyncMain() {
                             reportElement.innerHTML = "式検索";
                             break;
                         case undefined:
-                            reportElement.innerHTML = "未検索";
+                            reportElement.innerHTML = "全件";
                             break;
                         default:
                             return exhaustive(message.language);
@@ -2405,7 +2405,10 @@ function asyncMain() {
             setQueryExpressionCancelScope((signal) => iitc_plugin_pgo_route_helper_awaiter(this, void 0, void 0, function* () {
                 yield sleep(delayMilliseconds, { signal });
                 if (queryText.trim() === "") {
-                    state.routeListQuery === undefined;
+                    state.routeListQuery = {
+                        queryText,
+                        query: undefined,
+                    };
                     progress({
                         type: "query-parse-completed",
                         language: undefined,
@@ -2436,7 +2439,7 @@ function asyncMain() {
                 autoCompleteList: styles_module["auto-complete-list"],
                 autoCompleteListItem: styles_module["auto-complete-list-item"],
             },
-            initialText: (_b = (_a = config.routeQueries) === null || _a === void 0 ? void 0 : _a.at(-1)) !== null && _b !== void 0 ? _b : "",
+            initialText: (_a = config.routeQueries) === null || _a === void 0 ? void 0 : _a.at(-1),
             placeholder: "🔍ルート検索",
             getCompletions() {
                 var _a, _b;
@@ -2467,7 +2470,7 @@ function asyncMain() {
             height: "auto",
             width: "auto",
         });
-        (_c = document.querySelector("#toolbox")) === null || _c === void 0 ? void 0 : _c.append(addListeners(jsx("a", { children: "Route Helper" }), {
+        (_b = document.querySelector("#toolbox")) === null || _b === void 0 ? void 0 : _b.append(addListeners(jsx("a", { children: "Route Helper" }), {
             click() {
                 editor.dialog("open");
                 return false;
@@ -2644,7 +2647,7 @@ function asyncMain() {
             });
             const { routes: routeList } = yield getRoutes({
                 "user-id": config.userId,
-            }, { rootUrl: (_d = config.apiRoot) !== null && _d !== void 0 ? _d : apiRoot });
+            }, { rootUrl: (_c = config.apiRoot) !== null && _c !== void 0 ? _c : apiRoot });
             progress({
                 type: "downloaded",
                 routeCount: routeList.length,
