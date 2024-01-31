@@ -32,7 +32,9 @@ export function createQueryEditor(
             <textarea
                 class={options?.classNames?.inputField ?? ""}
                 placeholder={options?.placeholder ?? ""}
-            ></textarea>
+            >
+                {options?.initialText ?? ""}
+            </textarea>
         ) as HTMLTextAreaElement,
         {
             input() {

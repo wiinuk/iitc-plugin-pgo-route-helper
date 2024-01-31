@@ -280,7 +280,7 @@ async function asyncMain() {
                         reportElement.innerHTML = "式検索";
                         break;
                     case undefined:
-                        reportElement.innerHTML = "未検索";
+                        reportElement.innerHTML = "全件";
                         break;
                     default:
                         return exhaustive(message.language);
@@ -836,7 +836,10 @@ async function asyncMain() {
         setQueryExpressionCancelScope(async (signal) => {
             await sleep(delayMilliseconds, { signal });
             if (queryText.trim() === "") {
-                state.routeListQuery === undefined;
+                state.routeListQuery = {
+                    queryText,
+                    query: undefined,
+                };
                 progress({
                     type: "query-parse-completed",
                     language: undefined,
@@ -865,7 +868,7 @@ async function asyncMain() {
             autoCompleteList: classNames["auto-complete-list"],
             autoCompleteListItem: classNames["auto-complete-list-item"],
         },
-        initialText: config.routeQueries?.at(-1) ?? "",
+        initialText: config.routeQueries?.at(-1),
         placeholder: "🔍ルート検索",
         getCompletions() {
             return config.routeQueries?.reverse()?.map((queryText) => {
