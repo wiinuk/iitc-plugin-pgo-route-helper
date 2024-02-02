@@ -96,7 +96,7 @@ export function getEmptyQuery(): RouteQuery {
     };
 }
 export type QueryCreateResult = {
-    query: () => RouteQuery;
+    getQuery: () => RouteQuery;
     syntax: "words" | "parentheses";
     diagnostics: string[];
 };
@@ -122,17 +122,63 @@ function includes(words: readonly string[]): RouteQuery {
 function createSimpleQuery(expression: string): RouteQuery {
     return includes(expression.split(/\s+/));
 }
-function tryParseJson(text: string): MutableJson | undefined {
+function tryParseJson(text: string): Json | undefined {
     try {
         return JSON.parse(text);
     } catch {
         return;
     }
 }
+
+type TokenDefinition = readonly [
+    pattern: RegExp,
+    action?: (...xs: [string, ...string[]]) => string
+];
+type TokenDefinitions = readonly TokenDefinition[];
+function replaceTokens(source: string, tokenDefinitions: TokenDefinitions) {
+    const tokens = [];
+    let remainingSource = source;
+
+    next: while (remainingSource.length > 0) {
+        for (const [pattern, action] of tokenDefinitions) {
+            const match = pattern.exec(remainingSource);
+            if (match && match.index === 0) {
+                tokens.push(
+                    action
+                        ? action(
+                              ...(match as string[] as [string, ...string[]])
+                          )
+                        : match[0]
+                );
+                remainingSource = remainingSource.slice(match[0].length);
+                continue next;
+            }
+        }
+        return;
+    }
+    return tokens.join("");
+}
+const exJsonTokens: TokenDefinitions = [
+    // 行コメント // comment
+    [/\/\/.*?(\n|$)/, () => ""],
+    // 複数行コメント /* comment */
+    [/\/\*[\s\S]*?\*\//, () => ""],
+    // 末尾のカンマ { a: 0, } [1, 2,]
+    [/,\s*(}])}/, (xs) => xs[1] ?? ""],
+    // キーワードや記号
+    [/true|false|null|[[\]{},:]/],
+    // 識別子形式の文字列 { key: 0 }
+    [/[$_\w][$_\w\d]*/, (xs) => `"${xs[0]}"`],
+    // 空白
+    [/\s+/],
+    // 数値リテラル
+    [/-?\d+(\.\d+)?/],
+    // 文字列リテラル
+    [/"[^"]*"/],
+];
+
 function toStrictJson(text: string) {
-    return text
-        .replace(/([$_\w][$_\w\d]*)\s*:/g, `"$1":`)
-        .replace(/,\s*\]/g, `]`);
+    return replaceTokens(text, exJsonTokens);
 }
 
 const reachable: RouteQuery = {
@@ -277,19 +323,17 @@ export interface QueryEnvironment {
     distance(c1: Coordinate, c2: Coordinate): number;
 }
 export function createQuery(expression: string): QueryCreateResult {
-    const json = tryParseJson(toStrictJson(expression)) as Json | undefined;
-    if (
-        json == null ||
-        !(typeof json === "object" || typeof json === "string")
-    ) {
+    const source = toStrictJson(expression);
+    const json = source != null ? tryParseJson(source) : source;
+    if (json == null || typeof json !== "object") {
         return {
-            query: () => createSimpleQuery(expression),
+            getQuery: () => createSimpleQuery(expression),
             syntax: "words",
             diagnostics: [],
         };
     }
     return {
-        query: () => {
+        getQuery: () => {
             // TODO: 静的チェックする
             return evaluateWithLibrary(json) as RouteQuery;
         },

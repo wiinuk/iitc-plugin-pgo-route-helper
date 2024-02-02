@@ -198,7 +198,12 @@ async function asyncMain() {
         routes: "routes-unloaded" | Map<string, RouteWithView>;
         routeListQuery: Readonly<{
             queryText: string;
-            query: undefined | (() => RouteQuery);
+            query:
+                | {
+                      syntax: "words" | "parentheses";
+                      getQuery: () => RouteQuery;
+                  }
+                | undefined;
         }>;
     } = {
         selectedRouteId: null,
@@ -224,6 +229,12 @@ async function asyncMain() {
             | {
                   type: "query-parse-completed";
                   language: "words" | "parentheses" | undefined;
+              }
+            | {
+                  type: "query-evaluation-completed";
+                  language: "words" | "parentheses";
+                  allCount: number;
+                  hitCount: number;
               }
             | {
                   type: "query-parse-error-occurred";
@@ -283,8 +294,23 @@ async function asyncMain() {
                         reportElement.innerHTML = "全件";
                         break;
                     default:
-                        return exhaustive(message.language);
+                        return exhaustive(message);
                 }
+                break;
+            }
+            case "query-evaluation-completed": {
+                let comment;
+                switch (message.language) {
+                    case "words":
+                        comment = "通常検索";
+                        break;
+                    case "parentheses":
+                        comment = "式検索";
+                        break;
+                    default:
+                        return exhaustive(message);
+                }
+                reportElement.innerHTML = `${comment} (表示 ${message.hitCount} 件 / 全体 ${message.allCount} 件)`;
                 break;
             }
             case "query-parse-error-occurred": {
@@ -763,8 +789,8 @@ async function asyncMain() {
         const { queryText, query } = state.routeListQuery;
 
         const routes = [...state.routes.values()].map((r) => r.route);
-        const queryUndefined = query === undefined;
-        const getQuery = queryUndefined ? getEmptyQuery : query;
+        const isQueryUndefined = query === undefined;
+        const getQuery = isQueryUndefined ? getEmptyQuery : query.getQuery;
 
         const environment = { ...defaultEnvironment, routes };
         const { predicate } = protectedCallQueryFunction(
@@ -772,6 +798,7 @@ async function asyncMain() {
             () => getEmptyQuery().initialize(environment)
         );
 
+        let visibleListItemCount = 0;
         for (const {
             route,
             listItem,
@@ -783,13 +810,22 @@ async function asyncMain() {
             );
             if (r) {
                 listItem.classList.remove(classNames.hidden);
+                visibleListItemCount++;
             } else {
                 listItem.classList.add(classNames.hidden);
             }
             updateRoutesListItem(route, listItem);
-            if (!queryUndefined) {
+            if (!isQueryUndefined) {
                 coordinatesEditor.highlight(r);
             }
+        }
+        if (!isQueryUndefined) {
+            progress({
+                type: "query-evaluation-completed",
+                language: query.syntax,
+                hitCount: visibleListItemCount,
+                allCount: state.routes.size,
+            });
         }
         saveQueryHistory(queryText);
     }
@@ -845,7 +881,8 @@ async function asyncMain() {
                     language: undefined,
                 });
             } else {
-                const { query, diagnostics, syntax } = createQuery(queryText);
+                const { getQuery, diagnostics, syntax } =
+                    createQuery(queryText);
                 if (0 !== diagnostics.length) {
                     progress({
                         type: "query-parse-error-occurred",
@@ -857,7 +894,10 @@ async function asyncMain() {
                         language: syntax,
                     });
                 }
-                state.routeListQuery = { queryText, query };
+                state.routeListQuery = {
+                    queryText,
+                    query: { getQuery, syntax },
+                };
             }
             updateRoutesListElement();
         });
