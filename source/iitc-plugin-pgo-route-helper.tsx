@@ -800,6 +800,7 @@ async function asyncMain() {
             return action();
         } catch (error) {
             progress({ type: "query-evaluation-error", error });
+            queryEditor.addDiagnostic(String(error));
             return defaultValue();
         }
     }
@@ -813,7 +814,7 @@ async function asyncMain() {
         const views = [...state.routes.values()];
         const routes = views.map((r) => r.route);
         const isQueryUndefined = query === undefined;
-        const getQuery = isQueryUndefined ? () => anyQuery : query.getQuery;
+        const getQuery = query?.getQuery ?? (() => anyQuery);
 
         const environment = { ...defaultEnvironment, routes };
         const { predicate, getTitle, getNote, getSorter } =
@@ -970,8 +971,13 @@ async function asyncMain() {
                     language: undefined,
                 });
             } else {
+                queryEditor.clearDiagnostics();
                 const { getQuery, diagnostics, syntax } =
                     createQuery(queryText);
+
+                for (const diagnostic of diagnostics) {
+                    queryEditor.addDiagnostic(diagnostic);
+                }
                 if (0 !== diagnostics.length) {
                     progress({
                         type: "query-parse-error-occurred",
@@ -991,11 +997,12 @@ async function asyncMain() {
             updateRoutesListElement();
         });
     }
-    const routeQueryEditorElement = createQueryEditor({
+    const queryEditor = createQueryEditor({
         classNames: {
             inputField: classNames["query-input-field"],
             autoCompleteList: classNames["auto-complete-list"],
             autoCompleteListItem: classNames["auto-complete-list-item"],
+            invalid: classNames["invalid"],
         },
         initialText: config.routeQueries?.at(-1),
         placeholder: "🔍ルート検索",
@@ -1056,7 +1063,7 @@ async function asyncMain() {
             class={classNames["properties-editor"]}
         >
             {selectedRouteEditorContainer}
-            {routeQueryEditorElement}
+            {queryEditor.element}
             <div class={classNames["route-list-container"]}>
                 {routeListElement}
             </div>

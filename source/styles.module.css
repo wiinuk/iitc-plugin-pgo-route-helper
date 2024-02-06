@@ -69,8 +69,12 @@ input.editable-text {
 }
 
 .properties-editor textarea.query-input-field {
-    font-family: Menlo, Monaco, 'Courier New', Courier, monospace;
+    font-family: 'fira code', Consolas, Menlo, Monaco, 'Courier New', Courier, monospace;
     height: 1.5em;
+}
+.properties-editor textarea.invalid {
+    border: solid 1px red;
+    background-color: lightgoldenrodyellow;
 }
 
 .route-list .selecting {

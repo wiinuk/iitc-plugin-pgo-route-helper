@@ -11,8 +11,9 @@ export function createQueryEditor(
         placeholder?: string;
         classNames?: Readonly<{
             inputField?: string;
-            autoCompleteList: string;
-            autoCompleteListItem: string;
+            autoCompleteList?: string;
+            autoCompleteListItem?: string;
+            invalid?: string;
         }>;
         getCompletions?(
             value: string,
@@ -23,6 +24,7 @@ export function createQueryEditor(
         ) => void;
     }>
 ) {
+    const invalidClassName = options?.classNames?.invalid ?? "";
     // TODO: 入力補完
     const completionsContainer = (
         <div class={options?.classNames?.autoCompleteList ?? ""}></div>
@@ -67,5 +69,13 @@ export function createQueryEditor(
             },
         }
     );
-    return <div>{inputField}</div>;
+    return {
+        element: <div>{inputField}</div>,
+        clearDiagnostics() {
+            inputField.classList.remove(invalidClassName);
+        },
+        addDiagnostic(_message: string) {
+            inputField.classList.add(invalidClassName);
+        },
+    };
 }
