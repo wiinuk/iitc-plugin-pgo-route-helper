@@ -7,8 +7,14 @@ import {
     type Coordinate,
     type Route,
 } from "../route";
-import { exhaustive, isArray, type Json } from "../standard-extensions";
+import { exhaustive, isArray } from "../standard-extensions";
 import { getGymsOrderKinds, orderByGyms } from "./gyms";
+import {
+    createParser,
+    createTokenizer,
+    DiagnosticKind,
+    tokenDefinitions,
+} from "./parser";
 
 function eachJsonStrings(
     json: MutableJson,
@@ -157,67 +163,6 @@ function includes(words: readonly string[]): RouteQuery {
 
 function createSimpleQuery(expression: string): RouteQuery {
     return includes(expression.split(/\s+/));
-}
-function tryParseJson(text: string): Json | undefined {
-    try {
-        return JSON.parse(text);
-    } catch {
-        return;
-    }
-}
-
-type TokenDefinition = readonly [
-    pattern: RegExp,
-    action?: (xs: readonly [string, ...string[]]) => string
-];
-type TokenDefinitions = readonly TokenDefinition[];
-function replaceTokens(source: string, tokenDefinitions: TokenDefinitions) {
-    const tokens = [];
-    let remainingSource = source;
-
-    next: while (remainingSource.length > 0) {
-        for (const [pattern, action] of tokenDefinitions) {
-            const match = pattern.exec(remainingSource);
-            if (match && match.index === 0) {
-                tokens.push(
-                    action
-                        ? action(
-                              match as readonly string[] as readonly [
-                                  string,
-                                  ...string[]
-                              ]
-                          )
-                        : match[0]
-                );
-                remainingSource = remainingSource.slice(match[0].length);
-                continue next;
-            }
-        }
-        return;
-    }
-    return tokens.join("");
-}
-const exJsonTokens: TokenDefinitions = [
-    // 行コメント // comment
-    [/\/\/.*?(\n|$)/, () => ""],
-    // 複数行コメント /* comment */
-    [/\/\*[\s\S]*?\*\//, () => ""],
-    // 末尾のカンマ { a: 0, } [1, 2,]
-    [/,([\s\n]*[}\]])/, ([_, m1]) => m1 ?? ""],
-    // キーワードや記号
-    [/true|false|null|[[\]{},:]/],
-    // 識別子形式の文字列 { key: 0 }
-    [/[^\s/[\]{},:"\\\d][^\s/[\]{},:"\\]*/, ([m]) => `"${m}"`],
-    // 空白
-    [/\s+/],
-    // 数値リテラル
-    [/-?\d+(\.\d+)?([eE]\d+)?/],
-    // 文字列リテラル
-    [/"([^"]|\\")*"/],
-];
-
-function toStrictJson(text: string) {
-    return replaceTokens(text, exJsonTokens);
 }
 
 const reachable: RouteQuery = {
@@ -409,8 +354,10 @@ export interface QueryEnvironment {
     distance(c1: Coordinate, c2: Coordinate): number;
 }
 export function createQuery(expression: string): QueryCreateResult {
-    const source = toStrictJson(expression);
-    const json = source != null ? tryParseJson(source) : source;
+    const diagnostics: DiagnosticKind[] = [];
+    const tokenizer = createTokenizer(expression, tokenDefinitions);
+    const parser = createParser(tokenizer, (d) => diagnostics.push(d));
+    const json = parser.parse();
     if (json == null || typeof json !== "object") {
         return {
             getQuery: () => createSimpleQuery(expression),
@@ -424,6 +371,6 @@ export function createQuery(expression: string): QueryCreateResult {
             return evaluateWithLibrary(json) as RouteQuery;
         },
         syntax: "parentheses",
-        diagnostics: [],
+        diagnostics,
     };
 }
