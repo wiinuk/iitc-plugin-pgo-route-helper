@@ -204,7 +204,7 @@ function reachableWith(options: {
     };
 }
 
-function queryAsFactory(query: RouteQuery) {
+export function queryAsFactory(query: RouteQuery) {
     return typeof query === "string" ? includes([query]) : query;
 }
 function orderByKey(

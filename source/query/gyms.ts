@@ -1,5 +1,5 @@
 // spell-checker: ignore pokestop pokestops
-import type { QuerySorter, RouteQuery } from ".";
+import { queryAsFactory, type QuerySorter, type RouteQuery } from ".";
 import {
     buildCells,
     getSpotLatLng,
@@ -102,7 +102,7 @@ type GymsSortKind = ReturnType<typeof getGymsOrderKinds>[number];
 export function orderByGyms(kind: GymsSortKind, query: RouteQuery): RouteQuery {
     return {
         initialize(e) {
-            const unit = query.initialize(e);
+            const unit = queryAsFactory(query).initialize(e);
             const cells = buildCells(e.routes);
             const gymCounts = new WeakMap<Cell14, Cell14Gyms>();
             function routeGymsWith<T>(
