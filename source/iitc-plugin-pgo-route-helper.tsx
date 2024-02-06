@@ -37,7 +37,6 @@ import type { LastOfArray } from "./type-level";
 import {
     anyQuery,
     createQuery,
-    type RouteQuery,
     type QueryEnvironment,
     type QueryKey,
     compareQueryKey,
