@@ -124,7 +124,8 @@ interface UnitQuery {
     getNote?(route: Route): string;
     getSorter?(): Readonly<QuerySorter>;
 }
-export interface RouteQuery {
+export type RouteQuery = string | UnitQueryFactory;
+export interface UnitQueryFactory {
     initialize(environment: QueryEnvironment): UnitQuery;
 }
 const emptyUnit: UnitQuery = {
@@ -132,17 +133,17 @@ const emptyUnit: UnitQuery = {
         return true;
     },
 };
-export const anyQuery: RouteQuery = {
+export const anyQuery: UnitQueryFactory = {
     initialize() {
         return emptyUnit;
     },
 };
 export type QueryCreateResult = {
-    getQuery: () => RouteQuery;
+    getQuery: () => UnitQueryFactory;
     syntax: "words" | "parentheses";
     diagnostics: string[];
 };
-function includes(words: readonly string[]): RouteQuery {
+function includes(words: readonly string[]): UnitQueryFactory {
     const unit: UnitQuery = {
         ...emptyUnit,
         predicate(route) {
@@ -161,7 +162,7 @@ function includes(words: readonly string[]): RouteQuery {
     };
 }
 
-function createSimpleQuery(expression: string): RouteQuery {
+function createSimpleQuery(expression: string): UnitQueryFactory {
     return includes(expression.split(/\s+/));
 }
 
@@ -203,6 +204,9 @@ function reachableWith(options: {
     };
 }
 
+function queryAsFactory(query: RouteQuery) {
+    return typeof query === "string" ? includes([query]) : query;
+}
 function orderByKey(
     query: RouteQuery,
     getKey: (route: Route) => QueryKey,
@@ -210,7 +214,7 @@ function orderByKey(
 ) {
     return {
         initialize(e) {
-            const unit = query.initialize(e);
+            const unit = queryAsFactory(query).initialize(e);
             return {
                 ...unit,
                 getSorter() {
@@ -227,10 +231,8 @@ function orderByKey(
 export function getOrderByKinds() {
     return ["id", "latitude", "longitude", ...getGymsOrderKinds()] as const;
 }
-export function orderBy(
-    kind: ReturnType<typeof getOrderByKinds>[number],
-    query: RouteQuery
-): RouteQuery {
+type OrderByKinds = ReturnType<typeof getOrderByKinds>[number];
+export function orderBy(kind: OrderByKinds, query: RouteQuery): RouteQuery {
     switch (kind) {
         case "id":
             return orderByKey(query, (r) => r.routeId, false);
@@ -249,7 +251,32 @@ export function orderBy(
             );
     }
 }
-
+function and(...queries: RouteQuery[]): RouteQuery {
+    return {
+        initialize(e) {
+            const units = queries.map((q) => queryAsFactory(q).initialize(e));
+            return {
+                ...units.reduce(Object.assign, emptyUnit),
+                predicate(r) {
+                    return units.every((u) => u.predicate(r));
+                },
+            };
+        },
+    };
+}
+function or(...queries: RouteQuery[]): RouteQuery {
+    return {
+        initialize(e) {
+            const units = queries.map((q) => queryAsFactory(q).initialize(e));
+            return {
+                ...units.reduce(Object.assign, emptyUnit),
+                predicate(r) {
+                    return units.some((u) => u.predicate(r));
+                },
+            };
+        },
+    };
+}
 const library = {
     ["tag?"](route: Route, tagNames: readonly string[]) {
         const tags = getRouteTags(route);
@@ -273,36 +300,14 @@ const library = {
     },
     reachable,
     reachableWith,
-    and(...queries: RouteQuery[]): RouteQuery {
-        return {
-            initialize(e) {
-                const units = queries.map((q) => q.initialize(e));
-                return {
-                    ...units.reduce(Object.assign, emptyUnit),
-                    predicate(r) {
-                        return units.every((u) => u.predicate(r));
-                    },
-                };
-            },
-        };
-    },
-    or(...queries: RouteQuery[]): RouteQuery {
-        return {
-            initialize(e) {
-                const units = queries.map((q) => q.initialize(e));
-                return {
-                    ...units.reduce(Object.assign, emptyUnit),
-                    predicate(r) {
-                        return units.some((u) => u.predicate(r));
-                    },
-                };
-            },
-        };
-    },
+    and,
+    ["_@and_"]: and,
+    or,
+    ["_@or_"]: or,
     not(query: RouteQuery): RouteQuery {
         return {
             initialize(e) {
-                const { predicate } = query.initialize(e);
+                const { predicate } = queryAsFactory(query).initialize(e);
                 return {
                     ...emptyUnit,
                     predicate(r) {
@@ -319,7 +324,7 @@ const library = {
         return {
             initialize(e) {
                 return {
-                    ...query.initialize(e),
+                    ...queryAsFactory(query).initialize(e),
                     getTitle,
                 };
             },
@@ -329,13 +334,16 @@ const library = {
         return {
             initialize(e) {
                 return {
-                    ...query.initialize(e),
+                    ...queryAsFactory(query).initialize(e),
                     getNote,
                 };
             },
         };
     },
     orderBy,
+    ["_@orderBy_"](query: RouteQuery, kind: OrderByKinds) {
+        return orderBy(kind, query);
+    },
     any: anyQuery,
 };
 function evaluateWithLibrary(expression: Expression) {
@@ -368,7 +376,7 @@ export function createQuery(expression: string): QueryCreateResult {
     return {
         getQuery: () => {
             // TODO: 静的チェックする
-            return evaluateWithLibrary(json) as RouteQuery;
+            return queryAsFactory(evaluateWithLibrary(json) as RouteQuery);
         },
         syntax: "parentheses",
         diagnostics,

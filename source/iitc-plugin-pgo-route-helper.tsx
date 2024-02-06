@@ -41,6 +41,7 @@ import {
     type QueryEnvironment,
     type QueryKey,
     compareQueryKey,
+    type UnitQueryFactory,
 } from "./query";
 import { createQueryEditor } from "./query-editor";
 
@@ -211,7 +212,7 @@ async function asyncMain() {
             query:
                 | {
                       syntax: "words" | "parentheses";
-                      getQuery: () => RouteQuery;
+                      getQuery: () => UnitQueryFactory;
                   }
                 | undefined;
         }>;

@@ -4,6 +4,7 @@ const enum CharacterCodes {
     ["/"] = 47,
     C0 = 48,
     C9 = 57,
+    ["@"] = 64,
 }
 // spaces
 const enum CharacterCodes {
@@ -125,8 +126,10 @@ export const tokenDefinitions: TokenDefinitions<string> = [
     [/\/\*[\s\S]*?\*\//],
     // キーワードや記号
     [/true|false|null|[[\](){},:]/],
+    // @始まりの中置き演算子
+    [/@[^\s/[\](){}@,:"\\]+/],
     // 識別子形式の文字列 { key: 0 }
-    [/[^\s/[\](){},:"\\\d][^\s/[\](){},:"\\]*/],
+    [/[^\s/[\](){}@,:"\\\d][^\s/[\](){}@,:"\\]*/],
     // 空白
     [/\s+/],
     // 数値リテラル
@@ -157,6 +160,7 @@ type TokenKind =
     | "Number"
     | "String"
     | "Name"
+    | "AtName"
     | "WhiteSpace"
     | "Comment"
     | "EndOfSource";
@@ -179,6 +183,7 @@ function getTokenKind(token: Token): TokenKind {
     const code0 = token.codePointAt(0) ?? error`internal error`;
     if (code0 === CharacterCodes["/"]) return "Comment";
     if (code0 === CharacterCodes['"']) return "String";
+    if (code0 === CharacterCodes["@"]) return "AtName";
     if (isAsciiDigit(code0)) return "Number";
     if (isUnicodeWhiteSpace(code0)) return "WhiteSpace";
     return "Name";
@@ -211,7 +216,21 @@ export function createParser(
     }
     const recoveryToken = "<recover>";
 
-    function parseExpression(): Json {
+    function parseExpression() {
+        return parseOperatorExpressionOrHigher();
+    }
+    // operator-expression-or-higher := primary-expression (at-name primary-expression)*
+    function parseOperatorExpressionOrHigher() {
+        let left = parsePrimaryExpression();
+        while (currentTokenKind === "AtName") {
+            const operatorName = `_${currentToken}_`;
+            nextToken();
+            const right = parsePrimaryExpression();
+            left = [operatorName, left, right];
+        }
+        return left;
+    }
+    function parsePrimaryExpression(): Json {
         const token = currentToken;
         const tokenKind = currentTokenKind;
         if (token === undefined) {
