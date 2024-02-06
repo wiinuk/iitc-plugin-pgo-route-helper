@@ -1,13 +1,14 @@
 // spell-checker: ignore drivetunnel
-import type { Json as MutableJson } from "../../gas-drivetunnel/source/json-schema-core";
-import { evaluateExpression, type Expression } from "./query-expression";
+import type { Json as MutableJson } from "../../../gas-drivetunnel/source/json-schema-core";
+import { evaluateExpression, type Expression } from "./expression";
 import {
     getRouteKind,
     getRouteTags,
     type Coordinate,
     type Route,
-} from "./route";
-import type { Json } from "./standard-extensions";
+} from "../route";
+import { exhaustive, isArray, type Json } from "../standard-extensions";
+import { getGymsOrderKinds, orderByGyms } from "./gyms";
 
 function eachJsonStrings(
     json: MutableJson,
@@ -69,10 +70,53 @@ function includesAmbiguousTextInRoute(route: Route, word: string) {
     return success;
 }
 
+/** ラインタイムの規定ロケールで比較 */
+const { compare: compareString } = new Intl.Collator();
+export type QueryKey = null | number | string | readonly QueryKey[];
+export function compareQueryKey(key1: QueryKey, key2: QueryKey): number {
+    if (key1 === null && key2 === null) return 0;
+    if (key1 === null) return -1;
+    if (key2 === null) return 1;
+
+    if (typeof key1 === "number" && typeof key2 === "number") {
+        const key1IsNaN = key1 !== key1;
+        const key2IsNaN = key2 !== key2;
+        if (key1IsNaN && key2IsNaN) return 0;
+        if (key1IsNaN) return -1;
+        if (key2IsNaN) return 1;
+        return key1 - key2;
+    }
+    if (typeof key1 === "string" && typeof key2 === "string")
+        return compareString(key1, key2);
+
+    if (isArray(key1) && isArray(key2)) {
+        const length = Math.min(key1.length, key2.length);
+        for (let i = 0; i < length; i++) {
+            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+            const result = compareQueryKey(key1[i]!, key2[i]!);
+            if (result !== 0) return result;
+        }
+        return key1.length - key2.length;
+    }
+    if (typeof key1 === "number") return -1;
+    if (typeof key2 === "number") return 1;
+    if (typeof key1 === "string") return -1;
+    if (typeof key2 === "string") return 1;
+    if (isArray(key1)) return -1;
+    if (isArray(key2)) return 1;
+
+    return exhaustive(key1), exhaustive(key2);
+}
+
+export interface QuerySorter {
+    getKey(route: Route): QueryKey;
+    isAscendent: boolean;
+}
 interface UnitQuery {
     predicate(route: Route): boolean;
-    getTitle(route: Route): string | null;
-    getDescription(route: Route): string | null;
+    getTitle?(route: Route): string;
+    getNote?(route: Route): string;
+    getSorter?(): Readonly<QuerySorter>;
 }
 export interface RouteQuery {
     initialize(environment: QueryEnvironment): UnitQuery;
@@ -81,20 +125,12 @@ const emptyUnit: UnitQuery = {
     predicate() {
         return true;
     },
-    getTitle() {
-        return null;
-    },
-    getDescription() {
-        return null;
+};
+export const anyQuery: RouteQuery = {
+    initialize() {
+        return emptyUnit;
     },
 };
-export function getEmptyQuery(): RouteQuery {
-    return {
-        initialize() {
-            return emptyUnit;
-        },
-    };
-}
 export type QueryCreateResult = {
     getQuery: () => RouteQuery;
     syntax: "words" | "parentheses";
@@ -132,7 +168,7 @@ function tryParseJson(text: string): Json | undefined {
 
 type TokenDefinition = readonly [
     pattern: RegExp,
-    action?: (...xs: [string, ...string[]]) => string
+    action?: (xs: readonly [string, ...string[]]) => string
 ];
 type TokenDefinitions = readonly TokenDefinition[];
 function replaceTokens(source: string, tokenDefinitions: TokenDefinitions) {
@@ -146,7 +182,10 @@ function replaceTokens(source: string, tokenDefinitions: TokenDefinitions) {
                 tokens.push(
                     action
                         ? action(
-                              ...(match as string[] as [string, ...string[]])
+                              match as readonly string[] as readonly [
+                                  string,
+                                  ...string[]
+                              ]
                           )
                         : match[0]
                 );
@@ -164,17 +203,17 @@ const exJsonTokens: TokenDefinitions = [
     // 複数行コメント /* comment */
     [/\/\*[\s\S]*?\*\//, () => ""],
     // 末尾のカンマ { a: 0, } [1, 2,]
-    [/,\s*(}])}/, (xs) => xs[1] ?? ""],
+    [/,([\s\n]*[}\]])/, ([_, m1]) => m1 ?? ""],
     // キーワードや記号
     [/true|false|null|[[\]{},:]/],
     // 識別子形式の文字列 { key: 0 }
-    [/[$_\w][$_\w\d]*/, (xs) => `"${xs[0]}"`],
+    [/[^\s/[\]{},:"\\\d][^\s/[\]{},:"\\]*/, ([m]) => `"${m}"`],
     // 空白
     [/\s+/],
     // 数値リテラル
-    [/-?\d+(\.\d+)?/],
+    [/-?\d+(\.\d+)?([eE]\d+)?/],
     // 文字列リテラル
-    [/"[^"]*"/],
+    [/"([^"]|\\")*"/],
 ];
 
 function toStrictJson(text: string) {
@@ -218,6 +257,54 @@ function reachableWith(options: {
         },
     };
 }
+
+function orderByKey(
+    query: RouteQuery,
+    getKey: (route: Route) => QueryKey,
+    isAscendent: boolean
+) {
+    return {
+        initialize(e) {
+            const unit = query.initialize(e);
+            return {
+                ...unit,
+                getSorter() {
+                    return {
+                        getKey,
+                        isAscendent,
+                    };
+                },
+            };
+        },
+    } satisfies RouteQuery;
+}
+
+export function getOrderByKinds() {
+    return ["id", "latitude", "longitude", ...getGymsOrderKinds()] as const;
+}
+export function orderBy(
+    kind: ReturnType<typeof getOrderByKinds>[number],
+    query: RouteQuery
+): RouteQuery {
+    switch (kind) {
+        case "id":
+            return orderByKey(query, (r) => r.routeId, false);
+        case "latitude":
+            return orderByKey(query, (r) => r.coordinates[0][0], false);
+        case "longitude":
+            return orderByKey(query, (r) => r.coordinates[0][1], true);
+        case "potentialGyms":
+        case "potentialStops":
+            return orderByGyms(kind, query);
+        default:
+            throw new Error(
+                `Invalid order kind: ${
+                    kind satisfies never
+                }. Expected ${getOrderByKinds().join(" or ")}.`
+            );
+    }
+}
+
 const library = {
     ["tag?"](route: Route, tagNames: readonly string[]) {
         const tags = getRouteTags(route);
@@ -246,7 +333,7 @@ const library = {
             initialize(e) {
                 const units = queries.map((q) => q.initialize(e));
                 return {
-                    ...emptyUnit,
+                    ...units.reduce(Object.assign, emptyUnit),
                     predicate(r) {
                         return units.every((u) => u.predicate(r));
                     },
@@ -259,7 +346,7 @@ const library = {
             initialize(e) {
                 const units = queries.map((q) => q.initialize(e));
                 return {
-                    ...emptyUnit,
+                    ...units.reduce(Object.assign, emptyUnit),
                     predicate(r) {
                         return units.some((u) => u.predicate(r));
                     },
@@ -293,19 +380,18 @@ const library = {
             },
         };
     },
-    withDescription(
-        getDescription: (route: Route) => string,
-        query: RouteQuery
-    ): RouteQuery {
+    withNote(getNote: (route: Route) => string, query: RouteQuery): RouteQuery {
         return {
             initialize(e) {
                 return {
                     ...query.initialize(e),
-                    getDescription,
+                    getNote,
                 };
             },
         };
     },
+    orderBy,
+    any: anyQuery,
 };
 function evaluateWithLibrary(expression: Expression) {
     const getUnresolved = (name: string) => {

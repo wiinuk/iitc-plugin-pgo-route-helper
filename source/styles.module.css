@@ -14,6 +14,14 @@
 .hidden {
     display: none;
 }
+.ellipsis-text {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.ellipsis-text br {
+    display: none;
+}
 
 input.editable-text {
     border: none;
@@ -86,6 +94,11 @@ input.editable-text {
     height: 18px;
     cursor: pointer;
     user-select: none;
+}
+.route-list .note {
+    font-size: 75%;
+    padding-left: 0.5em;
+    color: #ffffffab;
 }
 
 .auto-complete-list {

@@ -36,10 +36,12 @@ import { createPolylineEditorPlugin } from "./polyline-editor";
 import jqueryUIPolyfillTouchEvents from "./jquery-ui-polyfill-touch-events";
 import type { LastOfArray } from "./type-level";
 import {
-    getEmptyQuery,
+    anyQuery,
     createQuery,
     type RouteQuery,
     type QueryEnvironment,
+    type QueryKey,
+    compareQueryKey,
 } from "./query";
 import { createQueryEditor } from "./query-editor";
 
@@ -182,6 +184,14 @@ async function asyncMain() {
     }
     console.debug(`'${config.userId}' としてログインしています。`);
 
+    type RouteListItemView = {
+        readonly listItem: HTMLLIElement;
+        readonly titleElement: HTMLElement;
+        readonly noteElement: HTMLElement;
+        visible: boolean;
+        title: string | null;
+        note: string | null;
+    };
     type RouteWithView = {
         readonly route: Route;
         readonly coordinatesEditor: Readonly<{
@@ -189,7 +199,8 @@ async function asyncMain() {
             update: (route: Route) => void;
             highlight: (enabled: boolean) => void;
         }>;
-        readonly listItem: HTMLLIElement;
+        readonly listView: RouteListItemView;
+        sortKey: QueryKey;
     };
     const state: {
         /** null: 選択されていない */
@@ -643,7 +654,7 @@ async function asyncMain() {
                 if (view == null) return;
 
                 routes.delete(deleteRouteId);
-                view.listItem.remove();
+                view.listView.listItem.remove();
                 updateRoutesListElement();
                 map.removeLayer(view.coordinatesEditor.layer);
                 routeLayerGroup.removeLayer(view.coordinatesEditor.layer);
@@ -676,15 +687,20 @@ async function asyncMain() {
         },
     });
     function onMoveToSelectedElement(showListItem: boolean) {
-        const route = getSelectedRoute();
-        if (route == null) return;
+        const view = getSelectedRoute();
+        if (view == null) return;
+
+        const {
+            listView: { listItem },
+            route,
+        } = view;
 
         if (showListItem) {
-            route.listItem.scrollIntoView();
+            listItem.scrollIntoView();
         }
-        onListItemClicked(route.listItem);
+        onListItemClicked(listItem);
         const bounds = L.latLngBounds(
-            route.route.coordinates.map(coordinateToLatLng)
+            route.coordinates.map(coordinateToLatLng)
         );
         map.panInsideBounds(bounds);
     }
@@ -742,9 +758,6 @@ async function asyncMain() {
         config.routeQueries = history;
         saveConfig(config);
     }
-    function updateRoutesListItem(route: Route, listItem: HTMLLIElement) {
-        listItem.innerText = route.routeName;
-    }
 
     const tempLatLng1 = L.latLng(0, 0);
     const tempLatLng2 = L.latLng(0, 0);
@@ -788,36 +801,63 @@ async function asyncMain() {
         }
         const { queryText, query } = state.routeListQuery;
 
-        const routes = [...state.routes.values()].map((r) => r.route);
+        const views = [...state.routes.values()];
+        const routes = views.map((r) => r.route);
         const isQueryUndefined = query === undefined;
-        const getQuery = isQueryUndefined ? getEmptyQuery : query.getQuery;
+        const getQuery = isQueryUndefined ? () => anyQuery : query.getQuery;
 
         const environment = { ...defaultEnvironment, routes };
-        const { predicate } = protectedCallQueryFunction(
-            () => getQuery().initialize(environment),
-            () => getEmptyQuery().initialize(environment)
+        const { predicate, getTitle, getNote, getSorter } =
+            protectedCallQueryFunction(
+                () => getQuery().initialize(environment),
+                () => anyQuery.initialize(environment)
+            );
+        const sorter = protectedCallQueryFunction(
+            () => getSorter?.() ?? null,
+            () => null
         );
 
         let visibleListItemCount = 0;
-        for (const {
-            route,
-            listItem,
-            coordinatesEditor,
-        } of state.routes.values()) {
-            const r = protectedCallQueryFunction(
+        for (const view of views) {
+            const { route, listView, coordinatesEditor } = view;
+            if (sorter != null) {
+                view.sortKey = protectedCallQueryFunction(
+                    () => sorter.getKey(route),
+                    () => null
+                );
+            } else {
+                view.sortKey = null;
+            }
+
+            listView.visible = protectedCallQueryFunction(
                 () => predicate(route),
                 () => false
             );
-            if (r) {
-                listItem.classList.remove(classNames.hidden);
-                visibleListItemCount++;
-            } else {
-                listItem.classList.add(classNames.hidden);
+            listView.title = protectedCallQueryFunction(
+                () => getTitle?.(route) ?? null,
+                () => null
+            );
+            listView.note = protectedCallQueryFunction(
+                () => getNote?.(route) ?? null,
+                () => null
+            );
+            if (listView.visible) visibleListItemCount++;
+            updateRouteListView(route, listView);
+
+            if (!isQueryUndefined)
+                coordinatesEditor.highlight(listView.visible);
+        }
+        if (sorter != null) {
+            const fragment = document.createDocumentFragment();
+            views.sort(
+                (r1, r2) =>
+                    (sorter.isAscendent ? 1 : -1) *
+                    compareQueryKey(r1.sortKey, r2.sortKey)
+            );
+            for (const { listView } of views) {
+                fragment.appendChild(listView.listItem);
             }
-            updateRoutesListItem(route, listItem);
-            if (!isQueryUndefined) {
-                coordinatesEditor.highlight(r);
-            }
+            routeListElement.appendChild(fragment);
         }
         if (!isQueryUndefined) {
             progress({
@@ -833,8 +873,8 @@ async function asyncMain() {
     const elementToRouteId = new WeakMap<Element, string>();
     function onListItemClicked(element: HTMLElement) {
         if (state.routes === "routes-unloaded") return;
-        for (const { listItem } of state.routes.values()) {
-            listItem.classList.remove(classNames.selected);
+        for (const { listView } of state.routes.values()) {
+            listView.listItem.classList.remove(classNames.selected);
         }
         element.classList.add(classNames.selected);
 
@@ -842,10 +882,20 @@ async function asyncMain() {
         if (routeId == null) return;
         selectedRouteListItemUpdated([routeId]);
     }
-    function createRouteListItem(route: Route) {
+    function createRouteListView(route: Route) {
+        const titleElement = <span>{route.routeName}</span>;
+        const noteElement = <span class={classNames.note}>{route.note}</span>;
         const listItem = addListeners(
             (
-                <li class="ui-widget-content">{route.routeName}</li>
+                <li
+                    classList={[
+                        "ui-widget-content",
+                        classNames["ellipsis-text"],
+                    ]}
+                >
+                    {titleElement}
+                    {noteElement}
+                </li>
             ) as HTMLLIElement,
             {
                 click() {
@@ -857,8 +907,35 @@ async function asyncMain() {
             }
         );
         elementToRouteId.set(listItem, route.routeId);
-        return listItem;
+        return {
+            listItem,
+            titleElement,
+            noteElement,
+            note: null,
+            title: null,
+            visible: true,
+        } satisfies RouteListItemView;
     }
+    function updateRouteListView(
+        route: Route,
+        {
+            listItem,
+            titleElement,
+            noteElement,
+            title,
+            visible,
+            note,
+        }: RouteListItemView
+    ) {
+        titleElement.innerText = title ?? route.routeName;
+        noteElement.innerText = note ?? route.note;
+        if (visible) {
+            listItem.classList.remove(classNames.hidden);
+        } else {
+            listItem.classList.add(classNames.hidden);
+        }
+    }
+
     const routeListElement = (
         <ol class={classNames["route-list"]}></ol>
     ) as HTMLOListElement;
@@ -870,6 +947,9 @@ async function asyncMain() {
         queryText: string
     ) {
         setQueryExpressionCancelScope(async (signal) => {
+            if (state.routeListQuery.queryText.trim() === queryText.trim())
+                return;
+
             await sleep(delayMilliseconds, { signal });
             if (queryText.trim() === "") {
                 state.routeListQuery = {
@@ -981,8 +1061,6 @@ async function asyncMain() {
     const editor = $(editorElement).dialog({
         autoOpen: false,
         title: "ルート",
-        height: "auto",
-        width: "auto",
     });
 
     document.querySelector("#toolbox")?.append(
@@ -1009,7 +1087,7 @@ async function asyncMain() {
             state.routes !== "routes-unloaded" && state.routes.get(routeId);
         if (!route) return;
         route.coordinatesEditor.update(route.route);
-        updateRoutesListItem(route.route, route.listItem);
+        updateRouteListView(route.route, route.listView);
 
         if (getSelectedRoute()?.route?.routeId === routeId) {
             setEditorElements(route.route);
@@ -1159,13 +1237,14 @@ async function asyncMain() {
         }
         routeLayerGroup.addLayer(view.layer);
 
-        const listItem = createRouteListItem(route);
+        const listView = createRouteListView(route);
 
-        routeListElement.appendChild(listItem);
+        routeListElement.appendChild(listView.listItem);
         routeMap.set(routeId, {
             route,
             coordinatesEditor: view,
-            listItem,
+            listView,
+            sortKey: null,
         });
         updateRoutesListElement();
     }

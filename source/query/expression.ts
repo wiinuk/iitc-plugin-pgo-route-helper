@@ -1,5 +1,5 @@
-import { isArray, type Json } from "./standard-extensions";
-import * as Assoc from "./assoc";
+import { isArray, type Json } from "../standard-extensions";
+import * as Assoc from "../assoc";
 
 export type Expression = Json;
 function throwFunctionExpressionError(): never {

@@ -20,7 +20,7 @@ interface WindowForContentScope extends Window {
 // IITC mobile
 var android: { readonly addPane?: unknown } | undefined;
 
-function plugin(): void;
+var plugin: IITCPlugin;
 var bootPlugins: SetupHook[];
 var iitcLoaded: boolean;
 var L: typeof import("leaflet");
@@ -33,6 +33,9 @@ function addLayerGroup<Layer extends L.ILayer>(
     defaultDisplay?: boolean
 ): unknown;
 
+interface IITCPlugin extends Record<string, unknown> {
+    (): void;
+}
 interface IITCSearchResult {
     description?: string;
     icon?: string;
