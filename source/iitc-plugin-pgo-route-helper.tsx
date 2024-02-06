@@ -237,6 +237,8 @@ async function asyncMain() {
                   type: "downloading";
               }
             | { type: "downloaded"; routeCount: number }
+            | { type: "adding"; routeName: string; routeId: string }
+            | { type: "routes-added"; count: number }
             | {
                   type: "query-parse-completed";
                   language: "words" | "parentheses" | undefined;
@@ -291,6 +293,14 @@ async function asyncMain() {
             }
             case "downloaded": {
                 reportElement.innerText = `${message.routeCount} 個のルートを受信しました。`;
+                break;
+            }
+            case "adding": {
+                reportElement.innerText = `ルート: '${message.routeName}' ( ${message.routeId} ) を読み込みました`;
+                break;
+            }
+            case "routes-added": {
+                reportElement.innerText = `${message.count} 個のルートを追加しました`;
                 break;
             }
             case "query-parse-completed": {
@@ -1256,7 +1266,7 @@ async function asyncMain() {
     await waitLayerAdded(map, routeLayerGroup);
 
     if (state.routes === "routes-unloaded") {
-        const routeMap = (state.routes = new Map());
+        const routeMap = new Map();
         progress({
             type: "downloading",
         });
@@ -1271,14 +1281,21 @@ async function asyncMain() {
             routeCount: routeList.length,
         });
         for (const route of routeList) {
-            await doOtherTasks();
+            await new Promise(requestAnimationFrame);
             addRouteView(routeMap, {
                 ...route,
                 coordinates: parseCoordinates(route.coordinates),
             });
-            console.debug(
-                `ルート: '${route.routeName}' ( ${route.routeId} ) を読み込みました`
-            );
+            progress({
+                type: "adding",
+                routeName: route.routeName,
+                routeId: route.routeId,
+            });
         }
+        state.routes = routeMap;
+        progress({
+            type: "routes-added",
+            count: state.routes.size,
+        });
     }
 }
