@@ -21,7 +21,6 @@ import {
 } from "./route";
 import {
     error,
-    microYield as doOtherTasks,
     createAsyncCancelScope,
     sleep,
     exhaustive,
