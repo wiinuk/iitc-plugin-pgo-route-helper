@@ -6,7 +6,7 @@
 // @downloadURL  https://github.com/wiinuk/iitc-plugin-pgo-route-helper/raw/master/iitc-plugin-pgo-route-helper.user.js
 // @updateURL    https://github.com/wiinuk/iitc-plugin-pgo-route-helper/raw/master/iitc-plugin-pgo-route-helper.user.js
 // @homepageURL  https://github.com/wiinuk/iitc-plugin-pgo-route-helper
-// @version      0.9.7
+// @version      0.9.8
 // @description  IITC plugin to assist in Pokémon GO route creation.
 // @author       Wiinuk
 // @include      https://*.ingress.com/intel*
@@ -557,21 +557,6 @@ function pipe(value, ...processes) {
     return a;
 }
 const isArray = Array.isArray;
-const failureSymbol = Symbol("GetFailure");
-function getOrFailureSymbol(o, ...keys) {
-    function get(o, k) {
-        if (o === failureSymbol)
-            return o;
-        return typeof o === "object" && o !== null && k in o
-            ? o[k]
-            : failureSymbol;
-    }
-    for (let i = 0; i < keys.length; i++) {
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        o = get(o, keys[i]);
-    }
-    return o;
-}
 
 ;// CONCATENATED MODULE: ./source/document-extensions.ts
 var __awaiter = (undefined && undefined.__awaiter) || function (thisArg, _arguments, P, generator) {
@@ -2171,25 +2156,14 @@ function includes(words) {
 function createSimpleQuery(expression) {
     return includes(expression.split(/\s+/));
 }
-const reachable = {
-    initialize({ getUserCoordinate, distance }) {
-        const userCoordinate = getUserCoordinate();
-        if (userCoordinate == null)
-            return emptyUnit;
-        return Object.assign(Object.assign({}, emptyUnit), { predicate(route) {
-                return (getRouteKind(route) === "spot" &&
-                    distance(userCoordinate, route.coordinates[0]) < 9800);
-            } });
-    },
-};
 function reachableWith(options) {
     return {
         initialize({ getUserCoordinate, distance }) {
             var _a;
-            const center = options.center || getUserCoordinate();
+            const center = (options === null || options === void 0 ? void 0 : options.center) || getUserCoordinate();
             if (center == null)
                 return emptyUnit;
-            const radius = (_a = options.radius) !== null && _a !== void 0 ? _a : 9800;
+            const radius = (_a = options === null || options === void 0 ? void 0 : options.radius) !== null && _a !== void 0 ? _a : 9800;
             return Object.assign(Object.assign({}, emptyUnit), { predicate(route) {
                     return (getRouteKind(route) === "spot" &&
                         distance(center, route.coordinates[0]) < radius);
@@ -2197,6 +2171,7 @@ function reachableWith(options) {
         },
     };
 }
+const reachable = reachableWith();
 function queryAsFactory(query) {
     return typeof query === "string" ? includes([query]) : query;
 }
@@ -2587,6 +2562,8 @@ function asyncMain() {
                     reportError(message.error);
                     break;
                 }
+                case "user-location-fetched":
+                    break;
                 default:
                     throw new Error(`Unknown message type ${type}`);
             }
@@ -2933,9 +2910,17 @@ function asyncMain() {
                 return tempLatLng1.distanceTo(tempLatLng2);
             },
             getUserCoordinate() {
-                const userLatLng = getOrFailureSymbol(window.plugin, "userLocation", "user", "latlng");
-                const coordinate = userLatLng instanceof L.LatLng ? userLatLng : map.getCenter();
-                return latLngToCoordinate(coordinate);
+                let center;
+                try {
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    const v = globalThis.plugin.userLocation.user.latlng;
+                    center = v instanceof L.LatLng ? v : null;
+                }
+                catch (_a) {
+                    center = null;
+                }
+                progress({ type: "user-location-fetched", center });
+                return latLngToCoordinate(center !== null && center !== void 0 ? center : map.getCenter());
             },
         };
         function protectedCallQueryFunction(action, defaultValue) {
