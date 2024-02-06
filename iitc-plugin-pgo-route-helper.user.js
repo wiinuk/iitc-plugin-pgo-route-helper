@@ -6,7 +6,7 @@
 // @downloadURL  https://github.com/wiinuk/iitc-plugin-pgo-route-helper/raw/master/iitc-plugin-pgo-route-helper.user.js
 // @updateURL    https://github.com/wiinuk/iitc-plugin-pgo-route-helper/raw/master/iitc-plugin-pgo-route-helper.user.js
 // @homepageURL  https://github.com/wiinuk/iitc-plugin-pgo-route-helper
-// @version      0.9.5
+// @version      0.9.6
 // @description  IITC plugin to assist in Pokémon GO route creation.
 // @author       Wiinuk
 // @include      https://*.ingress.com/intel*
@@ -758,22 +758,24 @@ function getRouteIsTemplate(route) {
 }
 
 ;// CONCATENATED MODULE: ./source/styles.module.css
-const cssText = ".import-text-input-0f3bde8ee8a16aef8b568bdcba64c15ae3ebb473 {\r\n    position: fixed;\r\n    top: 0;\r\n    left: 0;\r\n    width: 100%;\r\n    height: 100%;\r\n    z-index: 10000;\r\n\r\n    display: flex;\r\n    justify-content: center;\r\n    align-items: center;\r\n}\r\n\r\n.hidden-6d022c31bf61c323d2b7cb97231966c07399aa1d {\r\n    display: none;\r\n}\r\n\r\ninput.editable-text-fda5c378d1ba5644ddaba7ba58a2c56619f16ef9 {\r\n    border: none;\r\n    background: none;\r\n    font-size: 16px;\r\n    color: black;\r\n}\r\n\r\n.spot-label-c7e75e38e1a20fc10d800714fc5ba0a2c3a891ef {\r\n    color: #FFFFBB;\r\n    font-size: 11px;\r\n    line-height: 12px;\r\n    text-align: center;\r\n    padding: 2px;\r\n    overflow: hidden;\r\n    white-space: nowrap;\r\n    text-overflow: ellipsis;\r\n    text-shadow: 1px 1px #000, 1px -1px #000, -1px 1px #000, -1px -1px #000, 0 0 5px #000;\r\n    pointer-events: none;\r\n}\r\n\r\n.properties-editor-eba9c0a9780e4be64ecb133aaf190a60a10cf553 {\r\n    display: flex;\r\n    flex-direction: column;\r\n    resize: both;\r\n    overflow: auto;\r\n    max-width: 100%;\r\n    max-height: 100vh;\r\n}\r\n.route-list-container-8268fd5b65fa49ac68b3ef6bcd3bafe60f8b91b8 {\r\n    flex-grow: 1;\r\n    overflow: auto;\r\n}\r\n\r\n.properties-editor-eba9c0a9780e4be64ecb133aaf190a60a10cf553 textarea,\r\n.properties-editor-eba9c0a9780e4be64ecb133aaf190a60a10cf553 input {\r\n    box-sizing: border-box;\r\n    width: 100%;\r\n    resize: vertical;\r\n\r\n    font-family: Arial, Helvetica, sans-serif;\r\n}\r\n.properties-editor-eba9c0a9780e4be64ecb133aaf190a60a10cf553 input.title-c2d91ee7f43befb8336776e0455a2ced7e5541ec {\r\n    width: auto;\r\n}\r\n\r\n.properties-editor-eba9c0a9780e4be64ecb133aaf190a60a10cf553 textarea.query-input-field-97d643ddd39e0ac31b1ca6bf2408b7bb149f3f55 {\r\n    font-family: Menlo, Monaco, 'Courier New', Courier, monospace;\r\n    height: 1.5em;\r\n}\r\n\r\n.route-list-9aeb7c282389c3c895710b5db7c6ad75c27b9b53 .selecting-553e0c12db30dd6dd88e3b6b04d1fd70efaee944 {\r\n    background: #FECA40;\r\n}\r\n\r\n.route-list-9aeb7c282389c3c895710b5db7c6ad75c27b9b53 .selected-f6ada44c3bd1269a6d3cff87618f4bb418f18a8b {\r\n    background: #F39814;\r\n    color: white;\r\n}\r\n\r\n.route-list-9aeb7c282389c3c895710b5db7c6ad75c27b9b53 {\r\n    list-style-type: none;\r\n    margin: 0;\r\n    padding: 0;\r\n}\r\n\r\n.route-list-9aeb7c282389c3c895710b5db7c6ad75c27b9b53 li {\r\n    margin: 3px;\r\n    padding: 0.4em;\r\n    height: 18px;\r\n    cursor: pointer;\r\n    user-select: none;\r\n}\r\n\r\n.auto-complete-list-856887868ad8a42dc6274f34d973885b8d6ba821 {\r\n    position: absolute;\r\n    background-color: #f9f9f9;\r\n    min-width: 160px;\r\n    box-shadow: 0px 8px 16px 0px rgba(0, 0, 0, 0.2);\r\n    padding: 12px 16px;\r\n    z-index: 1;\r\n}\r\n\r\n.auto-complete-list-856887868ad8a42dc6274f34d973885b8d6ba821 .auto-complete-list-item-39316a154fca9b9dbf6eff12ba2c26bb2e49b28c {\r\n    color: black;\r\n    padding: 12px 16px;\r\n    text-decoration: none;\r\n    display: block;\r\n}\r\n\r\n.auto-complete-list-856887868ad8a42dc6274f34d973885b8d6ba821 .auto-complete-list-item-39316a154fca9b9dbf6eff12ba2c26bb2e49b28c:hover {\r\n    background-color: #ddd;\r\n}\r\n\r\n\r\n/* アコーディオン */\r\n/* マーカー */\r\n.accordion-e0fa04aea802ad6a6426fd4e5862446b69b7f8b6>summary::-webkit-details-marker {\r\n    display: none;\r\n}\r\n\r\n.accordion-e0fa04aea802ad6a6426fd4e5862446b69b7f8b6>summary::before {\r\n    content: \"\";\r\n    position: absolute;\r\n    width: 6px;\r\n    height: 6px;\r\n    border-top: 2px solid #fff;\r\n    border-right: 2px solid #fff;\r\n\r\n    transform: rotate(225deg);\r\n    top: calc(50% - 3px);\r\n    right: 1em;\r\n}\r\n\r\n/* 閉じているとき */\r\n.accordion-e0fa04aea802ad6a6426fd4e5862446b69b7f8b6>summary {\r\n    cursor: grab;\r\n    display: block;\r\n    height: auto;\r\n    padding: 3px;\r\n    width: auto;\r\n    height: auto;\r\n\r\n    background: #019bc656;\r\n    border: solid 1px #00000000\r\n}\r\n\r\n.accordion-e0fa04aea802ad6a6426fd4e5862446b69b7f8b6>* {\r\n    backface-visibility: hidden;\r\n    transform: translateZ(0);\r\n    transition: all 0.3s;\r\n}\r\n\r\n.accordion-e0fa04aea802ad6a6426fd4e5862446b69b7f8b6> :not(summary) {\r\n    margin-bottom: 6px;\r\n    padding: 0 3px;\r\n    border: solid 1px #00000000;\r\n}\r\n\r\n/* 開いたとき */\r\n.accordion-e0fa04aea802ad6a6426fd4e5862446b69b7f8b6[open]>summary {\r\n    background: #c6880156;\r\n}\r\n\r\n.accordion-e0fa04aea802ad6a6426fd4e5862446b69b7f8b6[open]>summary::before {\r\n    transform: rotate(135deg);\r\n}\r\n\r\n.accordion-e0fa04aea802ad6a6426fd4e5862446b69b7f8b6[open]> :not(summary) {\r\n    padding: 3px;\r\n    transition: all 0.3s;\r\n\r\n    border: solid 1px #c6880156;\r\n}\r\n";
+const cssText = ".import-text-input-f09c30b3c1550677a834e2b08aa03bf2e4bdbb6b {\r\n    position: fixed;\r\n    top: 0;\r\n    left: 0;\r\n    width: 100%;\r\n    height: 100%;\r\n    z-index: 10000;\r\n\r\n    display: flex;\r\n    justify-content: center;\r\n    align-items: center;\r\n}\r\n\r\n.hidden-fd7352e62813123afa532e43f62bc3b9d7534fa2 {\r\n    display: none;\r\n}\r\n.ellipsis-text-74b801c0c90596d2a0f397671cfc2d7d13066917 {\r\n    white-space: nowrap;\r\n    overflow: hidden;\r\n    text-overflow: ellipsis;\r\n}\r\n.ellipsis-text-74b801c0c90596d2a0f397671cfc2d7d13066917 br {\r\n    display: none;\r\n}\r\n\r\ninput.editable-text-18069017b0cacbb4ea6ba74d667e9fba84ca15e6 {\r\n    border: none;\r\n    background: none;\r\n    font-size: 16px;\r\n    color: black;\r\n}\r\n\r\n.spot-label-b4ed9b83fb2e309173bf464f4c606d1a10102e1a {\r\n    color: #FFFFBB;\r\n    font-size: 11px;\r\n    line-height: 12px;\r\n    text-align: center;\r\n    padding: 2px;\r\n    overflow: hidden;\r\n    white-space: nowrap;\r\n    text-overflow: ellipsis;\r\n    text-shadow: 1px 1px #000, 1px -1px #000, -1px 1px #000, -1px -1px #000, 0 0 5px #000;\r\n    pointer-events: none;\r\n}\r\n\r\n.properties-editor-9d34538673a2541d99f4068f28faf7041e7effc6 {\r\n    display: flex;\r\n    flex-direction: column;\r\n    resize: both;\r\n    overflow: auto;\r\n    max-width: 100%;\r\n    max-height: 100vh;\r\n}\r\n.route-list-container-f1f90a26a65cf40180e32440358d1f37f7748d54 {\r\n    flex-grow: 1;\r\n    overflow: auto;\r\n}\r\n\r\n.properties-editor-9d34538673a2541d99f4068f28faf7041e7effc6 textarea,\r\n.properties-editor-9d34538673a2541d99f4068f28faf7041e7effc6 input {\r\n    box-sizing: border-box;\r\n    width: 100%;\r\n    resize: vertical;\r\n\r\n    font-family: Arial, Helvetica, sans-serif;\r\n}\r\n.properties-editor-9d34538673a2541d99f4068f28faf7041e7effc6 input.title-bf2575eb19e06b2959b67c5c58e8166ea42a9df1 {\r\n    width: auto;\r\n}\r\n\r\n.properties-editor-9d34538673a2541d99f4068f28faf7041e7effc6 textarea.query-input-field-d8a4e78924d8eb8302ccf02612ebd556b1754c66 {\r\n    font-family: Menlo, Monaco, 'Courier New', Courier, monospace;\r\n    height: 1.5em;\r\n}\r\n\r\n.route-list-82f4b1a4f5e8c49c0b284e30840e8bd7b66d7d74 .selecting-2e778fd51a003dfb77d90049885fbeb40c6a75ef {\r\n    background: #FECA40;\r\n}\r\n\r\n.route-list-82f4b1a4f5e8c49c0b284e30840e8bd7b66d7d74 .selected-bf4ed9e1cf86beaac068954cffb024cdd8eae4c4 {\r\n    background: #F39814;\r\n    color: white;\r\n}\r\n\r\n.route-list-82f4b1a4f5e8c49c0b284e30840e8bd7b66d7d74 {\r\n    list-style-type: none;\r\n    margin: 0;\r\n    padding: 0;\r\n}\r\n\r\n.route-list-82f4b1a4f5e8c49c0b284e30840e8bd7b66d7d74 li {\r\n    margin: 3px;\r\n    padding: 0.4em;\r\n    height: 18px;\r\n    cursor: pointer;\r\n    user-select: none;\r\n}\r\n.route-list-82f4b1a4f5e8c49c0b284e30840e8bd7b66d7d74 .note-795e3287d682ad5d8cf6667a8878e39d3ef81e93 {\r\n    font-size: 75%;\r\n    padding-left: 0.5em;\r\n    color: #ffffffab;\r\n}\r\n\r\n.auto-complete-list-6d8a40c5118b1a1bff9d8ea8a74a9f0d3f3bfda3 {\r\n    position: absolute;\r\n    background-color: #f9f9f9;\r\n    min-width: 160px;\r\n    box-shadow: 0px 8px 16px 0px rgba(0, 0, 0, 0.2);\r\n    padding: 12px 16px;\r\n    z-index: 1;\r\n}\r\n\r\n.auto-complete-list-6d8a40c5118b1a1bff9d8ea8a74a9f0d3f3bfda3 .auto-complete-list-item-d50b97f0052c5920d66eae1e0dc2783a351cc328 {\r\n    color: black;\r\n    padding: 12px 16px;\r\n    text-decoration: none;\r\n    display: block;\r\n}\r\n\r\n.auto-complete-list-6d8a40c5118b1a1bff9d8ea8a74a9f0d3f3bfda3 .auto-complete-list-item-d50b97f0052c5920d66eae1e0dc2783a351cc328:hover {\r\n    background-color: #ddd;\r\n}\r\n\r\n\r\n/* アコーディオン */\r\n/* マーカー */\r\n.accordion-af78fffddb45fee8e2c8711a639893b7241a7bcf>summary::-webkit-details-marker {\r\n    display: none;\r\n}\r\n\r\n.accordion-af78fffddb45fee8e2c8711a639893b7241a7bcf>summary::before {\r\n    content: \"\";\r\n    position: absolute;\r\n    width: 6px;\r\n    height: 6px;\r\n    border-top: 2px solid #fff;\r\n    border-right: 2px solid #fff;\r\n\r\n    transform: rotate(225deg);\r\n    top: calc(50% - 3px);\r\n    right: 1em;\r\n}\r\n\r\n/* 閉じているとき */\r\n.accordion-af78fffddb45fee8e2c8711a639893b7241a7bcf>summary {\r\n    cursor: grab;\r\n    display: block;\r\n    height: auto;\r\n    padding: 3px;\r\n    width: auto;\r\n    height: auto;\r\n\r\n    background: #019bc656;\r\n    border: solid 1px #00000000\r\n}\r\n\r\n.accordion-af78fffddb45fee8e2c8711a639893b7241a7bcf>* {\r\n    backface-visibility: hidden;\r\n    transform: translateZ(0);\r\n    transition: all 0.3s;\r\n}\r\n\r\n.accordion-af78fffddb45fee8e2c8711a639893b7241a7bcf> :not(summary) {\r\n    margin-bottom: 6px;\r\n    padding: 0 3px;\r\n    border: solid 1px #00000000;\r\n}\r\n\r\n/* 開いたとき */\r\n.accordion-af78fffddb45fee8e2c8711a639893b7241a7bcf[open]>summary {\r\n    background: #c6880156;\r\n}\r\n\r\n.accordion-af78fffddb45fee8e2c8711a639893b7241a7bcf[open]>summary::before {\r\n    transform: rotate(135deg);\r\n}\r\n\r\n.accordion-af78fffddb45fee8e2c8711a639893b7241a7bcf[open]> :not(summary) {\r\n    padding: 3px;\r\n    transition: all 0.3s;\r\n\r\n    border: solid 1px #c6880156;\r\n}\r\n";
 /* harmony default export */ const styles_module = ({
-    "import-text-input": "import-text-input-0f3bde8ee8a16aef8b568bdcba64c15ae3ebb473",
-    hidden: "hidden-6d022c31bf61c323d2b7cb97231966c07399aa1d",
-    "editable-text": "editable-text-fda5c378d1ba5644ddaba7ba58a2c56619f16ef9",
-    "spot-label": "spot-label-c7e75e38e1a20fc10d800714fc5ba0a2c3a891ef",
-    "properties-editor": "properties-editor-eba9c0a9780e4be64ecb133aaf190a60a10cf553",
-    "route-list-container": "route-list-container-8268fd5b65fa49ac68b3ef6bcd3bafe60f8b91b8",
-    title: "title-c2d91ee7f43befb8336776e0455a2ced7e5541ec",
-    "query-input-field": "query-input-field-97d643ddd39e0ac31b1ca6bf2408b7bb149f3f55",
-    "route-list": "route-list-9aeb7c282389c3c895710b5db7c6ad75c27b9b53",
-    selecting: "selecting-553e0c12db30dd6dd88e3b6b04d1fd70efaee944",
-    selected: "selected-f6ada44c3bd1269a6d3cff87618f4bb418f18a8b",
-    "auto-complete-list": "auto-complete-list-856887868ad8a42dc6274f34d973885b8d6ba821",
-    "auto-complete-list-item": "auto-complete-list-item-39316a154fca9b9dbf6eff12ba2c26bb2e49b28c",
-    accordion: "accordion-e0fa04aea802ad6a6426fd4e5862446b69b7f8b6",
+    "import-text-input": "import-text-input-f09c30b3c1550677a834e2b08aa03bf2e4bdbb6b",
+    hidden: "hidden-fd7352e62813123afa532e43f62bc3b9d7534fa2",
+    "ellipsis-text": "ellipsis-text-74b801c0c90596d2a0f397671cfc2d7d13066917",
+    "editable-text": "editable-text-18069017b0cacbb4ea6ba74d667e9fba84ca15e6",
+    "spot-label": "spot-label-b4ed9b83fb2e309173bf464f4c606d1a10102e1a",
+    "properties-editor": "properties-editor-9d34538673a2541d99f4068f28faf7041e7effc6",
+    "route-list-container": "route-list-container-f1f90a26a65cf40180e32440358d1f37f7748d54",
+    title: "title-bf2575eb19e06b2959b67c5c58e8166ea42a9df1",
+    "query-input-field": "query-input-field-d8a4e78924d8eb8302ccf02612ebd556b1754c66",
+    "route-list": "route-list-82f4b1a4f5e8c49c0b284e30840e8bd7b66d7d74",
+    selecting: "selecting-2e778fd51a003dfb77d90049885fbeb40c6a75ef",
+    selected: "selected-bf4ed9e1cf86beaac068954cffb024cdd8eae4c4",
+    note: "note-795e3287d682ad5d8cf6667a8878e39d3ef81e93",
+    "auto-complete-list": "auto-complete-list-6d8a40c5118b1a1bff9d8ea8a74a9f0d3f3bfda3",
+    "auto-complete-list-item": "auto-complete-list-item-d50b97f0052c5920d66eae1e0dc2783a351cc328",
+    accordion: "accordion-af78fffddb45fee8e2c8711a639893b7241a7bcf",
 });
 
 ;// CONCATENATED MODULE: ../gas-drivetunnel/source/schemas.ts
@@ -1406,7 +1408,7 @@ function map(kvs, mapping) {
     return result;
 }
 
-;// CONCATENATED MODULE: ./source/query-expression.ts
+;// CONCATENATED MODULE: ./source/query/expression.ts
 
 
 function throwFunctionExpressionError() {
@@ -1415,7 +1417,7 @@ function throwFunctionExpressionError() {
 function throwLetExpressionError() {
     throw new Error(`#let 形式には要素1と要素2が必要です。例: ["#let", ["result", ["complexTask"]], "result"]`);
 }
-const query_expression_hasOwnProperty = Object.prototype.hasOwnProperty;
+const expression_hasOwnProperty = Object.prototype.hasOwnProperty;
 function evaluateExpression(expression, variables, getUnresolved) {
     switch (typeof expression) {
         case "boolean":
@@ -1431,7 +1433,7 @@ function evaluateExpression(expression, variables, getUnresolved) {
     if (!isArray(expression)) {
         const result = Object.create(null);
         for (const key in expression) {
-            if (query_expression_hasOwnProperty.call(expression, key)) {
+            if (expression_hasOwnProperty.call(expression, key)) {
                 result[key] = evaluateExpression(
                 // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
                 expression[key], variables, getUnresolved);
@@ -1539,7 +1541,187 @@ function evaluateExpression(expression, variables, getUnresolved) {
     }
 }
 
-;// CONCATENATED MODULE: ./source/query.ts
+;// CONCATENATED MODULE: ./source/cells.ts
+
+
+function getOrCreate(map, key, createValue) {
+    let v = map.get(key);
+    if (v === undefined) {
+        v = createValue(key);
+        map.set(key, v);
+    }
+    return v;
+}
+function getSpotLatLng(route) {
+    if (getRouteKind(route) !== "spot")
+        return;
+    const [lat, lng] = route.coordinates[0];
+    return { lat, lng };
+}
+function getS2Cell(latLng, level) {
+    if (typeof S2 === "undefined")
+        throw new Error("S2 is undefined");
+    return S2.S2Cell.FromLatLng(latLng, level);
+}
+function getCell14(cells, coordinate) {
+    const s2Cell = getS2Cell(coordinate, 14);
+    const id = s2Cell.toString();
+    return cells.get(id);
+}
+function getCell17(cells, coordinate) {
+    const cell14 = getCell14(cells, coordinate);
+    if (cell14 == null)
+        return;
+    const id17 = getS2Cell(coordinate, 17).toString();
+    return cell14.cell17s.get(id17);
+}
+function createCell17(cells, coordinate) {
+    const s2Cell14 = getS2Cell(coordinate, 14);
+    const s2Cell17 = getS2Cell(coordinate, 17);
+    const id14 = s2Cell14.toString();
+    const id17 = s2Cell17.toString();
+    const { cell17s } = getOrCreate(cells, id14, () => ({
+        s2Cell: s2Cell14,
+        cell17s: new Map(),
+    }));
+    return getOrCreate(cell17s, id17, () => ({
+        s2Cell: s2Cell17,
+        routes: [],
+        portals: [],
+    }));
+}
+function buildCells(routes) {
+    const { portalLocations: { cache } = standard_extensions_error `plugin portalLocations not defined`, } = plugin;
+    const cells = new Map();
+    for (const cacheKey in cache) {
+        const portal = cache[cacheKey];
+        if (portal == null || portal.sponsored)
+            continue;
+        createCell17(cells, portal.latLng).portals.push(portal);
+    }
+    for (const route of routes) {
+        const coordinate = getSpotLatLng(route);
+        if (coordinate == null)
+            continue;
+        createCell17(cells, coordinate).routes.push(route);
+    }
+    return cells;
+}
+
+;// CONCATENATED MODULE: ./source/query/gyms.ts
+
+function getGymCount(pokestopCount) {
+    if (20 <= pokestopCount)
+        return 3;
+    if (6 <= pokestopCount)
+        return 2;
+    if (2 <= pokestopCount)
+        return 1;
+    return 0;
+}
+function gymCountToMinPokestopCount(gymCount) {
+    switch (gymCount) {
+        case 0:
+            return 0;
+        case 1:
+            return 2;
+        case 2:
+            return 6;
+        default:
+            return gymCount < 0 ? NaN : 20;
+    }
+}
+function getCell14Statistics(cells, cell14ToStatistics, getStatistics, route) {
+    const coordinate = getSpotLatLng(route);
+    if (coordinate == null)
+        return;
+    const cell14 = getCell14(cells, coordinate);
+    if (cell14 == null)
+        return;
+    let statistics = cell14ToStatistics.get(cell14);
+    if (statistics !== undefined)
+        return statistics;
+    statistics = getStatistics(cell14);
+    cell14ToStatistics.set(cell14, statistics);
+    return statistics;
+}
+function getPotentialPokestopCountForNextGym(pokestops, potentialPokestops) {
+    const minPokestopsForNextGym = gymCountToMinPokestopCount(getGymCount(pokestops) + 1);
+    if (pokestops + potentialPokestops < minPokestopsForNextGym ||
+        minPokestopsForNextGym <= pokestops) {
+        return Infinity;
+    }
+    return minPokestopsForNextGym - pokestops;
+}
+function getCell14Gyms(cell14) {
+    let currentPokestops = 0;
+    let potentialPokestops = 0;
+    for (const [, { portals, routes }] of cell14.cell17s) {
+        if (0 < portals.length) {
+            currentPokestops++;
+        }
+        else if (0 < routes.length) {
+            potentialPokestops++;
+        }
+    }
+    const expectedGyms = getGymCount(potentialPokestops + currentPokestops);
+    const currentGyms = getGymCount(currentPokestops);
+    const potentialGyms = expectedGyms - currentGyms;
+    const potentialPokestopsForNextGym = getPotentialPokestopCountForNextGym(currentPokestops, potentialPokestops);
+    return {
+        currentPokestops,
+        expectedGyms,
+        currentGyms,
+        potentialGyms,
+        potentialPokestopsForNextGym,
+    };
+}
+function getGymsOrderKinds() {
+    return ["potentialStops", "potentialGyms"];
+}
+function orderByGyms(kind, query) {
+    return {
+        initialize(e) {
+            const unit = query.initialize(e);
+            const cells = buildCells(e.routes);
+            const gymCounts = new WeakMap();
+            function routeGymsWith(scope) {
+                return (r) => scope(getCell14Statistics(cells, gymCounts, getCell14Gyms, r), r);
+            }
+            let getNote;
+            let getKey;
+            let isAscendent;
+            switch (kind) {
+                case "potentialStops":
+                    getNote = routeGymsWith((s, r) => {
+                        var _a;
+                        return `P${(_a = s === null || s === void 0 ? void 0 : s.potentialPokestopsForNextGym) !== null && _a !== void 0 ? _a : Infinity},${r.note}`;
+                    });
+                    getKey = routeGymsWith((s) => { var _a; return (_a = s === null || s === void 0 ? void 0 : s.potentialPokestopsForNextGym) !== null && _a !== void 0 ? _a : Infinity; });
+                    isAscendent = true;
+                    break;
+                case "potentialGyms":
+                    getNote = routeGymsWith((s, r) => { var _a; return `G${(_a = s === null || s === void 0 ? void 0 : s.potentialGyms) !== null && _a !== void 0 ? _a : 0},${r.note}`; });
+                    getKey = routeGymsWith((s) => { var _a; return (_a = s === null || s === void 0 ? void 0 : s.potentialGyms) !== null && _a !== void 0 ? _a : 0; });
+                    isAscendent = false;
+                    break;
+                default:
+                    throw new Error(`Invalid order kind: ${kind}. Expected ${getGymsOrderKinds().join(" or ")}.`);
+            }
+            return Object.assign(Object.assign({}, unit), { getNote,
+                getSorter() {
+                    return {
+                        getKey,
+                        isAscendent,
+                    };
+                } });
+        },
+    };
+}
+
+;// CONCATENATED MODULE: ./source/query/index.ts
+
+
 
 
 function eachJsonStrings(json, action) {
@@ -1599,24 +1781,62 @@ function includesAmbiguousTextInRoute(route, word) {
     });
     return success;
 }
+/** ラインタイムの規定ロケールで比較 */
+const { compare: compareString } = new Intl.Collator();
+function compareQueryKey(key1, key2) {
+    if (key1 === null && key2 === null)
+        return 0;
+    if (key1 === null)
+        return -1;
+    if (key2 === null)
+        return 1;
+    if (typeof key1 === "number" && typeof key2 === "number") {
+        const key1IsNaN = key1 !== key1;
+        const key2IsNaN = key2 !== key2;
+        if (key1IsNaN && key2IsNaN)
+            return 0;
+        if (key1IsNaN)
+            return -1;
+        if (key2IsNaN)
+            return 1;
+        return key1 - key2;
+    }
+    if (typeof key1 === "string" && typeof key2 === "string")
+        return compareString(key1, key2);
+    if (isArray(key1) && isArray(key2)) {
+        const length = Math.min(key1.length, key2.length);
+        for (let i = 0; i < length; i++) {
+            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+            const result = compareQueryKey(key1[i], key2[i]);
+            if (result !== 0)
+                return result;
+        }
+        return key1.length - key2.length;
+    }
+    if (typeof key1 === "number")
+        return -1;
+    if (typeof key2 === "number")
+        return 1;
+    if (typeof key1 === "string")
+        return -1;
+    if (typeof key2 === "string")
+        return 1;
+    if (isArray(key1))
+        return -1;
+    if (isArray(key2))
+        return 1;
+    return exhaustive(key1), exhaustive(key2);
+}
 const emptyUnit = {
     predicate() {
         return true;
     },
-    getTitle() {
-        return null;
-    },
-    getDescription() {
-        return null;
+};
+const anyQuery = {
+    initialize() {
+        return emptyUnit;
     },
 };
-function getEmptyQuery() {
-    return {
-        initialize() {
-            return emptyUnit;
-        },
-    };
-}
 function includes(words) {
     const unit = Object.assign(Object.assign({}, emptyUnit), { predicate(route) {
             for (const word of words) {
@@ -1643,10 +1863,44 @@ function tryParseJson(text) {
         return;
     }
 }
+function replaceTokens(source, tokenDefinitions) {
+    const tokens = [];
+    let remainingSource = source;
+    next: while (remainingSource.length > 0) {
+        for (const [pattern, action] of tokenDefinitions) {
+            const match = pattern.exec(remainingSource);
+            if (match && match.index === 0) {
+                tokens.push(action
+                    ? action(match)
+                    : match[0]);
+                remainingSource = remainingSource.slice(match[0].length);
+                continue next;
+            }
+        }
+        return;
+    }
+    return tokens.join("");
+}
+const exJsonTokens = [
+    // 行コメント // comment
+    [/\/\/.*?(\n|$)/, () => ""],
+    // 複数行コメント /* comment */
+    [/\/\*[\s\S]*?\*\//, () => ""],
+    // 末尾のカンマ { a: 0, } [1, 2,]
+    [/,([\s\n]*[}\]])/, ([_, m1]) => m1 !== null && m1 !== void 0 ? m1 : ""],
+    // キーワードや記号
+    [/true|false|null|[[\]{},:]/],
+    // 識別子形式の文字列 { key: 0 }
+    [/[^\s/[\]{},:"\\\d][^\s/[\]{},:"\\]*/, ([m]) => `"${m}"`],
+    // 空白
+    [/\s+/],
+    // 数値リテラル
+    [/-?\d+(\.\d+)?([eE]\d+)?/],
+    // 文字列リテラル
+    [/"([^"]|\\")*"/],
+];
 function toStrictJson(text) {
-    return text
-        .replace(/([$_\w][$_\w\d]*)\s*:/g, `"$1":`)
-        .replace(/,\s*\]/g, `]`);
+    return replaceTokens(text, exJsonTokens);
 }
 const reachable = {
     initialize({ getUserCoordinate, distance }) {
@@ -1673,6 +1927,37 @@ function reachableWith(options) {
                 } });
         },
     };
+}
+function orderByKey(query, getKey, isAscendent) {
+    return {
+        initialize(e) {
+            const unit = query.initialize(e);
+            return Object.assign(Object.assign({}, unit), { getSorter() {
+                    return {
+                        getKey,
+                        isAscendent,
+                    };
+                } });
+        },
+    };
+}
+function getOrderByKinds() {
+    return ["id", "latitude", "longitude", ...getGymsOrderKinds()];
+}
+function orderBy(kind, query) {
+    switch (kind) {
+        case "id":
+            return orderByKey(query, (r) => r.routeId, false);
+        case "latitude":
+            return orderByKey(query, (r) => r.coordinates[0][0], false);
+        case "longitude":
+            return orderByKey(query, (r) => r.coordinates[0][1], true);
+        case "potentialGyms":
+        case "potentialStops":
+            return orderByGyms(kind, query);
+        default:
+            throw new Error(`Invalid order kind: ${kind}. Expected ${getOrderByKinds().join(" or ")}.`);
+    }
 }
 const library = {
     ["tag?"](route, tagNames) {
@@ -1703,7 +1988,7 @@ const library = {
         return {
             initialize(e) {
                 const units = queries.map((q) => q.initialize(e));
-                return Object.assign(Object.assign({}, emptyUnit), { predicate(r) {
+                return Object.assign(Object.assign({}, units.reduce(Object.assign, emptyUnit)), { predicate(r) {
                         return units.every((u) => u.predicate(r));
                     } });
             },
@@ -1713,7 +1998,7 @@ const library = {
         return {
             initialize(e) {
                 const units = queries.map((q) => q.initialize(e));
-                return Object.assign(Object.assign({}, emptyUnit), { predicate(r) {
+                return Object.assign(Object.assign({}, units.reduce(Object.assign, emptyUnit)), { predicate(r) {
                         return units.some((u) => u.predicate(r));
                     } });
             },
@@ -1736,13 +2021,15 @@ const library = {
             },
         };
     },
-    withDescription(getDescription, query) {
+    withNote(getNote, query) {
         return {
             initialize(e) {
-                return Object.assign(Object.assign({}, query.initialize(e)), { getDescription });
+                return Object.assign(Object.assign({}, query.initialize(e)), { getNote });
             },
         };
     },
+    orderBy,
+    any: anyQuery,
 };
 function evaluateWithLibrary(expression) {
     const getUnresolved = (name) => {
@@ -1754,17 +2041,17 @@ function evaluateWithLibrary(expression) {
     return evaluateExpression(expression, null, getUnresolved);
 }
 function createQuery(expression) {
-    const json = tryParseJson(toStrictJson(expression));
-    if (json == null ||
-        !(typeof json === "object" || typeof json === "string")) {
+    const source = toStrictJson(expression);
+    const json = source != null ? tryParseJson(source) : source;
+    if (json == null || typeof json !== "object") {
         return {
-            query: () => createSimpleQuery(expression),
+            getQuery: () => createSimpleQuery(expression),
             syntax: "words",
             diagnostics: [],
         };
     }
     return {
-        query: () => {
+        getQuery: () => {
             // TODO: 静的チェックする
             return evaluateWithLibrary(json);
         },
@@ -1974,8 +2261,23 @@ function asyncMain() {
                             reportElement.innerHTML = "全件";
                             break;
                         default:
-                            return exhaustive(message.language);
+                            return exhaustive(message);
                     }
+                    break;
+                }
+                case "query-evaluation-completed": {
+                    let comment;
+                    switch (message.language) {
+                        case "words":
+                            comment = "通常検索";
+                            break;
+                        case "parentheses":
+                            comment = "式検索";
+                            break;
+                        default:
+                            return exhaustive(message);
+                    }
+                    reportElement.innerHTML = `${comment} (表示 ${message.hitCount} 件 / 全体 ${message.allCount} 件)`;
                     break;
                 }
                 case "query-parse-error-occurred": {
@@ -2227,7 +2529,7 @@ function asyncMain() {
                     if (view == null)
                         return;
                     routes.delete(deleteRouteId);
-                    view.listItem.remove();
+                    view.listView.listItem.remove();
                     updateRoutesListElement();
                     map.removeLayer(view.coordinatesEditor.layer);
                     routeLayerGroup.removeLayer(view.coordinatesEditor.layer);
@@ -2261,14 +2563,15 @@ function asyncMain() {
             },
         });
         function onMoveToSelectedElement(showListItem) {
-            const route = getSelectedRoute();
-            if (route == null)
+            const view = getSelectedRoute();
+            if (view == null)
                 return;
+            const { listView: { listItem }, route, } = view;
             if (showListItem) {
-                route.listItem.scrollIntoView();
+                listItem.scrollIntoView();
             }
-            onListItemClicked(route.listItem);
-            const bounds = L.latLngBounds(route.route.coordinates.map(coordinateToLatLng));
+            onListItemClicked(listItem);
+            const bounds = L.latLngBounds(route.coordinates.map(coordinateToLatLng));
             map.panInsideBounds(bounds);
         }
         const moveToRouteElement = addListeners(jsx("button", { children: "\uD83C\uDFAF\u5730\u56F3\u3067\u8868\u793A" }), {
@@ -2320,9 +2623,6 @@ function asyncMain() {
             config.routeQueries = history;
             saveConfig(config);
         }
-        function updateRoutesListItem(route, listItem) {
-            listItem.innerText = route.routeName;
-        }
         const tempLatLng1 = L.latLng(0, 0);
         const tempLatLng2 = L.latLng(0, 0);
         const defaultEnvironment = {
@@ -2354,23 +2654,47 @@ function asyncMain() {
                 return;
             }
             const { queryText, query } = state.routeListQuery;
-            const routes = [...state.routes.values()].map((r) => r.route);
-            const queryUndefined = query === undefined;
-            const getQuery = queryUndefined ? getEmptyQuery : query;
+            const views = [...state.routes.values()];
+            const routes = views.map((r) => r.route);
+            const isQueryUndefined = query === undefined;
+            const getQuery = isQueryUndefined ? () => anyQuery : query.getQuery;
             const environment = Object.assign(Object.assign({}, defaultEnvironment), { routes });
-            const { predicate } = protectedCallQueryFunction(() => getQuery().initialize(environment), () => getEmptyQuery().initialize(environment));
-            for (const { route, listItem, coordinatesEditor, } of state.routes.values()) {
-                const r = protectedCallQueryFunction(() => predicate(route), () => false);
-                if (r) {
-                    listItem.classList.remove(styles_module.hidden);
+            const { predicate, getTitle, getNote, getSorter } = protectedCallQueryFunction(() => getQuery().initialize(environment), () => anyQuery.initialize(environment));
+            const sorter = protectedCallQueryFunction(() => { var _a; return (_a = getSorter === null || getSorter === void 0 ? void 0 : getSorter()) !== null && _a !== void 0 ? _a : null; }, () => null);
+            let visibleListItemCount = 0;
+            for (const view of views) {
+                const { route, listView, coordinatesEditor } = view;
+                if (sorter != null) {
+                    view.sortKey = protectedCallQueryFunction(() => sorter.getKey(route), () => null);
                 }
                 else {
-                    listItem.classList.add(styles_module.hidden);
+                    view.sortKey = null;
                 }
-                updateRoutesListItem(route, listItem);
-                if (!queryUndefined) {
-                    coordinatesEditor.highlight(r);
+                listView.visible = protectedCallQueryFunction(() => predicate(route), () => false);
+                listView.title = protectedCallQueryFunction(() => { var _a; return (_a = getTitle === null || getTitle === void 0 ? void 0 : getTitle(route)) !== null && _a !== void 0 ? _a : null; }, () => null);
+                listView.note = protectedCallQueryFunction(() => { var _a; return (_a = getNote === null || getNote === void 0 ? void 0 : getNote(route)) !== null && _a !== void 0 ? _a : null; }, () => null);
+                if (listView.visible)
+                    visibleListItemCount++;
+                updateRouteListView(route, listView);
+                if (!isQueryUndefined)
+                    coordinatesEditor.highlight(listView.visible);
+            }
+            if (sorter != null) {
+                const fragment = document.createDocumentFragment();
+                views.sort((r1, r2) => (sorter.isAscendent ? 1 : -1) *
+                    compareQueryKey(r1.sortKey, r2.sortKey));
+                for (const { listView } of views) {
+                    fragment.appendChild(listView.listItem);
                 }
+                routeListElement.appendChild(fragment);
+            }
+            if (!isQueryUndefined) {
+                progress({
+                    type: "query-evaluation-completed",
+                    language: query.syntax,
+                    hitCount: visibleListItemCount,
+                    allCount: state.routes.size,
+                });
             }
             saveQueryHistory(queryText);
         }
@@ -2378,8 +2702,8 @@ function asyncMain() {
         function onListItemClicked(element) {
             if (state.routes === "routes-unloaded")
                 return;
-            for (const { listItem } of state.routes.values()) {
-                listItem.classList.remove(styles_module.selected);
+            for (const { listView } of state.routes.values()) {
+                listView.listItem.classList.remove(styles_module.selected);
             }
             element.classList.add(styles_module.selected);
             const routeId = elementToRouteId.get(element);
@@ -2387,8 +2711,13 @@ function asyncMain() {
                 return;
             selectedRouteListItemUpdated([routeId]);
         }
-        function createRouteListItem(route) {
-            const listItem = addListeners((jsx("li", { class: "ui-widget-content", children: route.routeName })), {
+        function createRouteListView(route) {
+            const titleElement = jsx("span", { children: route.routeName });
+            const noteElement = jsx("span", { class: styles_module.note, children: route.note });
+            const listItem = addListeners((jsxs("li", { classList: [
+                    "ui-widget-content",
+                    styles_module["ellipsis-text"],
+                ], children: [titleElement, noteElement] })), {
                 click() {
                     onListItemClicked(this);
                 },
@@ -2397,12 +2726,31 @@ function asyncMain() {
                 },
             });
             elementToRouteId.set(listItem, route.routeId);
-            return listItem;
+            return {
+                listItem,
+                titleElement,
+                noteElement,
+                note: null,
+                title: null,
+                visible: true,
+            };
+        }
+        function updateRouteListView(route, { listItem, titleElement, noteElement, title, visible, note, }) {
+            titleElement.innerText = title !== null && title !== void 0 ? title : route.routeName;
+            noteElement.innerText = note !== null && note !== void 0 ? note : route.note;
+            if (visible) {
+                listItem.classList.remove(styles_module.hidden);
+            }
+            else {
+                listItem.classList.add(styles_module.hidden);
+            }
         }
         const routeListElement = (jsx("ol", { class: styles_module["route-list"] }));
         const setQueryExpressionCancelScope = createAsyncCancelScope(handleAsyncError);
         function setQueryExpressionDelayed(delayMilliseconds, queryText) {
             setQueryExpressionCancelScope((signal) => iitc_plugin_pgo_route_helper_awaiter(this, void 0, void 0, function* () {
+                if (state.routeListQuery.queryText.trim() === queryText.trim())
+                    return;
                 yield sleep(delayMilliseconds, { signal });
                 if (queryText.trim() === "") {
                     state.routeListQuery = {
@@ -2415,7 +2763,7 @@ function asyncMain() {
                     });
                 }
                 else {
-                    const { query, diagnostics, syntax } = createQuery(queryText);
+                    const { getQuery, diagnostics, syntax } = createQuery(queryText);
                     if (0 !== diagnostics.length) {
                         progress({
                             type: "query-parse-error-occurred",
@@ -2428,7 +2776,10 @@ function asyncMain() {
                             language: syntax,
                         });
                     }
-                    state.routeListQuery = { queryText, query };
+                    state.routeListQuery = {
+                        queryText,
+                        query: { getQuery, syntax },
+                    };
                 }
                 updateRoutesListElement();
             }));
@@ -2467,8 +2818,6 @@ function asyncMain() {
         const editor = $(editorElement).dialog({
             autoOpen: false,
             title: "ルート",
-            height: "auto",
-            width: "auto",
         });
         (_b = document.querySelector("#toolbox")) === null || _b === void 0 ? void 0 : _b.append(addListeners(jsx("a", { children: "Route Helper" }), {
             click() {
@@ -2490,7 +2839,7 @@ function asyncMain() {
             if (!route)
                 return;
             route.coordinatesEditor.update(route.route);
-            updateRoutesListItem(route.route, route.listItem);
+            updateRouteListView(route.route, route.listView);
             if (((_b = (_a = getSelectedRoute()) === null || _a === void 0 ? void 0 : _a.route) === null || _b === void 0 ? void 0 : _b.routeId) === routeId) {
                 setEditorElements(route.route);
             }
@@ -2627,12 +2976,13 @@ function asyncMain() {
                     return exhaustive(kind);
             }
             routeLayerGroup.addLayer(view.layer);
-            const listItem = createRouteListItem(route);
-            routeListElement.appendChild(listItem);
+            const listView = createRouteListView(route);
+            routeListElement.appendChild(listView.listItem);
             routeMap.set(routeId, {
                 route,
                 coordinatesEditor: view,
-                listItem,
+                listView,
+                sortKey: null,
             });
             updateRoutesListElement();
         }
