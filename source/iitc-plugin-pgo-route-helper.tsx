@@ -26,7 +26,6 @@ import {
     exhaustive,
     pipe,
     ignore,
-    getOrFailureSymbol,
 } from "./standard-extensions";
 import classNames, { cssText } from "./styles.module.css";
 import * as remote from "./remote";
@@ -253,6 +252,10 @@ async function asyncMain() {
                   messages: readonly string[];
               }
             | { type: "query-evaluation-error"; error: unknown }
+            | {
+                  type: "user-location-fetched";
+                  center: Readonly<{ lat: number; lng: number }> | null;
+              }
     ) => {
         console.log(JSON.stringify(message));
 
@@ -344,6 +347,8 @@ async function asyncMain() {
                 reportError(message.error);
                 break;
             }
+            case "user-location-fetched":
+                break;
             default:
                 throw new Error(`Unknown message type ${type satisfies never}`);
         }
@@ -780,15 +785,16 @@ async function asyncMain() {
             return tempLatLng1.distanceTo(tempLatLng2);
         },
         getUserCoordinate() {
-            const userLatLng = getOrFailureSymbol(
-                window.plugin,
-                "userLocation",
-                "user",
-                "latlng"
-            );
-            const coordinate =
-                userLatLng instanceof L.LatLng ? userLatLng : map.getCenter();
-            return latLngToCoordinate(coordinate);
+            let center: L.LatLng | null;
+            try {
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                const v = (globalThis as any).plugin.userLocation.user.latlng;
+                center = v instanceof L.LatLng ? v : null;
+            } catch {
+                center = null;
+            }
+            progress({ type: "user-location-fetched", center });
+            return latLngToCoordinate(center ?? map.getCenter());
         },
     };
 

@@ -166,30 +166,15 @@ function createSimpleQuery(expression: string): UnitQueryFactory {
     return includes(expression.split(/\s+/));
 }
 
-const reachable: RouteQuery = {
-    initialize({ getUserCoordinate, distance }) {
-        const userCoordinate = getUserCoordinate();
-        if (userCoordinate == null) return emptyUnit;
-        return {
-            ...emptyUnit,
-            predicate(route) {
-                return (
-                    getRouteKind(route) === "spot" &&
-                    distance(userCoordinate, route.coordinates[0]) < 9800
-                );
-            },
-        };
-    },
-};
-function reachableWith(options: {
+function reachableWith(options?: {
     radius?: number;
     center?: Coordinate;
 }): RouteQuery {
     return {
         initialize({ getUserCoordinate, distance }) {
-            const center = options.center || getUserCoordinate();
+            const center = options?.center || getUserCoordinate();
             if (center == null) return emptyUnit;
-            const radius = options.radius ?? 9800;
+            const radius = options?.radius ?? 9800;
 
             return {
                 ...emptyUnit,
@@ -203,6 +188,7 @@ function reachableWith(options: {
         },
     };
 }
+const reachable = reachableWith();
 
 export function queryAsFactory(query: RouteQuery) {
     return typeof query === "string" ? includes([query]) : query;
