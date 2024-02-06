@@ -219,16 +219,50 @@ export function createParser(
     function parseExpression() {
         return parseOperatorExpressionOrHigher();
     }
-    // operator-expression-or-higher := primary-expression (at-name primary-expression)*
+    // operator-expression-or-higher := concatenation-expression (at-name concatenation-expression)*
     function parseOperatorExpressionOrHigher() {
-        let left = parsePrimaryExpression();
+        let left = parseConcatenationExpression();
         while (currentTokenKind === "AtName") {
-            const operatorName = `_${currentToken}_`;
+            const operatorName = `_${
+                currentToken?.slice(1) ?? error`internal error`
+            }_`;
             nextToken();
-            const right = parsePrimaryExpression();
+            const right = parseConcatenationExpression();
             left = [operatorName, left, right];
         }
         return left;
+    }
+    // concatenation-expression-or-higher := primary-expression primary-expression*
+    function parseConcatenationExpression() {
+        const left = parsePrimaryExpression();
+        if (isPrimaryExpressionHead()) {
+            const items = [left, parsePrimaryExpression()];
+            while (isPrimaryExpressionHead()) {
+                items.push(parsePrimaryExpression());
+            }
+            return items;
+        }
+        return left;
+    }
+    // primary-expression :=
+    //     | "(" expression ")"
+    //     | literal
+    //     | name
+    //     | record-expression
+    function isPrimaryExpressionHead() {
+        switch (currentTokenKind) {
+            case "{":
+            case "true":
+            case "false":
+            case "null":
+            case "Number":
+            case "String":
+            case "Name":
+            case "(":
+                return true;
+            default:
+                return false;
+        }
     }
     function parsePrimaryExpression(): Json {
         const token = currentToken;
@@ -242,7 +276,7 @@ export function createParser(
         switch (tokenKind) {
             // リスト
             case "(":
-                return parseListTail();
+                return parseParenthesisExpressionTail();
             // レコード
             case "{":
                 return parseRecordTail();
@@ -266,13 +300,10 @@ export function createParser(
                 return error`Invalid token kind: ${tokenKind}`;
         }
     }
-    function parseListTail() {
-        const result = [];
-        while (currentTokenKind !== "EndOfSource" && currentTokenKind !== ")") {
-            result.push(parseExpression());
-        }
+    function parseParenthesisExpressionTail() {
+        const value = parseExpression();
         skipToken(")", DiagnosticKind.RightParenthesisTokenExpected);
-        return result;
+        return value;
     }
     function parseRecordTail() {
         const record: Record<string, Json> = Object.create(null);

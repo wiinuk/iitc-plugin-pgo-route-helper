@@ -27,3 +27,14 @@ it("list", () => {
         diagnostics: ["RightParenthesisTokenExpected"],
     });
 });
+it("concat", () => {
+    expect(parseOk("f x y")).toStrictEqual(["f", "x", "y"]);
+});
+it("infix", () => {
+    expect(parseOk("x @f y")).toStrictEqual(["_f_", "x", "y"]);
+    expect(parseOk("x @f y @g z")).toStrictEqual([
+        "_g_",
+        ["_f_", "x", "y"],
+        "z",
+    ]);
+});

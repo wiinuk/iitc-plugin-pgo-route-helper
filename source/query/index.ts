@@ -301,9 +301,9 @@ const library = {
     reachable,
     reachableWith,
     and,
-    ["_@and_"]: and,
+    ["_and_"]: and,
     or,
-    ["_@or_"]: or,
+    ["_or_"]: or,
     not(query: RouteQuery): RouteQuery {
         return {
             initialize(e) {
@@ -341,7 +341,7 @@ const library = {
         };
     },
     orderBy,
-    ["_@orderBy_"](query: RouteQuery, kind: OrderByKinds) {
+    ["_orderBy_"](query: RouteQuery, kind: OrderByKinds) {
         return orderBy(kind, query);
     },
     any: anyQuery,
