@@ -3,6 +3,7 @@ import { z } from "../../gas-drivetunnel/source/json-schema";
 import {
     addListeners,
     addStyle,
+    escapeHtml,
     waitElementLoaded,
 } from "./document-extensions";
 import {
@@ -314,10 +315,10 @@ async function asyncMain() {
                         reportElement.innerText = "通常検索";
                         break;
                     case "parentheses":
-                        reportElement.innerHTML = "式検索";
+                        reportElement.innerText = "式検索";
                         break;
                     case undefined:
-                        reportElement.innerHTML = "全件";
+                        reportElement.innerText = "全件";
                         break;
                     default:
                         return exhaustive(message);
@@ -336,7 +337,7 @@ async function asyncMain() {
                     default:
                         return exhaustive(message);
                 }
-                reportElement.innerHTML = `${comment} (表示 ${message.hitCount} 件 / 全体 ${message.allCount} 件)`;
+                reportElement.innerText = `${comment} (表示 ${message.hitCount} 件 / 全体 ${message.allCount} 件)`;
                 break;
             }
             case "query-parse-error-occurred": {
@@ -1182,7 +1183,7 @@ async function asyncMain() {
     function createSpotLabel(text: string) {
         return L.divIcon({
             className: classNames["spot-label"],
-            html: text,
+            html: escapeHtml(text),
             iconAnchor: [maxTitleWidth / 2, maxTitleHeight / -4],
             iconSize: [maxTitleWidth, maxTitleHeight],
         });
@@ -1237,7 +1238,7 @@ async function asyncMain() {
             if (!view) return;
             const { route } = view;
             route.coordinates = [latLngToCoordinate(circle.getLatLng())];
-                queueSetRouteCommandDelayed(3000, route);
+            queueSetRouteCommandDelayed(3000, route);
         });
         const label = L.marker(circle.getLatLng(), {
             icon: createSpotLabel(route.routeName),

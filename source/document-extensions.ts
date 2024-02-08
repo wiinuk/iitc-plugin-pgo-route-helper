@@ -141,3 +141,9 @@ export function addListeners<E extends HTMLElement>(
     }
     return element;
 }
+
+let e: HTMLElement | undefined;
+export function escapeHtml(text: string) {
+    (e ??= document.createElement("div")).innerText = text;
+    return e.innerHTML;
+}
