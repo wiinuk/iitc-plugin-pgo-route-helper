@@ -42,6 +42,7 @@ import {
     type UnitQueryFactory,
 } from "./query";
 import { createQueryEditor } from "./query-editor";
+import { applyTemplate } from "./template";
 
 function reportError(error: unknown) {
     console.error(error);
@@ -625,10 +626,10 @@ async function asyncMain() {
         });
         if (templateRoute && getRouteKind(templateRoute.route) === kind) {
             const r = templateRoute.route;
-            newRoute.routeName = r.routeName;
+            newRoute.routeName = applyTemplate(r.routeName);
             newRoute.data = structuredClone(r.data);
-            newRoute.description = r.description;
-            newRoute.note = r.note;
+            newRoute.description = applyTemplate(r.description);
+            newRoute.note = applyTemplate(r.note);
             setRouteIsTemplate(newRoute, false);
         }
 
