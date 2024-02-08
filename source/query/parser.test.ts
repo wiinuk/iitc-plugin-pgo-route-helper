@@ -38,3 +38,19 @@ it("infix", () => {
         "z",
     ]);
 });
+it("record", () => {
+    expect(parseOk("{}")).toStrictEqual({});
+    expect(parseOk("{ x: 0 }")).toStrictEqual({ x: 0 });
+    expect(parseOk("{ x: 0, }")).toStrictEqual({ x: 0 });
+    expect(parseOk("{ x: 0, y: 1 }")).toStrictEqual({ x: 0, y: 1 });
+    expect(parseOk("{ x: 0, y: 1, }")).toStrictEqual({ x: 0, y: 1 });
+    expect(parse("{,}").diagnostics.length).toBeGreaterThan(1);
+});
+it("failure", () => {
+    expect(parse(")")).toStrictEqual({
+        syntax: ")",
+        diagnostics: [
+            "LeftParenthesesOrLeftCurlyBracketOrLiteralOrNameRequired",
+        ],
+    });
+});

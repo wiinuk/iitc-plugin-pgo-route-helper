@@ -145,6 +145,7 @@ export const enum DiagnosticKind {
     RightCurlyBracketTokenExpected = "RightCurlyBracketTokenExpected",
     CommaTokenExpected = "CommaTokenExpected",
     StringLiteralOrNameRequired = "StringLiteralOrNameRequired",
+    LeftParenthesesOrLeftCurlyBracketOrLiteralOrNameRequired = "LeftParenthesesOrLeftCurlyBracketOrLiteralOrNameRequired",
 }
 type TokenKind =
     | "Unknown"
@@ -223,9 +224,7 @@ export function createParser(
     function parseOperatorExpressionOrHigher() {
         let left = parseConcatenationExpression();
         while (currentTokenKind === "AtName") {
-            const operatorName = `_${
-                currentToken?.slice(1) ?? error`internal error`
-            }_`;
+            const operatorName = `_${currentToken?.slice(1)}_`;
             nextToken();
             const right = parseConcatenationExpression();
             left = [operatorName, left, right];
@@ -297,7 +296,20 @@ export function createParser(
             case "Name":
                 return token;
             default:
-                return error`Invalid token kind: ${tokenKind}`;
+                tokenKind satisfies
+                    | "Unknown"
+                    | ")"
+                    | "}"
+                    | ","
+                    | ":"
+                    | "AtName"
+                    | "WhiteSpace"
+                    | "Comment"
+                    | "EndOfSource";
+                reporter(
+                    DiagnosticKind.LeftParenthesesOrLeftCurlyBracketOrLiteralOrNameRequired
+                );
+                return token;
         }
     }
     function parseParenthesisExpressionTail() {
@@ -306,20 +318,15 @@ export function createParser(
         return value;
     }
     function parseRecordTail() {
-        const record: Record<string, Json> = Object.create(null);
-        if (trySkipToken("}")) return record;
-        parseRecordEntry(record);
-        while (trySkipToken(",")) {
+        const record: Record<string, Json> = {};
+        do {
             if (trySkipToken("}")) return record;
-            parseRecordEntry(record);
-        }
+            const key = parseRecordKey();
+            skipToken(":", DiagnosticKind.CommaTokenExpected);
+            record[key] = parseExpression();
+        } while (trySkipToken(","));
         skipToken("}", DiagnosticKind.RightCurlyBracketTokenExpected);
         return record;
-    }
-    function parseRecordEntry(record: Record<string, Json>) {
-        const key = parseRecordKey();
-        skipToken(":", DiagnosticKind.CommaTokenExpected);
-        record[key] = parseExpression();
     }
     function parseRecordKey() {
         const token = currentToken;
