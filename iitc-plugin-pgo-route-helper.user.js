@@ -6,7 +6,7 @@
 // @downloadURL  https://github.com/wiinuk/iitc-plugin-pgo-route-helper/raw/master/iitc-plugin-pgo-route-helper.user.js
 // @updateURL    https://github.com/wiinuk/iitc-plugin-pgo-route-helper/raw/master/iitc-plugin-pgo-route-helper.user.js
 // @homepageURL  https://github.com/wiinuk/iitc-plugin-pgo-route-helper
-// @version      0.9.8
+// @version      0.9.9
 // @description  IITC plugin to assist in Pokémon GO route creation.
 // @author       Wiinuk
 // @include      https://*.ingress.com/intel*
@@ -676,6 +676,11 @@ function addListeners(element, eventListenerMap) {
     }
     return element;
 }
+let e;
+function escapeHtml(text) {
+    (e !== null && e !== void 0 ? e : (e = document.createElement("div"))).innerText = text;
+    return e.innerHTML;
+}
 
 ;// CONCATENATED MODULE: ./source/kml.ts
 
@@ -743,25 +748,28 @@ function getRouteIsTemplate(route) {
 }
 
 ;// CONCATENATED MODULE: ./source/styles.module.css
-const cssText = ".import-text-input-20cb65fa59918c9c1acd8bf741c823ad9c3d9417 {\r\n    position: fixed;\r\n    top: 0;\r\n    left: 0;\r\n    width: 100%;\r\n    height: 100%;\r\n    z-index: 10000;\r\n\r\n    display: flex;\r\n    justify-content: center;\r\n    align-items: center;\r\n}\r\n\r\n.hidden-335480717ad028e586caf8829d733f96f2c84353 {\r\n    display: none;\r\n}\r\n.ellipsis-text-b5ad76bb9ee4ff4b5db709166fd36686f02e4208 {\r\n    white-space: nowrap;\r\n    overflow: hidden;\r\n    text-overflow: ellipsis;\r\n}\r\n.ellipsis-text-b5ad76bb9ee4ff4b5db709166fd36686f02e4208 br {\r\n    display: none;\r\n}\r\n\r\ninput.editable-text-f98bfbe32615b347bb4a5b311bd4cb25dc7a4f11 {\r\n    border: none;\r\n    background: none;\r\n    font-size: 16px;\r\n    color: black;\r\n}\r\n\r\n.spot-label-1fbc516af173fc5875cc6e87e4c9f5f0c96c94b5 {\r\n    color: #FFFFBB;\r\n    font-size: 11px;\r\n    line-height: 12px;\r\n    text-align: center;\r\n    padding: 2px;\r\n    overflow: hidden;\r\n    white-space: nowrap;\r\n    text-overflow: ellipsis;\r\n    text-shadow: 1px 1px #000, 1px -1px #000, -1px 1px #000, -1px -1px #000, 0 0 5px #000;\r\n    pointer-events: none;\r\n}\r\n\r\n.properties-editor-adf0c92b8b8544b96e1b79d5454fe965dedf5965 {\r\n    display: flex;\r\n    flex-direction: column;\r\n    resize: both;\r\n    overflow: auto;\r\n    max-width: 100%;\r\n    max-height: 100vh;\r\n}\r\n.route-list-container-43ca0e82d1e9ac3c98913c78aefb33a2ae3eb7e7 {\r\n    flex-grow: 1;\r\n    overflow: auto;\r\n}\r\n\r\n.properties-editor-adf0c92b8b8544b96e1b79d5454fe965dedf5965 textarea,\r\n.properties-editor-adf0c92b8b8544b96e1b79d5454fe965dedf5965 input {\r\n    box-sizing: border-box;\r\n    width: 100%;\r\n    resize: vertical;\r\n\r\n    font-family: Arial, Helvetica, sans-serif;\r\n}\r\n.properties-editor-adf0c92b8b8544b96e1b79d5454fe965dedf5965 input.title-77e33635fdbc4e89d18e3221a078e5a9ab61f943 {\r\n    width: auto;\r\n}\r\n\r\n.properties-editor-adf0c92b8b8544b96e1b79d5454fe965dedf5965 textarea.query-input-field-97323f1d17028355c8163d9f1baad74d06d6c9e4 {\r\n    font-family: 'fira code', Consolas, Menlo, Monaco, 'Courier New', Courier, monospace;\r\n    height: 1.5em;\r\n}\r\n.properties-editor-adf0c92b8b8544b96e1b79d5454fe965dedf5965 textarea.invalid-aac67fc1ce74e4cde0946b84f99609d16ed88149 {\r\n    border: solid 1px red;\r\n    background-color: lightgoldenrodyellow;\r\n}\r\n\r\n.route-list-1d54dbb96708b8e8495eaacbdc389076b74d7211 .selecting-00cadd96685c5cd8be939bbe61746530c7d76dc0 {\r\n    background: #FECA40;\r\n}\r\n\r\n.route-list-1d54dbb96708b8e8495eaacbdc389076b74d7211 .selected-fe4715fe48205b981903a3c6dafbdd9000d3bfbb {\r\n    background: #F39814;\r\n    color: white;\r\n}\r\n\r\n.route-list-1d54dbb96708b8e8495eaacbdc389076b74d7211 {\r\n    list-style-type: none;\r\n    margin: 0;\r\n    padding: 0;\r\n}\r\n\r\n.route-list-1d54dbb96708b8e8495eaacbdc389076b74d7211 li {\r\n    margin: 3px;\r\n    padding: 0.4em;\r\n    height: 18px;\r\n    cursor: pointer;\r\n    user-select: none;\r\n}\r\n.route-list-1d54dbb96708b8e8495eaacbdc389076b74d7211 .note-5f944c744ed4ebf624ae49601391244dff39edea {\r\n    font-size: 75%;\r\n    padding-left: 0.5em;\r\n    color: #ffffffab;\r\n}\r\n\r\n.auto-complete-list-3c9f9317ea488c69c05fa2ce9f14b1f8555b12ec {\r\n    position: absolute;\r\n    background-color: #f9f9f9;\r\n    min-width: 160px;\r\n    box-shadow: 0px 8px 16px 0px rgba(0, 0, 0, 0.2);\r\n    padding: 12px 16px;\r\n    z-index: 1;\r\n}\r\n\r\n.auto-complete-list-3c9f9317ea488c69c05fa2ce9f14b1f8555b12ec .auto-complete-list-item-cbdaa3796d8526c04ced783c74b46b6c6758ffc2 {\r\n    color: black;\r\n    padding: 12px 16px;\r\n    text-decoration: none;\r\n    display: block;\r\n}\r\n\r\n.auto-complete-list-3c9f9317ea488c69c05fa2ce9f14b1f8555b12ec .auto-complete-list-item-cbdaa3796d8526c04ced783c74b46b6c6758ffc2:hover {\r\n    background-color: #ddd;\r\n}\r\n\r\n\r\n/* アコーディオン */\r\n/* マーカー */\r\n.accordion-fdde66496dbd5c728a0ba4d3ea9475c9cd7bf5a3>summary::-webkit-details-marker {\r\n    display: none;\r\n}\r\n\r\n.accordion-fdde66496dbd5c728a0ba4d3ea9475c9cd7bf5a3>summary::before {\r\n    content: \"\";\r\n    position: absolute;\r\n    width: 6px;\r\n    height: 6px;\r\n    border-top: 2px solid #fff;\r\n    border-right: 2px solid #fff;\r\n\r\n    transform: rotate(225deg);\r\n    top: calc(50% - 3px);\r\n    right: 1em;\r\n}\r\n\r\n/* 閉じているとき */\r\n.accordion-fdde66496dbd5c728a0ba4d3ea9475c9cd7bf5a3>summary {\r\n    cursor: grab;\r\n    display: block;\r\n    height: auto;\r\n    padding: 3px;\r\n    width: auto;\r\n    height: auto;\r\n\r\n    background: #019bc656;\r\n    border: solid 1px #00000000\r\n}\r\n\r\n.accordion-fdde66496dbd5c728a0ba4d3ea9475c9cd7bf5a3>* {\r\n    backface-visibility: hidden;\r\n    transform: translateZ(0);\r\n    transition: all 0.3s;\r\n}\r\n\r\n.accordion-fdde66496dbd5c728a0ba4d3ea9475c9cd7bf5a3> :not(summary) {\r\n    margin-bottom: 6px;\r\n    padding: 0 3px;\r\n    border: solid 1px #00000000;\r\n}\r\n\r\n/* 開いたとき */\r\n.accordion-fdde66496dbd5c728a0ba4d3ea9475c9cd7bf5a3[open]>summary {\r\n    background: #c6880156;\r\n}\r\n\r\n.accordion-fdde66496dbd5c728a0ba4d3ea9475c9cd7bf5a3[open]>summary::before {\r\n    transform: rotate(135deg);\r\n}\r\n\r\n.accordion-fdde66496dbd5c728a0ba4d3ea9475c9cd7bf5a3[open]> :not(summary) {\r\n    padding: 3px;\r\n    transition: all 0.3s;\r\n\r\n    border: solid 1px #c6880156;\r\n}\r\n";
+const cssText = ".import-text-input-87c4956e65871212ef8c87331df4adc3e10771cc {\r\n    position: fixed;\r\n    top: 0;\r\n    left: 0;\r\n    width: 100%;\r\n    height: 100%;\r\n    z-index: 10000;\r\n\r\n    display: flex;\r\n    justify-content: center;\r\n    align-items: center;\r\n}\r\n\r\n.hidden-6b8c67e5eb86810773e6848ec0904c54de09035d {\r\n    display: none;\r\n}\r\n.ellipsis-text-a568971192ce30c179713621f3347705d2af5ffb {\r\n    white-space: nowrap;\r\n    overflow: hidden;\r\n    text-overflow: ellipsis;\r\n}\r\n.ellipsis-text-a568971192ce30c179713621f3347705d2af5ffb br {\r\n    display: none;\r\n}\r\n\r\ninput.editable-text-c5cb8a9db661e21e3fa4365a5940871f64e6605e {\r\n    border: none;\r\n    background: none;\r\n    font-size: 16px;\r\n    color: black;\r\n}\r\n\r\n.spot-label-a3e1278eb18733f2999caa4f40d964ab47955906 {\r\n    color: #FFFFBB;\r\n    font-size: 11px;\r\n    line-height: 12px;\r\n    text-align: center;\r\n    padding: 2px;\r\n    overflow: hidden;\r\n    white-space: nowrap;\r\n    text-overflow: ellipsis;\r\n    text-shadow: 1px 1px #000, 1px -1px #000, -1px 1px #000, -1px -1px #000, 0 0 5px #000;\r\n    pointer-events: none;\r\n}\r\n.spot-handle-ae4dd363a53df54e11f3a3c88b9120b27ffdf879 {\r\n    --background-hue: 152deg;\r\n    --background-opacity: 40%;\r\n    --border-width: 2px;\r\n    --border-saturation: 0%;\r\n    --border-opacity: 80%;\r\n\r\n    transition: all 0.5s, transform 0s;\r\n    box-sizing: border-box;\r\n    background-color: hsla(var(--background-hue), 84%, 56%, var(--background-opacity));\r\n    border: solid var(--border-width) hsla(56, var(--border-saturation), 39%, var(--border-opacity));\r\n    border-radius: 100%;\r\n}\r\n.spot-handle-ae4dd363a53df54e11f3a3c88b9120b27ffdf879.draggable-8267b166caf8e5ac485a8ec677dc77cfd16630b9 {\r\n    --background-opacity: 100%;\r\n    --border-opacity: 100%;\r\n    border-radius: 0;\r\n}\r\n.spot-handle-ae4dd363a53df54e11f3a3c88b9120b27ffdf879.highlighted-c593388adcafd16933fde2f58f845caf996a4307 {\r\n    --border-width: 4px;\r\n    --border-saturation: 100%;\r\n}\r\n\r\n.properties-editor-5068ac4601181ac46ba78ea4d81875b2b80fc1a6 {\r\n    display: flex;\r\n    flex-direction: column;\r\n    resize: both;\r\n    overflow: auto;\r\n    max-width: 100%;\r\n    max-height: 100vh;\r\n}\r\n.route-list-container-a1a618f39db9af2f8ce81ea9a2d71a85f17d817f {\r\n    flex-grow: 1;\r\n    overflow: auto;\r\n}\r\n\r\n.properties-editor-5068ac4601181ac46ba78ea4d81875b2b80fc1a6 textarea,\r\n.properties-editor-5068ac4601181ac46ba78ea4d81875b2b80fc1a6 input {\r\n    box-sizing: border-box;\r\n    width: 100%;\r\n    resize: vertical;\r\n\r\n    font-family: Arial, Helvetica, sans-serif;\r\n}\r\n.properties-editor-5068ac4601181ac46ba78ea4d81875b2b80fc1a6 input.title-e3e849dd86b016f903b958d0dd92ae0d450423fb {\r\n    width: auto;\r\n}\r\n\r\n.properties-editor-5068ac4601181ac46ba78ea4d81875b2b80fc1a6 textarea.query-input-field-aea1881fb0dd459925d34097d57a197c8a274a2b {\r\n    font-family: 'fira code', Consolas, Menlo, Monaco, 'Courier New', Courier, monospace;\r\n    height: 1.5em;\r\n}\r\n.properties-editor-5068ac4601181ac46ba78ea4d81875b2b80fc1a6 textarea.invalid-10d20e7e49b5181c353bd150ade73e74bd742a76 {\r\n    border: solid 1px red;\r\n    background-color: lightgoldenrodyellow;\r\n}\r\n\r\n.route-list-92ddbe08d467e97729843cdd32ab3a7a6361e831 .selecting-66cb567f495ea2de11e92670f891b72832d5e7ed {\r\n    background: #FECA40;\r\n}\r\n\r\n.route-list-92ddbe08d467e97729843cdd32ab3a7a6361e831 .selected-8a088f2301284b7adaea141d44ed74efb3eabcd9 {\r\n    background: #F39814;\r\n    color: white;\r\n}\r\n\r\n.route-list-92ddbe08d467e97729843cdd32ab3a7a6361e831 {\r\n    list-style-type: none;\r\n    margin: 0;\r\n    padding: 0;\r\n}\r\n\r\n.route-list-92ddbe08d467e97729843cdd32ab3a7a6361e831 li {\r\n    margin: 3px;\r\n    padding: 0.4em;\r\n    height: 18px;\r\n    cursor: pointer;\r\n    user-select: none;\r\n}\r\n.route-list-92ddbe08d467e97729843cdd32ab3a7a6361e831 .note-2bf25f471effde16dedb6e3c8240d8232090b11d {\r\n    font-size: 75%;\r\n    padding-left: 0.5em;\r\n    color: #ffffffab;\r\n}\r\n\r\n.auto-complete-list-fbf691c5b54a10f5224607f1ff657f1bb5d2e4c2 {\r\n    position: absolute;\r\n    background-color: #f9f9f9;\r\n    min-width: 160px;\r\n    box-shadow: 0px 8px 16px 0px rgba(0, 0, 0, 0.2);\r\n    padding: 12px 16px;\r\n    z-index: 1;\r\n}\r\n\r\n.auto-complete-list-fbf691c5b54a10f5224607f1ff657f1bb5d2e4c2 .auto-complete-list-item-05369bbf368fb99e98bee234037331e6eeca6313 {\r\n    color: black;\r\n    padding: 12px 16px;\r\n    text-decoration: none;\r\n    display: block;\r\n}\r\n\r\n.auto-complete-list-fbf691c5b54a10f5224607f1ff657f1bb5d2e4c2 .auto-complete-list-item-05369bbf368fb99e98bee234037331e6eeca6313:hover {\r\n    background-color: #ddd;\r\n}\r\n\r\n\r\n/* アコーディオン */\r\n/* マーカー */\r\n.accordion-84899385d42b4ea158b933f71e5abcfee44879e3>summary::-webkit-details-marker {\r\n    display: none;\r\n}\r\n\r\n.accordion-84899385d42b4ea158b933f71e5abcfee44879e3>summary::before {\r\n    content: \"\";\r\n    position: absolute;\r\n    width: 6px;\r\n    height: 6px;\r\n    border-top: 2px solid #fff;\r\n    border-right: 2px solid #fff;\r\n\r\n    transform: rotate(225deg);\r\n    top: calc(50% - 3px);\r\n    right: 1em;\r\n}\r\n\r\n/* 閉じているとき */\r\n.accordion-84899385d42b4ea158b933f71e5abcfee44879e3>summary {\r\n    cursor: grab;\r\n    display: block;\r\n    height: auto;\r\n    padding: 3px;\r\n    width: auto;\r\n    height: auto;\r\n\r\n    background: #019bc656;\r\n    border: solid 1px #00000000\r\n}\r\n\r\n.accordion-84899385d42b4ea158b933f71e5abcfee44879e3>* {\r\n    backface-visibility: hidden;\r\n    transform: translateZ(0);\r\n    transition: all 0.3s;\r\n}\r\n\r\n.accordion-84899385d42b4ea158b933f71e5abcfee44879e3> :not(summary) {\r\n    margin-bottom: 6px;\r\n    padding: 0 3px;\r\n    border: solid 1px #00000000;\r\n}\r\n\r\n/* 開いたとき */\r\n.accordion-84899385d42b4ea158b933f71e5abcfee44879e3[open]>summary {\r\n    background: #c6880156;\r\n}\r\n\r\n.accordion-84899385d42b4ea158b933f71e5abcfee44879e3[open]>summary::before {\r\n    transform: rotate(135deg);\r\n}\r\n\r\n.accordion-84899385d42b4ea158b933f71e5abcfee44879e3[open]> :not(summary) {\r\n    padding: 3px;\r\n    transition: all 0.3s;\r\n\r\n    border: solid 1px #c6880156;\r\n}\r\n";
 /* harmony default export */ const styles_module = ({
-    "import-text-input": "import-text-input-20cb65fa59918c9c1acd8bf741c823ad9c3d9417",
-    hidden: "hidden-335480717ad028e586caf8829d733f96f2c84353",
-    "ellipsis-text": "ellipsis-text-b5ad76bb9ee4ff4b5db709166fd36686f02e4208",
-    "editable-text": "editable-text-f98bfbe32615b347bb4a5b311bd4cb25dc7a4f11",
-    "spot-label": "spot-label-1fbc516af173fc5875cc6e87e4c9f5f0c96c94b5",
-    "properties-editor": "properties-editor-adf0c92b8b8544b96e1b79d5454fe965dedf5965",
-    "route-list-container": "route-list-container-43ca0e82d1e9ac3c98913c78aefb33a2ae3eb7e7",
-    title: "title-77e33635fdbc4e89d18e3221a078e5a9ab61f943",
-    "query-input-field": "query-input-field-97323f1d17028355c8163d9f1baad74d06d6c9e4",
-    invalid: "invalid-aac67fc1ce74e4cde0946b84f99609d16ed88149",
-    "route-list": "route-list-1d54dbb96708b8e8495eaacbdc389076b74d7211",
-    selecting: "selecting-00cadd96685c5cd8be939bbe61746530c7d76dc0",
-    selected: "selected-fe4715fe48205b981903a3c6dafbdd9000d3bfbb",
-    note: "note-5f944c744ed4ebf624ae49601391244dff39edea",
-    "auto-complete-list": "auto-complete-list-3c9f9317ea488c69c05fa2ce9f14b1f8555b12ec",
-    "auto-complete-list-item": "auto-complete-list-item-cbdaa3796d8526c04ced783c74b46b6c6758ffc2",
-    accordion: "accordion-fdde66496dbd5c728a0ba4d3ea9475c9cd7bf5a3",
+    "import-text-input": "import-text-input-87c4956e65871212ef8c87331df4adc3e10771cc",
+    hidden: "hidden-6b8c67e5eb86810773e6848ec0904c54de09035d",
+    "ellipsis-text": "ellipsis-text-a568971192ce30c179713621f3347705d2af5ffb",
+    "editable-text": "editable-text-c5cb8a9db661e21e3fa4365a5940871f64e6605e",
+    "spot-label": "spot-label-a3e1278eb18733f2999caa4f40d964ab47955906",
+    "spot-handle": "spot-handle-ae4dd363a53df54e11f3a3c88b9120b27ffdf879",
+    draggable: "draggable-8267b166caf8e5ac485a8ec677dc77cfd16630b9",
+    highlighted: "highlighted-c593388adcafd16933fde2f58f845caf996a4307",
+    "properties-editor": "properties-editor-5068ac4601181ac46ba78ea4d81875b2b80fc1a6",
+    "route-list-container": "route-list-container-a1a618f39db9af2f8ce81ea9a2d71a85f17d817f",
+    title: "title-e3e849dd86b016f903b958d0dd92ae0d450423fb",
+    "query-input-field": "query-input-field-aea1881fb0dd459925d34097d57a197c8a274a2b",
+    invalid: "invalid-10d20e7e49b5181c353bd150ade73e74bd742a76",
+    "route-list": "route-list-92ddbe08d467e97729843cdd32ab3a7a6361e831",
+    selecting: "selecting-66cb567f495ea2de11e92670f891b72832d5e7ed",
+    selected: "selected-8a088f2301284b7adaea141d44ed74efb3eabcd9",
+    note: "note-2bf25f471effde16dedb6e3c8240d8232090b11d",
+    "auto-complete-list": "auto-complete-list-fbf691c5b54a10f5224607f1ff657f1bb5d2e4c2",
+    "auto-complete-list-item": "auto-complete-list-item-05369bbf368fb99e98bee234037331e6eeca6313",
+    accordion: "accordion-84899385d42b4ea158b933f71e5abcfee44879e3",
 });
 
 ;// CONCATENATED MODULE: ../gas-drivetunnel/source/schemas.ts
@@ -1841,6 +1849,7 @@ var DiagnosticKind;
     DiagnosticKind["RightCurlyBracketTokenExpected"] = "RightCurlyBracketTokenExpected";
     DiagnosticKind["CommaTokenExpected"] = "CommaTokenExpected";
     DiagnosticKind["StringLiteralOrNameRequired"] = "StringLiteralOrNameRequired";
+    DiagnosticKind["LeftParenthesesOrLeftCurlyBracketOrLiteralOrNameRequired"] = "LeftParenthesesOrLeftCurlyBracketOrLiteralOrNameRequired";
 })(DiagnosticKind || (DiagnosticKind = {}));
 function getTokenKind(token) {
     var _a;
@@ -1897,10 +1906,9 @@ function createParser({ next }, reporter) {
     }
     // operator-expression-or-higher := concatenation-expression (at-name concatenation-expression)*
     function parseOperatorExpressionOrHigher() {
-        var _a;
         let left = parseConcatenationExpression();
         while (currentTokenKind === "AtName") {
-            const operatorName = `_${(_a = currentToken === null || currentToken === void 0 ? void 0 : currentToken.slice(1)) !== null && _a !== void 0 ? _a : standard_extensions_error `internal error`}_`;
+            const operatorName = `_${currentToken === null || currentToken === void 0 ? void 0 : currentToken.slice(1)}_`;
             nextToken();
             const right = parseConcatenationExpression();
             left = [operatorName, left, right];
@@ -1971,7 +1979,9 @@ function createParser({ next }, reporter) {
             case "Name":
                 return token;
             default:
-                return standard_extensions_error `Invalid token kind: ${tokenKind}`;
+                tokenKind;
+                reporter(DiagnosticKind.LeftParenthesesOrLeftCurlyBracketOrLiteralOrNameRequired);
+                return token;
         }
     }
     function parseParenthesisExpressionTail() {
@@ -1980,22 +1990,16 @@ function createParser({ next }, reporter) {
         return value;
     }
     function parseRecordTail() {
-        const record = Object.create(null);
-        if (trySkipToken("}"))
-            return record;
-        parseRecordEntry(record);
-        while (trySkipToken(",")) {
+        const record = {};
+        do {
             if (trySkipToken("}"))
                 return record;
-            parseRecordEntry(record);
-        }
+            const key = parseRecordKey();
+            skipToken(":", DiagnosticKind.CommaTokenExpected);
+            record[key] = parseExpression();
+        } while (trySkipToken(","));
         skipToken("}", DiagnosticKind.RightCurlyBracketTokenExpected);
         return record;
-    }
-    function parseRecordEntry(record) {
-        const key = parseRecordKey();
-        skipToken(":", DiagnosticKind.CommaTokenExpected);
-        record[key] = parseExpression();
     }
     function parseRecordKey() {
         const token = currentToken;
@@ -2354,6 +2358,50 @@ function createQueryEditor(options) {
     };
 }
 
+;// CONCATENATED MODULE: ./source/template.ts
+function pad2(value) {
+    return ("00" + value).slice(-2);
+}
+function getIsoTodayString(date) {
+    const yyyy = date.getFullYear();
+    const mm = pad2(date.getMonth() + 1);
+    const dd = pad2(date.getDate());
+    return `${yyyy}-${mm}-${dd}`;
+}
+function getIsoTimeString(date) {
+    const hours = pad2(date.getHours());
+    const minutes = pad2(date.getMinutes());
+    const seconds = pad2(date.getSeconds());
+    return `${hours}:${minutes}:${seconds}`;
+}
+function getIsoTimeZoneString(date) {
+    const offset = -date.getTimezoneOffset();
+    const sign = offset >= 0 ? "+" : "-";
+    const hours = pad2(offset / 60);
+    const minutes = pad2(offset % 60);
+    return `${sign}${hours}:${minutes}`;
+}
+function getIsoDateTimeString(date, withTimeZone = false) {
+    return `${getIsoTodayString(date)}T${getIsoTimeString(date)}${withTimeZone ? getIsoTimeZoneString(date) : ""}`;
+}
+function resolveStandardVariable(name) {
+    switch (name) {
+        case "today":
+            return getIsoTodayString(new Date());
+        case "now":
+            return getIsoDateTimeString(new Date());
+        case "nowWithTimeZone":
+            return getIsoDateTimeString(new Date(), true);
+    }
+}
+const interpolationPattern = /\\\(\s*([a-zA-Z_$][a-zA-Z_$0-9]*)\s*\)/g;
+function applyTemplate(template, resolve) {
+    return template.replace(interpolationPattern, (interpolation, variableName) => {
+        var _a, _b;
+        return (_b = (_a = resolve === null || resolve === void 0 ? void 0 : resolve(variableName)) !== null && _a !== void 0 ? _a : resolveStandardVariable(variableName)) !== null && _b !== void 0 ? _b : interpolation;
+    });
+}
+
 ;// CONCATENATED MODULE: ./source/iitc-plugin-pgo-route-helper.tsx
 var iitc_plugin_pgo_route_helper_awaiter = (undefined && undefined.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
@@ -2366,6 +2414,7 @@ var iitc_plugin_pgo_route_helper_awaiter = (undefined && undefined.__awaiter) ||
 };
 
 // spell-checker: ignore layeradd drivetunnel latlngschanged lngs latlng buttonset
+
 
 
 
@@ -2481,6 +2530,7 @@ function asyncMain() {
         const state = {
             selectedRouteId: null,
             deleteRouteId: null,
+            templateCandidateRouteId: null,
             routes: "routes-unloaded",
             routeListQuery: { queryText: "", query: undefined },
         };
@@ -2528,10 +2578,10 @@ function asyncMain() {
                             reportElement.innerText = "通常検索";
                             break;
                         case "parentheses":
-                            reportElement.innerHTML = "式検索";
+                            reportElement.innerText = "式検索";
                             break;
                         case undefined:
-                            reportElement.innerHTML = "全件";
+                            reportElement.innerText = "全件";
                             break;
                         default:
                             return exhaustive(message);
@@ -2550,7 +2600,7 @@ function asyncMain() {
                         default:
                             return exhaustive(message);
                     }
-                    reportElement.innerHTML = `${comment} (表示 ${message.hitCount} 件 / 全体 ${message.allCount} 件)`;
+                    reportElement.innerText = `${comment} (表示 ${message.hitCount} 件 / 全体 ${message.allCount} 件)`;
                     break;
                 }
                 case "query-parse-error-occurred": {
@@ -2765,10 +2815,10 @@ function asyncMain() {
             });
             if (templateRoute && getRouteKind(templateRoute.route) === kind) {
                 const r = templateRoute.route;
-                newRoute.routeName = r.routeName;
+                newRoute.routeName = applyTemplate(r.routeName);
                 newRoute.data = structuredClone(r.data);
-                newRoute.description = r.description;
-                newRoute.note = r.note;
+                newRoute.description = applyTemplate(r.description);
+                newRoute.note = applyTemplate(r.note);
                 setRouteIsTemplate(newRoute, false);
             }
             addRouteView(routes, newRoute);
@@ -2854,25 +2904,49 @@ function asyncMain() {
                 onMoveToSelectedElement(true);
             },
         });
+        const setTemplateConfirmationElement = jsx("div", {});
+        const setTemplateConfirmation = $(setTemplateConfirmationElement).dialog({
+            autoOpen: false,
+            modal: true,
+            buttons: {
+                ok() {
+                    setTemplateConfirmation.dialog("close");
+                    const { templateCandidateRouteId } = state;
+                    if (templateCandidateRouteId == null)
+                        return;
+                    const routes = state.routes !== "routes-unloaded" && state.routes;
+                    if (!routes)
+                        return;
+                    const templateCandidateRoute = routes.get(templateCandidateRouteId);
+                    if (!templateCandidateRoute)
+                        return;
+                    const templateRouteKind = getRouteKind(templateCandidateRoute.route);
+                    for (const { route } of routes.values()) {
+                        if (getRouteIsTemplate(route) &&
+                            getRouteKind(route) === templateRouteKind) {
+                            setRouteIsTemplate(route, false);
+                            queueSetRouteCommandDelayed(3000, route);
+                            updateRouteView(route.routeId);
+                        }
+                    }
+                    setRouteIsTemplate(templateCandidateRoute.route, true);
+                    queueSetRouteCommandDelayed(3000, templateCandidateRoute.route);
+                    updateSelectedRouteInfo();
+                },
+                cancel() {
+                    setTemplateConfirmation.dialog("close");
+                    state.templateCandidateRouteId = null;
+                },
+            },
+        });
         const setAsTemplateElement = addListeners(jsx("button", { children: "\uD83D\uDCD1\u30C6\u30F3\u30D7\u30EC\u30FC\u30C8\u3068\u3057\u3066\u8A2D\u5B9A" }), {
             click() {
                 const selectedRoute = getSelectedRoute();
                 if (selectedRoute == null)
                     return;
-                const routes = state.routes !== "routes-unloaded" && state.routes;
-                if (!routes) {
-                    return;
-                }
-                for (const { route } of routes.values()) {
-                    if (getRouteIsTemplate(route)) {
-                        setRouteIsTemplate(route, false);
-                        queueSetRouteCommandDelayed(3000, route);
-                        updateRouteView(route.routeId);
-                    }
-                }
-                setRouteIsTemplate(selectedRoute.route, true);
-                queueSetRouteCommandDelayed(3000, selectedRoute.route);
-                updateSelectedRouteInfo();
+                state.templateCandidateRouteId = selectedRoute.route.routeId;
+                setTemplateConfirmationElement.innerText = `'${selectedRoute.route.routeName}' をテンプレートに設定しますか？`;
+                setTemplateConfirmation.dialog("open");
             },
         });
         function selectedRouteListItemUpdated(selectedRouteIds) {
@@ -3165,74 +3239,58 @@ function asyncMain() {
         function createSpotLabel(text) {
             return L.divIcon({
                 className: styles_module["spot-label"],
-                html: text,
+                html: escapeHtml(text),
                 iconAnchor: [maxTitleWidth / 2, maxTitleHeight / -4],
                 iconSize: [maxTitleWidth, maxTitleHeight],
             });
         }
-        function setSpotCircleNormalStyle(s) {
-            s.color = "#000";
-            s.weight = 5;
-            s.opacity = 0.3;
-            s.fillOpacity = 0.8;
-            return s;
-        }
-        function setSpotCircleSelectedStyle(s) {
-            s.opacity = 1.0;
-            s.fillOpacity = 1.0;
-            return s;
-        }
-        function setSpotCircleHighlightStyle(s) {
-            s.color = "#fcff3f";
-            s.opacity = 1;
-            return s;
-        }
+        const classNameSeparatorPattern = /\s/g;
         function createSpotView(route, routeMap) {
             const { routeId } = route;
-            const circle = L.circleMarker(coordinateToLatLng(route.coordinates[0]), setSpotCircleNormalStyle({
-                className: `spot-circle spot-circle-${routeId}`,
-                fillColor: "#3e9",
-            }));
+            const initialCoordinate = coordinateToLatLng(route.coordinates[0]);
+            const circleId = `spot-circle-${routeId.replace(classNameSeparatorPattern, "_")}`;
+            const circleSize = 20;
+            const circle = L.marker(initialCoordinate, {
+                icon: L.divIcon({
+                    className: `${styles_module["spot-handle"]} ${circleId}`,
+                    iconSize: [circleSize, circleSize],
+                    iconAnchor: [circleSize * 0.5, circleSize * 0.5],
+                }),
+            });
             let highlighted = false;
             let draggable = false;
-            let dragging = false;
-            const style = {};
+            circle.on("drag", () => {
+                const position = circle.getLatLng();
+                label.setLatLng(position);
+            });
             function changeStyle() {
-                setSpotCircleNormalStyle(style);
-                if (draggable)
-                    setSpotCircleSelectedStyle(style);
-                if (highlighted)
-                    setSpotCircleHighlightStyle(style);
-                circle.setStyle(style);
+                const e = document.getElementsByClassName(circleId).item(0);
+                if (!e)
+                    return;
+                e.classList.toggle(styles_module.highlighted, highlighted);
+                e.classList.toggle(styles_module.draggable, draggable);
             }
-            const onDragging = (e) => {
-                circle.setLatLng(e.latlng);
-                label.setLatLng(e.latlng);
-                dragging = true;
-            };
             circle.on("dblclick", () => {
                 draggable = !draggable;
+                if (draggable) {
+                    circle.dragging.enable();
+                }
+                else {
+                    circle.dragging.disable();
+                }
                 changeStyle();
             });
-            circle.on("mousedown", () => {
-                if (draggable) {
-                    map.dragging.disable();
-                    map.on("mousemove", onDragging);
-                }
+            circle.on("click", () => {
                 state.selectedRouteId = routeId;
                 updateSelectedRouteInfo();
             });
-            map.on("mouseup", () => {
-                var _a;
-                const latlngChanged = dragging;
-                dragging = false;
-                map.dragging.enable();
-                map.off("mousemove", onDragging);
-                const { route } = (_a = routeMap.get(routeId)) !== null && _a !== void 0 ? _a : standard_extensions_error `internal error`;
+            circle.on("dragend", () => {
+                const view = routeMap.get(routeId);
+                if (!view)
+                    return;
+                const { route } = view;
                 route.coordinates = [latLngToCoordinate(circle.getLatLng())];
-                if (latlngChanged) {
-                    queueSetRouteCommandDelayed(3000, route);
-                }
+                queueSetRouteCommandDelayed(3000, route);
             });
             const label = L.marker(circle.getLatLng(), {
                 icon: createSpotLabel(route.routeName),
