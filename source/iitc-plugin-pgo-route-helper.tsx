@@ -205,6 +205,7 @@ async function asyncMain() {
         /** null: 選択されていない */
         selectedRouteId: null | string;
         deleteRouteId: null | string;
+        templateCandidateRouteId: null | string;
         routes: "routes-unloaded" | Map<string, RouteWithView>;
         routeListQuery: Readonly<{
             queryText: string;
@@ -218,6 +219,7 @@ async function asyncMain() {
     } = {
         selectedRouteId: null,
         deleteRouteId: null,
+        templateCandidateRouteId: null,
         routes: "routes-unloaded",
         routeListQuery: { queryText: "", query: undefined },
     };
@@ -724,6 +726,49 @@ async function asyncMain() {
             onMoveToSelectedElement(true);
         },
     });
+
+    const setTemplateConfirmationElement = <div></div>;
+    const setTemplateConfirmation = $(setTemplateConfirmationElement).dialog({
+        autoOpen: false,
+        modal: true,
+        buttons: {
+            ok() {
+                setTemplateConfirmation.dialog("close");
+
+                const { templateCandidateRouteId } = state;
+                if (templateCandidateRouteId == null) return;
+
+                const routes =
+                    state.routes !== "routes-unloaded" && state.routes;
+                if (!routes) return;
+                const templateCandidateRoute = routes.get(
+                    templateCandidateRouteId
+                );
+                if (!templateCandidateRoute) return;
+
+                const templateRouteKind = getRouteKind(
+                    templateCandidateRoute.route
+                );
+                for (const { route } of routes.values()) {
+                    if (
+                        getRouteIsTemplate(route) &&
+                        getRouteKind(route) === templateRouteKind
+                    ) {
+                        setRouteIsTemplate(route, false);
+                        queueSetRouteCommandDelayed(3000, route);
+                        updateRouteView(route.routeId);
+                    }
+                }
+                setRouteIsTemplate(templateCandidateRoute.route, true);
+                queueSetRouteCommandDelayed(3000, templateCandidateRoute.route);
+                updateSelectedRouteInfo();
+            },
+            cancel() {
+                setTemplateConfirmation.dialog("close");
+                state.templateCandidateRouteId = null;
+            },
+        },
+    });
     const setAsTemplateElement = addListeners(
         <button>📑テンプレートとして設定</button>,
         {
@@ -731,22 +776,9 @@ async function asyncMain() {
                 const selectedRoute = getSelectedRoute();
                 if (selectedRoute == null) return;
 
-                const routes =
-                    state.routes !== "routes-unloaded" && state.routes;
-                if (!routes) {
-                    return;
-                }
-
-                for (const { route } of routes.values()) {
-                    if (getRouteIsTemplate(route)) {
-                        setRouteIsTemplate(route, false);
-                        queueSetRouteCommandDelayed(3000, route);
-                        updateRouteView(route.routeId);
-                    }
-                }
-                setRouteIsTemplate(selectedRoute.route, true);
-                queueSetRouteCommandDelayed(3000, selectedRoute.route);
-                updateSelectedRouteInfo();
+                state.templateCandidateRouteId = selectedRoute.route.routeId;
+                setTemplateConfirmationElement.innerText = `'${selectedRoute.route.routeName}' をテンプレートに設定しますか？`;
+                setTemplateConfirmation.dialog("open");
             },
         }
     );
