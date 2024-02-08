@@ -1187,74 +1187,57 @@ async function asyncMain() {
             iconSize: [maxTitleWidth, maxTitleHeight],
         });
     }
-    function setSpotCircleNormalStyle(s: L.PathOptions) {
-        s.color = "#000";
-        s.weight = 5;
-        s.opacity = 0.3;
-        s.fillOpacity = 0.8;
-        return s;
-    }
-    function setSpotCircleSelectedStyle(s: L.PathOptions) {
-        s.opacity = 1.0;
-        s.fillOpacity = 1.0;
-        return s;
-    }
-    function setSpotCircleHighlightStyle(s: L.PathOptions) {
-        s.color = "#fcff3f";
-        s.opacity = 1;
-        return s;
-    }
+    const classNameSeparatorPattern = /\s/g;
     function createSpotView(
         route: Route,
         routeMap: Map<string, RouteWithView>
     ) {
         const { routeId } = route;
-        const circle = L.circleMarker(
-            coordinateToLatLng(route.coordinates[0]),
-            setSpotCircleNormalStyle({
-                className: `spot-circle spot-circle-${routeId}`,
-                fillColor: "#3e9",
-            })
-        );
+        const initialCoordinate = coordinateToLatLng(route.coordinates[0]);
+        const circleId = `spot-circle-${routeId.replace(
+            classNameSeparatorPattern,
+            "_"
+        )}`;
+        const circleSize = 20;
+        const circle = L.marker(initialCoordinate, {
+            icon: L.divIcon({
+                className: `${classNames["spot-handle"]} ${circleId}`,
+                iconSize: [circleSize, circleSize],
+                iconAnchor: [circleSize * 0.5, circleSize * 0.5],
+            }),
+        });
         let highlighted = false;
         let draggable = false;
-        let dragging = false;
-        const style: L.PathOptions = {};
+        circle.on("drag", () => {
+            const position = circle.getLatLng();
+            label.setLatLng(position);
+        });
         function changeStyle() {
-            setSpotCircleNormalStyle(style);
-            if (draggable) setSpotCircleSelectedStyle(style);
-            if (highlighted) setSpotCircleHighlightStyle(style);
-            circle.setStyle(style);
+            const e = document.getElementsByClassName(circleId).item(0);
+            if (!e) return;
+
+            e.classList.toggle(classNames.highlighted, highlighted);
+            e.classList.toggle(classNames.draggable, draggable);
         }
-        const onDragging = (e: L.LeafletMouseEvent) => {
-            circle.setLatLng(e.latlng);
-            label.setLatLng(e.latlng);
-            dragging = true;
-        };
         circle.on("dblclick", () => {
             draggable = !draggable;
+            if (draggable) {
+                circle.dragging.enable();
+            } else {
+                circle.dragging.disable();
+            }
             changeStyle();
         });
-        circle.on("mousedown", () => {
-            if (draggable) {
-                map.dragging.disable();
-                map.on("mousemove", onDragging);
-            }
+        circle.on("click", () => {
             state.selectedRouteId = routeId;
             updateSelectedRouteInfo();
         });
-        map.on("mouseup", () => {
-            const latlngChanged = dragging;
-            dragging = false;
-            map.dragging.enable();
-            map.off("mousemove", onDragging);
-
-            const { route } = routeMap.get(routeId) ?? error`internal error`;
+        circle.on("dragend", () => {
+            const view = routeMap.get(routeId);
+            if (!view) return;
+            const { route } = view;
             route.coordinates = [latLngToCoordinate(circle.getLatLng())];
-
-            if (latlngChanged) {
                 queueSetRouteCommandDelayed(3000, route);
-            }
         });
         const label = L.marker(circle.getLatLng(), {
             icon: createSpotLabel(route.routeName),
