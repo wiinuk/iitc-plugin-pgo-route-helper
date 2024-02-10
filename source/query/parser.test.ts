@@ -19,6 +19,7 @@ function parseOk(source: string) {
     }
     return syntax;
 }
+const recoveryToken = "<recover>";
 it("list", () => {
     expect(parseOk("(f x)")).toStrictEqual(["f", "x"]);
     expect(parseOk("(f x )")).toStrictEqual(["f", "x"]);
@@ -37,6 +38,10 @@ it("infix", () => {
         ["_f_", "x", "y"],
         "z",
     ]);
+    expect(parse("x @f")).toStrictEqual({
+        syntax: ["_f_", "x", recoveryToken],
+        diagnostics: ["AnyTokenRequired"],
+    });
 });
 it("record", () => {
     expect(parseOk("{}")).toStrictEqual({});
@@ -52,5 +57,11 @@ it("failure", () => {
         diagnostics: [
             "LeftParenthesesOrLeftCurlyBracketOrLiteralOrNameRequired",
         ],
+    });
+});
+it("eos", () => {
+    expect(parse("expr }")).toStrictEqual({
+        syntax: "expr",
+        diagnostics: ["EndOfSourceOrAtNameExpected"],
     });
 });

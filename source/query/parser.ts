@@ -146,6 +146,7 @@ export const enum DiagnosticKind {
     CommaTokenExpected = "CommaTokenExpected",
     StringLiteralOrNameRequired = "StringLiteralOrNameRequired",
     LeftParenthesesOrLeftCurlyBracketOrLiteralOrNameRequired = "LeftParenthesesOrLeftCurlyBracketOrLiteralOrNameRequired",
+    EndOfSourceOrAtNameExpected = "EndOfSourceOrAtNameExpected",
 }
 type TokenKind =
     | "Unknown"
@@ -345,7 +346,10 @@ export function createParser(
     return {
         parse() {
             nextToken();
-            return parseExpression();
+            const value = parseExpression();
+            if (currentTokenKind !== "EndOfSource")
+                reporter(DiagnosticKind.EndOfSourceOrAtNameExpected);
+            return value;
         },
     };
 }
