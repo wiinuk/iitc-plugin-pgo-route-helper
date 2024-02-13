@@ -157,6 +157,16 @@ export const enum DiagnosticKind {
     LeftParenthesesOrLeftCurlyBracketOrLiteralOrNameRequired = "LeftParenthesesOrLeftCurlyBracketOrLiteralOrNameRequired",
     EndOfSourceOrAtNameExpected = "EndOfSourceOrAtNameExpected",
 }
+// for checker
+export const enum DiagnosticKind {
+    UnresolvedVariable = "UnresolvedVariable",
+    UnresolvedType = "UnresolvedType",
+    InvalidIfForm = "InvalidIfForm",
+    InvalidFunctionForm = "InvalidFunctionForm",
+    InvalidLetForm = "InvalidLetForm",
+    TypeMismatch = "TypeMismatch",
+    RecordTypeMismatch = "RecordTypeMismatch",
+}
 type TokenKind =
     | "Unknown"
     | "("

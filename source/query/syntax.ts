@@ -8,10 +8,12 @@ export enum SyntaxKind {
     RecordExpression = "RecordExpression",
 }
 
-export interface SyntaxBase {
+const privateSyntaxIdBrand = Symbol("privateSyntaxIdBrand");
+export type SyntaxId = number & { readonly [privateSyntaxIdBrand]: never };
+export interface Syntax {
     readonly kind: KnownSyntaxKinds;
 }
-interface Token<TKind extends KnownSyntaxKinds, TValue> extends ExpressionBase {
+interface Token<TKind extends KnownSyntaxKinds, TValue> extends Syntax {
     readonly kind: TKind;
     readonly value: TValue;
 }
@@ -40,7 +42,7 @@ export type Expression =
     | SequenceExpression
     | RecordExpression;
 type KnownExpressionKinds = Expression["kind"];
-export interface ExpressionBase extends SyntaxBase {
+export interface ExpressionBase extends Syntax {
     readonly kind: KnownExpressionKinds;
 }
 

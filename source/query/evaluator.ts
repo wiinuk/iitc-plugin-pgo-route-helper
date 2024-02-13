@@ -1,4 +1,5 @@
 import * as Assoc from "../assoc";
+import { error } from "../standard-extensions";
 import { SyntaxKind, type Expression, type SequenceExpression } from "./syntax";
 
 export function evaluateExpression(
@@ -34,9 +35,7 @@ export function evaluateExpression(
                 getUnresolved
             );
         default:
-            throw new Error(
-                `Invalid expression: '${expression satisfies never}'`
-            );
+            return error`Invalid expression: '${expression satisfies never}'`;
     }
 }
 function evaluateSequenceExpression(
@@ -70,9 +69,7 @@ function evaluateSequenceExpression(
                     ifNotFalsy === undefined ||
                     ifFalsy === undefined
                 ) {
-                    throw new Error(
-                        `#if 形式には要素1から3が必要です。例: ["#if", "isEven", ["#", "this is even"], ["#", "this is odd"]]`
-                    );
+                    return error`#if 形式には要素1から3が必要です。`;
                 }
                 return evaluateExpression(
                     evaluateExpression(condition, variables, getUnresolved)
@@ -89,9 +86,7 @@ function evaluateSequenceExpression(
                     parameter.kind !== SyntaxKind.Identifier ||
                     body === undefined
                 ) {
-                    throw new Error(
-                        `#function 形式の要素1にはパラメータ、要素2には式が必要です。`
-                    );
+                    return error`#function 形式の要素1にはパラメータ、要素2には式が必要です。`;
                 }
                 const parameterName = parameter.value;
                 return (parameterValue: unknown) =>
@@ -100,6 +95,23 @@ function evaluateSequenceExpression(
                         Assoc.add(parameterName, parameterValue, variables),
                         getUnresolved
                     );
+            }
+            case "#let": {
+                const [, variable, value, scope] = items;
+                if (
+                    variable === undefined ||
+                    variable.kind !== SyntaxKind.Identifier ||
+                    value === undefined ||
+                    scope === undefined
+                ) {
+                    return error`#let 形式の要素1には変数名、要素2には式、要素3には式が必要です。`;
+                }
+                variables = Assoc.add(
+                    variable.value,
+                    evaluateExpression(value, variables, getUnresolved),
+                    variables
+                );
+                return evaluateExpression(scope, variables, getUnresolved);
             }
         }
     }
