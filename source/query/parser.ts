@@ -1,4 +1,13 @@
-import { error, type Json } from "../standard-extensions";
+import { error } from "../standard-extensions";
+import {
+    type Expression,
+    createRecordExpression,
+    type RecordEntry,
+    createIdentifier,
+    createStringToken,
+    createSequenceExpression,
+    createNumberToken,
+} from "./syntax";
 const enum CharacterCodes {
     ['"'] = 34,
     ["/"] = 47,
@@ -156,9 +165,6 @@ type TokenKind =
     | "}"
     | ","
     | ":"
-    | "true"
-    | "false"
-    | "null"
     | "Number"
     | "String"
     | "Name"
@@ -177,9 +183,6 @@ function getTokenKind(token: Token): TokenKind {
         case "}":
         case ",":
         case ":":
-        case "true":
-        case "false":
-        case "null":
             return token;
     }
     const code0 = token.codePointAt(0) ?? error`internal error`;
@@ -193,7 +196,7 @@ function getTokenKind(token: Token): TokenKind {
 
 export function createParser(
     { next }: { next(): string | undefined },
-    reporter: (kind: DiagnosticKind) => void
+    reporter?: (kind: DiagnosticKind) => void
 ) {
     let currentToken: Token;
     let currentTokenKind: TokenKind = "Unknown";
@@ -208,7 +211,7 @@ export function createParser(
     }
     function skipToken(expectedToken: string, diagnosticKind: DiagnosticKind) {
         if (currentToken !== expectedToken) {
-            reporter(diagnosticKind);
+            reporter?.(diagnosticKind);
             return;
         }
         nextToken();
@@ -216,7 +219,9 @@ export function createParser(
     function trySkipToken(expectedToken: string) {
         return currentToken === expectedToken && (nextToken(), true);
     }
-    const recoveryToken = "<recover>";
+    function createRecoveryToken() {
+        return createIdentifier("");
+    }
 
     function parseExpression() {
         return parseOperatorExpressionOrHigher();
@@ -228,7 +233,11 @@ export function createParser(
             const operatorName = `_${currentToken?.slice(1)}_`;
             nextToken();
             const right = parseConcatenationExpression();
-            left = [operatorName, left, right];
+            left = createSequenceExpression([
+                createIdentifier(operatorName),
+                left,
+                right,
+            ]);
         }
         return left;
     }
@@ -240,7 +249,7 @@ export function createParser(
             while (isPrimaryExpressionHead()) {
                 items.push(parsePrimaryExpression());
             }
-            return items;
+            return createSequenceExpression(items);
         }
         return left;
     }
@@ -252,9 +261,6 @@ export function createParser(
     function isPrimaryExpressionHead() {
         switch (currentTokenKind) {
             case "{":
-            case "true":
-            case "false":
-            case "null":
             case "Number":
             case "String":
             case "Name":
@@ -264,12 +270,12 @@ export function createParser(
                 return false;
         }
     }
-    function parsePrimaryExpression(): Json {
+    function parsePrimaryExpression(): Expression {
         const token = currentToken;
         const tokenKind = currentTokenKind;
         if (token === undefined) {
-            reporter(DiagnosticKind.AnyTokenRequired);
-            return recoveryToken;
+            reporter?.(DiagnosticKind.AnyTokenRequired);
+            return createRecoveryToken();
         }
 
         nextToken();
@@ -280,22 +286,15 @@ export function createParser(
             // レコード
             case "{":
                 return parseRecordTail();
-            // true, false, null
-            case "true":
-                return true;
-            case "false":
-                return false;
-            case "null":
-                return null;
             // 文字列リテラル: "abc" => ["abc"]
             case "String":
-                return [JSON.parse(token) as string];
+                return createStringToken(JSON.parse(token) as string);
             // 数値リテラル
             case "Number":
-                return JSON.parse(token) as number;
+                return createNumberToken(JSON.parse(token) as number);
             // 名前: xyz => "xyz"
             case "Name":
-                return token;
+                return createIdentifier(token);
             default:
                 tokenKind satisfies
                     | "Unknown"
@@ -307,10 +306,10 @@ export function createParser(
                     | "WhiteSpace"
                     | "Comment"
                     | "EndOfSource";
-                reporter(
+                reporter?.(
                     DiagnosticKind.LeftParenthesesOrLeftCurlyBracketOrLiteralOrNameRequired
                 );
-                return token;
+                return createIdentifier(token);
         }
     }
     function parseParenthesisExpressionTail() {
@@ -319,36 +318,38 @@ export function createParser(
         return value;
     }
     function parseRecordTail() {
-        const record: Record<string, Json> = {};
-        do {
-            if (trySkipToken("}")) return record;
-            const key = parseRecordKey();
-            skipToken(":", DiagnosticKind.CommaTokenExpected);
-            record[key] = parseExpression();
-        } while (trySkipToken(","));
-        skipToken("}", DiagnosticKind.RightCurlyBracketTokenExpected);
-        return record;
+        const entries: RecordEntry[] = [];
+        parseEntries: {
+            do {
+                if (trySkipToken("}")) break parseEntries;
+                const key = parseRecordKey();
+                skipToken(":", DiagnosticKind.CommaTokenExpected);
+                entries.push([key, parseExpression()]);
+            } while (trySkipToken(","));
+            skipToken("}", DiagnosticKind.RightCurlyBracketTokenExpected);
+        }
+        return createRecordExpression(entries);
     }
     function parseRecordKey() {
         const token = currentToken;
         switch (currentTokenKind) {
             case "Name":
                 nextToken();
-                return token ?? error`internal error`;
+                return createIdentifier(token ?? error`internal error`);
             case "String":
                 nextToken();
-                return JSON.stringify(token) as string;
+                return createStringToken(JSON.stringify(token) as string);
         }
-        reporter(DiagnosticKind.StringLiteralOrNameRequired);
+        reporter?.(DiagnosticKind.StringLiteralOrNameRequired);
         nextToken();
-        return recoveryToken;
+        return createRecoveryToken();
     }
     return {
         parse() {
             nextToken();
             const value = parseExpression();
             if (currentTokenKind !== "EndOfSource")
-                reporter(DiagnosticKind.EndOfSourceOrAtNameExpected);
+                reporter?.(DiagnosticKind.EndOfSourceOrAtNameExpected);
             return value;
         },
     };

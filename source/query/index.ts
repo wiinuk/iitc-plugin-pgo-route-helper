@@ -1,6 +1,6 @@
 // spell-checker: ignore drivetunnel
 import type { Json as MutableJson } from "../../../gas-drivetunnel/source/json-schema-core";
-import { evaluateExpression, type Expression } from "./expression";
+import { evaluateExpression } from "./evaluator";
 import {
     getRouteKind,
     getRouteTags,
@@ -15,6 +15,7 @@ import {
     DiagnosticKind,
     tokenDefinitions,
 } from "./parser";
+import { SyntaxKind, type Expression } from "./syntax";
 
 function eachJsonStrings(
     json: MutableJson,
@@ -218,26 +219,28 @@ export function getOrderByKinds() {
     return ["id", "latitude", "longitude", ...getGymsOrderKinds()] as const;
 }
 type OrderByKinds = ReturnType<typeof getOrderByKinds>[number];
-export function orderBy(kind: OrderByKinds, query: RouteQuery): RouteQuery {
-    switch (kind) {
-        case "id":
-            return orderByKey(query, (r) => r.routeId, false);
-        case "latitude":
-            return orderByKey(query, (r) => r.coordinates[0][0], false);
-        case "longitude":
-            return orderByKey(query, (r) => r.coordinates[0][1], true);
-        case "potentialGyms":
-        case "potentialStops":
-            return orderByGyms(kind, query);
-        default:
-            throw new Error(
-                `Invalid order kind: ${
-                    kind satisfies never
-                }. Expected ${getOrderByKinds().join(" or ")}.`
-            );
-    }
-}
-function and(...queries: RouteQuery[]): RouteQuery {
+export const orderBy =
+    (kind: OrderByKinds) =>
+    (query: RouteQuery): RouteQuery => {
+        switch (kind) {
+            case "id":
+                return orderByKey(query, (r) => r.routeId, false);
+            case "latitude":
+                return orderByKey(query, (r) => r.coordinates[0][0], false);
+            case "longitude":
+                return orderByKey(query, (r) => r.coordinates[0][1], true);
+            case "potentialGyms":
+            case "potentialStops":
+                return orderByGyms(kind, query);
+            default:
+                throw new Error(
+                    `Invalid order kind: ${
+                        kind satisfies never
+                    }. Expected ${getOrderByKinds().join(" or ")}.`
+                );
+        }
+    };
+function and(queries: readonly RouteQuery[]): RouteQuery {
     return {
         initialize(e) {
             const units = queries.map((q) => queryAsFactory(q).initialize(e));
@@ -250,7 +253,7 @@ function and(...queries: RouteQuery[]): RouteQuery {
         },
     };
 }
-function or(...queries: RouteQuery[]): RouteQuery {
+function or(queries: readonly RouteQuery[]): RouteQuery {
     return {
         initialize(e) {
             const units = queries.map((q) => queryAsFactory(q).initialize(e));
@@ -263,83 +266,73 @@ function or(...queries: RouteQuery[]): RouteQuery {
         },
     };
 }
-const library = {
-    ["tag?"](route: Route, tagNames: readonly string[]) {
-        const tags = getRouteTags(route);
-        if (tags === undefined) return false;
-        for (const name of tagNames) {
-            if (name in tags) return true;
-        }
-        return false;
-    },
-    concat(strings: readonly string[]) {
-        return strings.join("");
-    },
-    getTitle(route: Route) {
-        return route.routeName;
-    },
-    getDescription(route: Route) {
-        return route.description;
-    },
-    includes(...words: string[]) {
-        return includes(words);
-    },
-    reachable,
-    reachableWith,
-    and,
-    ["_and_"]: and,
-    or,
-    ["_or_"]: or,
-    not(query: RouteQuery): RouteQuery {
-        return {
-            initialize(e) {
-                const { predicate } = queryAsFactory(query).initialize(e);
+function createLibrary() {
+    const entries = {
+        _pipe_:
+            <T, R>(x: T) =>
+            (f: (x: T) => R) =>
+                f(x),
+        includes(words: readonly string[]) {
+            return includes(words);
+        },
+        reachable,
+        reachableWith,
+        and,
+        _and_: (a: RouteQuery) => (b: RouteQuery) => and([a, b]),
+        or,
+        _or_: (a: RouteQuery) => (b: RouteQuery) => or([a, b]),
+        not(query: RouteQuery): RouteQuery {
+            return {
+                initialize(e) {
+                    const { predicate } = queryAsFactory(query).initialize(e);
+                    return {
+                        ...emptyUnit,
+                        predicate(r) {
+                            return !predicate(r);
+                        },
+                    };
+                },
+            };
+        },
+        withTitle:
+            (getTitle: (route: Route) => string) =>
+            (query: RouteQuery): RouteQuery => {
                 return {
-                    ...emptyUnit,
-                    predicate(r) {
-                        return !predicate(r);
+                    initialize(e) {
+                        return {
+                            ...queryAsFactory(query).initialize(e),
+                            getTitle,
+                        };
                     },
                 };
             },
-        };
-    },
-    withTitle(
-        getTitle: (route: Route) => string,
-        query: RouteQuery
-    ): RouteQuery {
-        return {
-            initialize(e) {
+        withNote:
+            (getNote: (route: Route) => string) =>
+            (query: RouteQuery): RouteQuery => {
                 return {
-                    ...queryAsFactory(query).initialize(e),
-                    getTitle,
+                    initialize(e) {
+                        return {
+                            ...queryAsFactory(query).initialize(e),
+                            getNote,
+                        };
+                    },
                 };
             },
-        };
-    },
-    withNote(getNote: (route: Route) => string, query: RouteQuery): RouteQuery {
-        return {
-            initialize(e) {
-                return {
-                    ...queryAsFactory(query).initialize(e),
-                    getNote,
-                };
-            },
-        };
-    },
-    orderBy,
-    ["_orderBy_"](query: RouteQuery, kind: OrderByKinds) {
-        return orderBy(kind, query);
-    },
-    any: anyQuery,
-};
-function evaluateWithLibrary(expression: Expression) {
-    const getUnresolved = (name: string) => {
-        if (name in library) {
-            return (library as Record<string, unknown>)[name];
-        }
-        throw new Error(`Unresolved name "${name}"`);
+        orderBy,
+        _orderBy_: (query: RouteQuery) => (kind: OrderByKinds) =>
+            orderBy(kind)(query),
+        any: anyQuery,
     };
-    return evaluateExpression(expression, null, getUnresolved);
+    return new Map<string, unknown>(Object.entries(entries));
+}
+let library: Map<string, unknown> | undefined;
+function libraryResolver(name: string) {
+    library ??= createLibrary();
+    if (library.has(name)) return library.get(name);
+    throw new Error(`Unresolved name "${name}"`);
+}
+function evaluateWithLibrary(expression: Expression) {
+    return evaluateExpression(expression, null, libraryResolver);
 }
 
 export interface QueryEnvironment {
@@ -347,14 +340,19 @@ export interface QueryEnvironment {
     getUserCoordinate(): Coordinate | undefined;
     distance(c1: Coordinate, c2: Coordinate): number;
 }
-export function createQuery(expression: string): QueryCreateResult {
+export function createQuery(source: string): QueryCreateResult {
     const diagnostics: DiagnosticKind[] = [];
-    const tokenizer = createTokenizer(expression, tokenDefinitions);
+    const tokenizer = createTokenizer(source, tokenDefinitions);
     const parser = createParser(tokenizer, (d) => diagnostics.push(d));
-    const json = parser.parse();
-    if (json == null || typeof json !== "object") {
+    const expression = parser.parse();
+    if (
+        expression.kind === SyntaxKind.Identifier ||
+        (expression.kind !== SyntaxKind.StringToken &&
+            expression.kind !== SyntaxKind.RecordExpression &&
+            expression.kind !== SyntaxKind.SequenceExpression)
+    ) {
         return {
-            getQuery: () => createSimpleQuery(expression),
+            getQuery: () => createSimpleQuery(source),
             syntax: "words",
             diagnostics: [],
         };
@@ -362,7 +360,9 @@ export function createQuery(expression: string): QueryCreateResult {
     return {
         getQuery: () => {
             // TODO: 静的チェックする
-            return queryAsFactory(evaluateWithLibrary(json) as RouteQuery);
+            return queryAsFactory(
+                evaluateWithLibrary(expression) as RouteQuery
+            );
         },
         syntax: "parentheses",
         diagnostics,

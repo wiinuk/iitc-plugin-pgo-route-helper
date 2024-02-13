@@ -5,12 +5,32 @@ import {
     createTokenizer,
     tokenDefinitions,
 } from "./parser";
+import { SyntaxKind, type Expression } from "./syntax";
+import type { Json } from "../standard-extensions";
 
+function expressionToJson(expression: Expression): Json {
+    switch (expression.kind) {
+        case SyntaxKind.Identifier:
+        case SyntaxKind.NumberToken:
+            return expression.value;
+        case SyntaxKind.StringToken:
+            return [expression.value];
+        case SyntaxKind.SequenceExpression:
+            return expression.items.map(expressionToJson);
+        case SyntaxKind.RecordExpression:
+            return Object.fromEntries(
+                expression.entries.map(([k, v]) => [
+                    k.value,
+                    expressionToJson(v),
+                ])
+            );
+    }
+}
 function parse(source: string) {
     const diagnostics: DiagnosticKind[] = [];
     const tokenizer = createTokenizer(source, tokenDefinitions);
     const parser = createParser(tokenizer, (d) => diagnostics.push(d));
-    return { syntax: parser.parse(), diagnostics };
+    return { syntax: expressionToJson(parser.parse()), diagnostics };
 }
 function parseOk(source: string) {
     const { syntax, diagnostics } = parse(source);
@@ -19,7 +39,7 @@ function parseOk(source: string) {
     }
     return syntax;
 }
-const recoveryToken = "<recover>";
+const recoveryToken = "";
 it("list", () => {
     expect(parseOk("(f x)")).toStrictEqual(["f", "x"]);
     expect(parseOk("(f x )")).toStrictEqual(["f", "x"]);
