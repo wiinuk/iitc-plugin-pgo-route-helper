@@ -9,6 +9,7 @@ import {
     createNumberToken,
     type TokenKind,
     SyntaxKind,
+    type Syntax,
 } from "./syntax";
 const enum CharacterCodes {
     ['"'] = 34,
@@ -177,7 +178,6 @@ export const tokenDefinitions: TokenDefinitions<TokenKind> = {
     },
 };
 
-type Token = string | undefined;
 export const enum DiagnosticKind {
     AnyTokenRequired = "AnyTokenRequired",
     RightParenthesisTokenExpected = "RightParenthesisTokenExpected",
@@ -200,8 +200,8 @@ export const enum DiagnosticKind {
     RecordTypeMismatch = "RecordTypeMismatch",
 }
 
-function getTokenKind(token: Token): TokenKind {
-    switch (token) {
+function getTokenKind(text: string): TokenKind {
+    switch (text) {
         case undefined:
             return SyntaxKind.EndOfSource;
         case "(":
@@ -217,7 +217,7 @@ function getTokenKind(token: Token): TokenKind {
         case ":":
             return SyntaxKind[":"];
     }
-    const code0 = token.codePointAt(0) ?? error`internal error`;
+    const code0 = text.codePointAt(0) ?? error`internal error`;
     if (code0 === CharacterCodes["/"]) return SyntaxKind.Comment;
     if (code0 === CharacterCodes['"']) return SyntaxKind.StringToken;
     if (code0 === CharacterCodes["@"]) return SyntaxKind.AtName;
@@ -226,40 +226,59 @@ function getTokenKind(token: Token): TokenKind {
     return SyntaxKind.Identifier;
 }
 
+type Mutable<T> = { -readonly [K in keyof T]: T[K] };
+function setPositions<T extends Syntax>(
+    syntax: T,
+    start: number,
+    end: number
+): T {
+    const s = syntax as Mutable<T>;
+    s.start = start;
+    s.end = end;
+    return s;
+}
+function setPositionsOfSyntax<T extends Syntax>(
+    target: T,
+    start: Syntax,
+    end: Syntax
+) {
+    return setPositions(target, start.start, end.end);
+}
 export function createParser(
     { next, getTokenText, getPosition }: Tokenizer<TokenKind>,
     reporter?: (kind: DiagnosticKind) => void
 ) {
-    let fullStart = -1;
-    let position = -1;
-    let end = -1;
-    let currentTokenKind: TokenKind = SyntaxKind.Unknown;
+    let tokenStart = -1;
+    let tokenEnd = -1;
+    let tokenKind: TokenKind = SyntaxKind.Unknown;
     function nextToken() {
-        fullStart = getPosition();
         do {
-            position = getPosition();
-            currentTokenKind = next();
+            tokenStart = getPosition();
+            tokenKind = next();
         } while (
-            currentTokenKind === SyntaxKind.WhiteSpaces ||
-            currentTokenKind === SyntaxKind.Comment
+            tokenKind === SyntaxKind.WhiteSpaces ||
+            tokenKind === SyntaxKind.Comment
         );
-        end = getPosition();
+        tokenEnd = getPosition();
     }
     function skipToken(
         expectedToken: TokenKind,
         diagnosticKind: DiagnosticKind
     ) {
-        if (currentTokenKind !== expectedToken) {
+        if (tokenKind !== expectedToken) {
             reporter?.(diagnosticKind);
             return;
         }
         nextToken();
     }
     function trySkipToken(expectedToken: TokenKind) {
-        return currentTokenKind === expectedToken && (nextToken(), true);
+        return tokenKind === expectedToken && (nextToken(), true);
+    }
+    function setPositionsOfCurrentToken<T extends Syntax>(syntax: T): T {
+        return setPositions(syntax, tokenStart, tokenEnd);
     }
     function createRecoveryToken() {
-        return createIdentifier("");
+        return setPositionsOfCurrentToken(createIdentifier(""));
     }
 
     function parseExpression() {
@@ -268,15 +287,18 @@ export function createParser(
     // operator-expression-or-higher := concatenation-expression (at-name concatenation-expression)*
     function parseOperatorExpressionOrHigher() {
         let left = parseConcatenationExpression();
-        while (currentTokenKind === SyntaxKind.AtName) {
+        while (tokenKind === SyntaxKind.AtName) {
             const operatorName = `_${getTokenText().slice(1)}_`;
+            const operator = setPositionsOfCurrentToken(
+                createIdentifier(operatorName)
+            );
             nextToken();
             const right = parseConcatenationExpression();
-            left = createSequenceExpression([
-                createIdentifier(operatorName),
+            left = setPositionsOfSyntax(
+                createSequenceExpression([operator, left, right]),
                 left,
-                right,
-            ]);
+                right
+            );
         }
         return left;
     }
@@ -288,7 +310,11 @@ export function createParser(
             while (isPrimaryExpressionHead()) {
                 items.push(parsePrimaryExpression());
             }
-            return createSequenceExpression(items);
+            return setPositionsOfSyntax(
+                createSequenceExpression(items),
+                left,
+                items[items.length - 1] ?? left
+            );
         }
         return left;
     }
@@ -298,7 +324,7 @@ export function createParser(
     //     | name
     //     | record-expression
     function isPrimaryExpressionHead() {
-        switch (currentTokenKind) {
+        switch (tokenKind) {
             case SyntaxKind["{"]:
             case SyntaxKind["("]:
             case SyntaxKind.NumberToken:
@@ -310,34 +336,38 @@ export function createParser(
         }
     }
     function parsePrimaryExpression(): Expression {
-        const tokenKind = currentTokenKind;
-        if (tokenKind === SyntaxKind.EndOfSource) {
+        const kind = tokenKind;
+        if (kind === SyntaxKind.EndOfSource) {
             reporter?.(DiagnosticKind.AnyTokenRequired);
             return createRecoveryToken();
         }
 
-        switch (tokenKind) {
+        let token;
+        switch (kind) {
             case SyntaxKind["("]:
                 return parseParenthesisExpressionTail();
             case SyntaxKind["{"]:
                 return parseRecordTail();
             case SyntaxKind.StringToken: {
-                const value = JSON.parse(getTokenText()) as string;
-                nextToken();
-                return createStringToken(value);
+                token = setPositionsOfCurrentToken(
+                    createStringToken(JSON.parse(getTokenText()) as string)
+                );
+                break;
             }
             case SyntaxKind.NumberToken: {
-                const value = JSON.parse(getTokenText()) as number;
-                nextToken();
-                return createNumberToken(value);
+                token = setPositionsOfCurrentToken(
+                    createNumberToken(JSON.parse(getTokenText()) as number)
+                );
+                break;
             }
             case SyntaxKind.Identifier: {
-                const value = getTokenText();
-                nextToken();
-                return createIdentifier(value);
+                token = setPositionsOfCurrentToken(
+                    createIdentifier(getTokenText())
+                );
+                break;
             }
             default: {
-                tokenKind satisfies
+                kind satisfies
                     | SyntaxKind.Unknown
                     | (typeof SyntaxKind)[")"]
                     | (typeof SyntaxKind)["}"]
@@ -350,11 +380,14 @@ export function createParser(
                 reporter?.(
                     DiagnosticKind.LeftParenthesesOrLeftCurlyBracketOrLiteralOrNameRequired
                 );
-                const value = getTokenText();
-                nextToken();
-                return createIdentifier(value);
+                token = setPositionsOfCurrentToken(
+                    createIdentifier(getTokenText())
+                );
+                break;
             }
         }
+        nextToken();
+        return token;
     }
     function parseParenthesisExpressionTail() {
         // (
@@ -367,32 +400,48 @@ export function createParser(
         return value;
     }
     function parseRecordTail() {
+        const start = tokenStart;
+        let end;
         // {
         nextToken();
         const entries: RecordEntry[] = [];
         parseEntries: {
             do {
-                if (trySkipToken(SyntaxKind["}"])) break parseEntries;
+                if (tokenKind === SyntaxKind["}"]) {
+                    end = tokenEnd;
+                    nextToken();
+                    break parseEntries;
+                }
                 const key = parseRecordKey();
                 skipToken(SyntaxKind[":"], DiagnosticKind.CommaTokenExpected);
                 entries.push([key, parseExpression()]);
             } while (trySkipToken(SyntaxKind[","]));
+
+            end = tokenEnd;
             skipToken(
                 SyntaxKind["}"],
                 DiagnosticKind.RightCurlyBracketTokenExpected
             );
         }
-        return createRecordExpression(entries);
+        return setPositions(createRecordExpression(entries), start, end);
     }
     function parseRecordKey() {
-        const token = getTokenText();
-        switch (currentTokenKind) {
-            case SyntaxKind.Identifier:
+        const text = getTokenText();
+        switch (tokenKind) {
+            case SyntaxKind.Identifier: {
+                const token = setPositionsOfCurrentToken(
+                    createIdentifier(text)
+                );
                 nextToken();
-                return createIdentifier(token);
-            case SyntaxKind.StringToken:
+                return token;
+            }
+            case SyntaxKind.StringToken: {
+                const token = setPositionsOfCurrentToken(
+                    createStringToken(JSON.parse(text) as string)
+                );
                 nextToken();
-                return createStringToken(JSON.stringify(token) as string);
+                return token;
+            }
         }
         reporter?.(DiagnosticKind.StringLiteralOrNameRequired);
         nextToken();
@@ -402,7 +451,7 @@ export function createParser(
         parse() {
             nextToken();
             const value = parseExpression();
-            if (currentTokenKind !== "EndOfSource")
+            if (tokenKind !== "EndOfSource")
                 reporter?.(DiagnosticKind.EndOfSourceOrAtNameExpected);
             return value;
         },

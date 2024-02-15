@@ -42,6 +42,8 @@ const privateSyntaxIdBrand = Symbol("privateSyntaxIdBrand");
 export type SyntaxId = number & { readonly [privateSyntaxIdBrand]: never };
 export interface Syntax {
     readonly kind: KnownSyntaxKinds;
+    readonly start: number;
+    readonly end: number;
 }
 interface Token<TKind extends KnownSyntaxKinds, TValue> extends Syntax {
     readonly kind: TKind;
@@ -52,7 +54,7 @@ export function createToken<
     TKind extends KnownSyntaxKinds,
     TValue extends Json
 >(kind: TKind, value: TValue): Token<TKind, TValue> {
-    return { kind, value };
+    return { kind, value, start: -1, end: -1 };
 }
 export function createIdentifier(value: Identifier["value"]): Identifier {
     return createToken(SyntaxKind.Identifier, value);
@@ -92,6 +94,8 @@ export function createSequenceExpression(
     return {
         kind: SyntaxKind.SequenceExpression,
         items,
+        start: -1,
+        end: -1,
     };
 }
 export type RecordEntry = readonly [StringToken | Identifier, Expression];
@@ -102,5 +106,10 @@ export interface RecordExpression extends ExpressionBase {
 export function createRecordExpression(
     entries: RecordExpression["entries"]
 ): RecordExpression {
-    return { kind: SyntaxKind.RecordExpression, entries };
+    return {
+        kind: SyntaxKind.RecordExpression,
+        entries,
+        start: -1,
+        end: -1,
+    };
 }
