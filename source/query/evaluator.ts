@@ -48,71 +48,16 @@ function evaluateSequenceExpression(
     if (head.kind === SyntaxKind.Identifier) {
         switch (head.value) {
             case "#list":
-            case "#tuple": {
-                const list = [];
-                for (let i = 1; i < items.length; i++) {
-                    list.push(
-                        evaluateExpression(
-                            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-                            items[i]!,
-                            variables,
-                            getUnresolved
-                        )
-                    );
-                }
-                return list;
-            }
-            case "#if": {
-                const [, condition, ifNotFalsy, ifFalsy] = items;
-                if (
-                    condition === undefined ||
-                    ifNotFalsy === undefined ||
-                    ifFalsy === undefined
-                ) {
-                    return error`#if 形式には要素1から3が必要です。`;
-                }
-                return evaluateExpression(
-                    evaluateExpression(condition, variables, getUnresolved)
-                        ? ifNotFalsy
-                        : ifFalsy,
-                    variables,
-                    getUnresolved
-                );
-            }
-            case "#function": {
-                const [, parameter, body] = items;
-                if (
-                    parameter === undefined ||
-                    parameter.kind !== SyntaxKind.Identifier ||
-                    body === undefined
-                ) {
-                    return error`#function 形式の要素1にはパラメータ、要素2には式が必要です。`;
-                }
-                const parameterName = parameter.value;
-                return (parameterValue: unknown) =>
-                    evaluateExpression(
-                        body,
-                        Assoc.add(parameterName, parameterValue, variables),
-                        getUnresolved
-                    );
-            }
-            case "#let": {
-                const [, variable, value, scope] = items;
-                if (
-                    variable === undefined ||
-                    variable.kind !== SyntaxKind.Identifier ||
-                    value === undefined ||
-                    scope === undefined
-                ) {
-                    return error`#let 形式の要素1には変数名、要素2には式、要素3には式が必要です。`;
-                }
-                variables = Assoc.add(
-                    variable.value,
-                    evaluateExpression(value, variables, getUnresolved),
-                    variables
-                );
-                return evaluateExpression(scope, variables, getUnresolved);
-            }
+            case "#tuple":
+                return evaluateListOrTupleForm(items, variables, getUnresolved);
+            case "#if":
+                return evaluateIfForm(items, variables, getUnresolved);
+            case "#function":
+                return evaluateFunctionForm(items, variables, getUnresolved);
+            case "#let":
+                return evaluateLetForm(items, variables, getUnresolved);
+            case "#get":
+                return evaluateGetForm(items, variables, getUnresolved);
         }
     }
     let headValue = evaluateExpression(head, variables, getUnresolved);
@@ -131,4 +76,98 @@ function evaluateSequenceExpression(
         headValue = headValue(p);
     }
     return headValue;
+}
+function evaluateListOrTupleForm(
+    items: readonly Expression[],
+    variables: Assoc.Assoc<string, unknown>,
+    getUnresolved: (name: string) => unknown
+) {
+    const list = [];
+    for (let i = 1; i < items.length; i++) {
+        list.push(
+            evaluateExpression(
+                // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+                items[i]!,
+                variables,
+                getUnresolved
+            )
+        );
+    }
+    return list;
+}
+function evaluateIfForm(
+    [, condition, ifNotFalsy, ifFalsy]: readonly Expression[],
+    variables: Assoc.Assoc<string, unknown>,
+    getUnresolved: (name: string) => unknown
+) {
+    if (
+        condition === undefined ||
+        ifNotFalsy === undefined ||
+        ifFalsy === undefined
+    ) {
+        return error`#if 形式には要素1から3が必要です。`;
+    }
+    return evaluateExpression(
+        evaluateExpression(condition, variables, getUnresolved)
+            ? ifNotFalsy
+            : ifFalsy,
+        variables,
+        getUnresolved
+    );
+}
+function evaluateFunctionForm(
+    [, parameter, body]: readonly Expression[],
+    variables: Assoc.Assoc<string, unknown>,
+    getUnresolved: (name: string) => unknown
+) {
+    if (
+        parameter === undefined ||
+        parameter.kind !== SyntaxKind.Identifier ||
+        body === undefined
+    ) {
+        return error`#function 形式の要素1にはパラメータ、要素2には式が必要です。`;
+    }
+    const parameterName = parameter.value;
+    return (parameterValue: unknown) =>
+        evaluateExpression(
+            body,
+            Assoc.add(parameterName, parameterValue, variables),
+            getUnresolved
+        );
+}
+function evaluateLetForm(
+    [, variable, value, scope]: readonly Expression[],
+    variables: Assoc.Assoc<string, unknown>,
+    getUnresolved: (name: string) => unknown
+) {
+    if (
+        variable === undefined ||
+        variable.kind !== SyntaxKind.Identifier ||
+        value === undefined ||
+        scope === undefined
+    ) {
+        return error`#let 形式の要素1には変数名、要素2には式、要素3には式が必要です。`;
+    }
+    variables = Assoc.add(
+        variable.value,
+        evaluateExpression(value, variables, getUnresolved),
+        variables
+    );
+    return evaluateExpression(scope, variables, getUnresolved);
+}
+function evaluateGetForm(
+    [, record, key]: readonly Expression[],
+    variables: Assoc.Assoc<string, unknown>,
+    getUnresolved: (name: string) => unknown
+) {
+    if (
+        record === undefined ||
+        key === undefined ||
+        (key.kind !== SyntaxKind.Identifier &&
+            key.kind !== SyntaxKind.StringToken)
+    ) {
+        return error`#get 形式の要素1には式、要素2にはフィールド名が必要です。`;
+    }
+    const value = evaluateExpression(record, variables, getUnresolved);
+    return (value as Record<string, unknown>)[key.value];
 }

@@ -92,6 +92,7 @@ export type TypeDiagnostics =
               | DiagnosticKind.InvalidIfForm
               | DiagnosticKind.InvalidFunctionForm
               | DiagnosticKind.InvalidLetForm
+              | DiagnosticKind.InvalidGetForm
       ]
     | [
           kind:
@@ -187,16 +188,34 @@ export function simplify(substitutions: ReadonlyMap<TypeId, Type>, type: Type) {
     return trySimplify(substitutions, type) ?? type;
 }
 
-export type TypeVariableCreator = (
-    location: Syntax,
-    letDepth: number,
-    displayName: string
-) => TypeVariable;
+export type TypeSystem = ReturnType<typeof createTypeSystem>;
+export function createTypeSystem(reporter: TypeDiagnosticReporter | undefined) {
+    let nextTypeId = 1;
+    function createTypeVariable(
+        source: TypeVariable["source"],
+        letDepth: TypeVariable["letDepth"],
+        displayName: TypeVariable["displayName"]
+    ): TypeVariable {
+        return {
+            kind: TypeKind.TypeVariable,
+            source,
+            typeId: nextTypeId++ as TypeId,
+            letDepth,
+            displayName,
+        };
+    }
+    function createParameterType(
+        source: ParameterType["source"],
+        displayName: ParameterType["displayName"]
+    ): ParameterType {
+        return {
+            kind: TypeKind.ParameterType,
+            source,
+            displayName,
+            typeId: nextTypeId++ as TypeId,
+        };
+    }
 
-export function createUnifier(
-    createTypeVariable: TypeVariableCreator,
-    reporter: TypeDiagnosticReporter | undefined
-) {
     let location: Syntax;
     let substitutions: Map<TypeId, Type>;
     function unifyType(actual: Type, expected: Type) {
@@ -331,24 +350,65 @@ export function createUnifier(
         unifyType(actual.type1, expected.type1);
         unifyType(actual.type2, expected.type2);
     }
-    return {
-        unify(
-            source: Syntax,
-            typeSubstitutions: Map<TypeId, Type>,
-            actual: Type,
-            expected: Type
-        ) {
-            location = source;
-            substitutions = typeSubstitutions;
-            try {
-                unifyType(actual, expected);
-            } finally {
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                location = undefined as any;
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                substitutions = undefined as any;
+    function unify(
+        source: Syntax,
+        typeSubstitutions: Map<TypeId, Type>,
+        actual: Type,
+        expected: Type
+    ) {
+        location = source;
+        substitutions = typeSubstitutions;
+        try {
+            unifyType(actual, expected);
+        } finally {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            location = undefined as any;
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            substitutions = undefined as any;
+        }
+    }
+    function generalize(location: Syntax, type: Type, letDepth: number) {
+        const map = new Map<TypeId, Type>();
+        const typeParameters = [];
+        collectFreeVariables(type, map);
+        for (const [key, t] of [...map.entries()]) {
+            if (t.kind === TypeKind.TypeVariable && letDepth < t.letDepth) {
+                const parameter = createParameterType(location, t.displayName);
+                typeParameters.push(parameter);
+                map.set(key, parameter);
             }
-        },
+        }
+        type = applyTypes(map, type);
+        for (let parameter; (parameter = typeParameters.pop()); ) {
+            type = createAbstractionType(location, parameter, type);
+        }
+        return type;
+    }
+    function instantiate(location: Syntax, type: Type, letDepth: number): Type {
+        let parameterIdToVariable;
+        while (type.kind === TypeKind.AbstractionType) {
+            parameterIdToVariable ??= new Map<TypeId, TypeVariable>();
+            parameterIdToVariable.set(
+                type.parameter.typeId,
+                createTypeVariable(
+                    location,
+                    letDepth,
+                    type.parameter.displayName
+                )
+            );
+            type = type.body;
+        }
+        return parameterIdToVariable
+            ? applyTypes(parameterIdToVariable, type)
+            : type;
+    }
+
+    return {
+        createTypeVariable,
+        createParameterType,
+        unify,
+        generalize,
+        instantiate,
     };
 }
 
@@ -405,48 +465,4 @@ function applyTypes(mapping: ReadonlyMap<TypeId, Type>, type: Type): Type {
                 applyTypes(mapping, type.body)
             );
     }
-}
-export function generalize(
-    location: Syntax,
-    type: Type,
-    letDepth: number,
-    createParameterType: (
-        source: ParameterType["source"],
-        displayName: ParameterType["displayName"]
-    ) => ParameterType
-) {
-    const map = new Map<TypeId, Type>();
-    const typeParameters = [];
-    collectFreeVariables(type, map);
-    for (const [key, t] of [...map.entries()]) {
-        if (t.kind === TypeKind.TypeVariable && letDepth < t.letDepth) {
-            const parameter = createParameterType(location, t.displayName);
-            typeParameters.push(parameter);
-            map.set(key, parameter);
-        }
-    }
-    type = applyTypes(map, type);
-    for (let parameter; (parameter = typeParameters.pop()); ) {
-        type = createAbstractionType(location, parameter, type);
-    }
-    return type;
-}
-export function instantiate(
-    location: Syntax,
-    type: Type,
-    letDepth: number,
-    createTypeVariable: TypeVariableCreator
-): Type {
-    let parameterIdToVariable;
-    while (type.kind === TypeKind.AbstractionType) {
-        parameterIdToVariable ??= new Map<TypeId, TypeVariable>();
-        parameterIdToVariable.set(
-            type.parameter.typeId,
-            createTypeVariable(location, letDepth, type.parameter.displayName)
-        );
-        type = type.body;
-    }
-    return parameterIdToVariable
-        ? applyTypes(parameterIdToVariable, type)
-        : type;
 }

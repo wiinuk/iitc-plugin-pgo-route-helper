@@ -9,19 +9,14 @@ import {
     type SequenceExpression,
 } from "./syntax";
 import {
-    TypeKind,
     type Type,
-    type TypeVariable,
     type RecordType,
     type TypeId,
-    createUnifier,
     type TypeDiagnosticReporter,
     createApplicationType,
     createRecordType,
-    generalize,
-    instantiate,
-    type ParameterType,
     simplify,
+    createTypeSystem,
 } from "./type";
 
 export function createChecker(
@@ -29,42 +24,18 @@ export function createChecker(
     resolveTypeOfVariable?: (variableName: string) => Type | undefined,
     resolveType?: (typeName: string) => Type | undefined
 ) {
-    let nextTypeId = 1;
     const typeSubstitutions = new Map<TypeId, Type>();
     let locals: Assoc.Assoc<string, Type> = null;
     let letDepth = 0;
     function reset() {
-        nextTypeId = 1;
         typeSubstitutions.clear();
         locals = null;
         letDepth = 0;
     }
 
-    const { unify } = createUnifier(createTypeVariable, report);
-    function createTypeVariable(
-        source: Syntax,
-        letDepth: number,
-        displayName: string
-    ): TypeVariable {
-        return {
-            kind: TypeKind.TypeVariable,
-            source,
-            typeId: nextTypeId++ as TypeId,
-            letDepth,
-            displayName,
-        };
-    }
-    function createParameterType(
-        source: Syntax,
-        displayName: string
-    ): ParameterType {
-        return {
-            kind: TypeKind.ParameterType,
-            source,
-            displayName,
-            typeId: nextTypeId++ as TypeId,
-        };
-    }
+    const { unify, createTypeVariable, instantiate, generalize } =
+        createTypeSystem(report);
+
     function createFunctionType(
         location: Syntax,
         parameterType: Type,
@@ -115,12 +86,10 @@ export function createChecker(
     }
     function checkIdentifier(expression: Identifier) {
         const { value } = expression;
-        const t =
+        const type =
             Assoc.get(expression.value, locals)?.[1] ||
             resolveTypeOfVariable?.(value);
-        if (t) {
-            return instantiate(expression, t, letDepth, createTypeVariable);
-        }
+        if (type) return instantiate(expression, type, letDepth);
 
         report?.(expression, DiagnosticKind.UnresolvedVariable, value);
         return createRecoveryType(expression);
@@ -281,8 +250,7 @@ export function createChecker(
                 generalize(
                     variable,
                     simplify(typeSubstitutions, valueType),
-                    letDepth,
-                    createParameterType
+                    letDepth
                 ),
                 locals
             );
