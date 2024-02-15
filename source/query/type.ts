@@ -5,6 +5,8 @@ import { type Syntax } from "./syntax";
 export type Type =
     | NamedType
     | RecordType
+    | RowEmptyType
+    | RowExtendType
     | ApplicationType
     | AbstractionType
     | ParameterType
@@ -13,6 +15,8 @@ export type Type =
 export enum TypeKind {
     NamedType = "NamedType",
     RecordType = "RecordType",
+    RowEmptyType = "RowEmptyType",
+    RowExtendType = "RowExtendType",
     ApplicationType = "ApplicationType",
     AbstractionType = "AbstractionType",
     ParameterType = "ParameterType",
@@ -29,7 +33,46 @@ export interface NamedType<TName extends string = string> extends TypeBase {
 }
 export interface RecordType extends TypeBase {
     readonly kind: TypeKind.RecordType;
-    readonly entries: ReadonlyMap<string, Type>;
+    readonly rows: Type;
+}
+export function createRecordType(
+    source: RecordType["source"],
+    rows: RecordType["rows"]
+): RecordType {
+    return {
+        kind: TypeKind.RecordType,
+        source,
+        rows,
+    };
+}
+export interface RowEmptyType extends TypeBase {
+    readonly kind: TypeKind.RowEmptyType;
+}
+export function createRowEmptyType(source: Syntax): RowEmptyType {
+    return {
+        kind: TypeKind.RowEmptyType,
+        source,
+    };
+}
+export interface RowExtendType extends TypeBase {
+    readonly kind: TypeKind.RowExtendType;
+    readonly rowLabel: string;
+    readonly rowValue: Type;
+    readonly rows: Type;
+}
+export function createRowExtendType(
+    source: RowExtendType["source"],
+    rowLabel: RowExtendType["rowLabel"],
+    rowValue: RowExtendType["rowValue"],
+    rows: RowExtendType["rows"]
+): RowExtendType {
+    return {
+        kind: TypeKind.RowExtendType,
+        source,
+        rowLabel,
+        rowValue,
+        rows,
+    };
 }
 export interface ApplicationType extends TypeBase {
     readonly kind: TypeKind.ApplicationType;
@@ -68,16 +111,6 @@ export function createApplicationType(
         type2,
     };
 }
-export function createRecordType(
-    source: RecordType["source"],
-    entries: RecordType["entries"]
-): RecordType {
-    return {
-        kind: TypeKind.RecordType,
-        source,
-        entries,
-    };
-}
 export function createAbstractionType(
     source: AbstractionType["source"],
     parameter: AbstractionType["parameter"],
@@ -109,50 +142,44 @@ export type TypeDiagnostics =
           kind: DiagnosticKind.RecordTypeMismatch,
           actualSource: Syntax,
           expectedTypeSource: Syntax,
-          requiredKeys: readonly string[] | undefined,
-          excessKeys: readonly string[] | undefined
+          requiredKeys: readonly [string, ...string[]] | undefined,
+          excessKeys: readonly [string, ...string[]] | undefined
       ];
 export type TypeDiagnosticReporter = (
     location: Syntax,
     ...kindAndParameters: TypeDiagnostics
 ) => void;
 
-function getSubstitutedType(
-    substitutions: ReadonlyMap<TypeId, Type>,
-    type: Type
-) {
+type TypeMapping = ReadonlyMap<TypeId, Type>;
+function getSubstitutedType(mapping: TypeMapping, type: Type) {
     for (
         let substituted;
-        type.kind === TypeKind.TypeVariable &&
-        (substituted = substitutions.get(type.typeId));
+        (type.kind === TypeKind.TypeVariable ||
+            type.kind === TypeKind.ParameterType) &&
+        (substituted = mapping.get(type.typeId));
         type = substituted
     );
     return type;
 }
-function trySimplify(
-    substitutions: ReadonlyMap<TypeId, Type>,
-    type: Type
-): Type | undefined {
+function tryApplyTypes(mapping: TypeMapping, type: Type): Type | undefined {
     switch (type.kind) {
-        case TypeKind.TypeVariable: {
-            const substituted = substitutions.get(type.typeId);
-            return (
-                substituted && getSubstitutedType(substitutions, substituted)
-            );
-        }
         case TypeKind.ParameterType:
+        case TypeKind.TypeVariable: {
+            const substituted = mapping.get(type.typeId);
+            return substituted && getSubstitutedType(mapping, substituted);
+        }
         case TypeKind.NamedType:
             return;
 
         case TypeKind.AbstractionType: {
-            const body = trySimplify(substitutions, type.body);
+            const body = tryApplyTypes(mapping, type.body);
             return (
                 body && createAbstractionType(type.source, type.parameter, body)
             );
         }
         case TypeKind.ApplicationType: {
-            const type1 = trySimplify(substitutions, type.type1);
-            const type2 = trySimplify(substitutions, type.type2);
+            const type1 = tryApplyTypes(mapping, type.type1);
+            const type2 = tryApplyTypes(mapping, type.type2);
             return (
                 (type1 || type2) &&
                 createApplicationType(
@@ -163,29 +190,30 @@ function trySimplify(
             );
         }
         case TypeKind.RecordType: {
-            let entries: Map<string, Type> | undefined;
-            for (const [k, t] of type.entries) {
-                const t2 = trySimplify(substitutions, t);
-                if (t2) {
-                    (entries ??= new Map()).set(k, t2);
-                }
-            }
-            if (entries) {
-                for (const [k, t] of type.entries) {
-                    if (!entries.has(k)) {
-                        entries.set(k, t);
-                    }
-                }
-                return createRecordType(type.source, entries);
-            }
+            const rows = tryApplyTypes(mapping, type.rows);
+            return rows && createRecordType(type.source, rows);
+        }
+        case TypeKind.RowEmptyType:
             return;
+        case TypeKind.RowExtendType: {
+            const rowValue = tryApplyTypes(mapping, type.rowValue);
+            const rows = tryApplyTypes(mapping, type.rows);
+            return (
+                (rowValue || rows) &&
+                createRowExtendType(
+                    type.source,
+                    type.rowLabel,
+                    rowValue ?? type.rowValue,
+                    rows ?? type.rows
+                )
+            );
         }
         default:
             return error`unexpected type: ${type satisfies never}`;
     }
 }
-export function simplify(substitutions: ReadonlyMap<TypeId, Type>, type: Type) {
-    return trySimplify(substitutions, type) ?? type;
+export function applyTypes(mapping: TypeMapping, type: Type) {
+    return tryApplyTypes(mapping, type) ?? type;
 }
 
 export type TypeSystem = ReturnType<typeof createTypeSystem>;
@@ -225,16 +253,33 @@ export function createTypeSystem(reporter: TypeDiagnosticReporter | undefined) {
         // unify Number String
         if (
             actual.kind === TypeKind.NamedType &&
-            expected.kind === TypeKind.NamedType
+            expected.kind === TypeKind.NamedType &&
+            actual.name === expected.name
         ) {
-            return unifyNamedTypes(actual, expected);
+            return;
         }
-        // unify { x: Number } { y: Number }
+        // unify {…} {…}
         if (
             actual.kind === TypeKind.RecordType &&
             expected.kind === TypeKind.RecordType
         ) {
-            return unifyRecordTypes(actual, expected);
+            return unifyType(actual.rows, expected.rows);
+        }
+        // unify {} {}
+        if (
+            actual.kind === TypeKind.RowEmptyType &&
+            expected.kind === TypeKind.RowEmptyType
+        ) {
+            return;
+        }
+        // unify { k: _, …R2 } { k: _, …R2 }
+        if (
+            actual.kind === TypeKind.RowExtendType &&
+            expected.kind === TypeKind.RowExtendType
+        ) {
+            const actualRows = unifyAsRowAndGetRows(actual, expected);
+            unifyType(actualRows, expected.rows);
+            return;
         }
         // unify (List Number) (Map String Number)
         if (
@@ -293,54 +338,58 @@ export function createTypeSystem(reporter: TypeDiagnosticReporter | undefined) {
             expected.source
         );
     }
+    function unifyAsRowAndGetRows(actual: Type, expected: RowExtendType): Type {
+        actual = getSubstitutedType(substitutions, actual);
+        switch (actual.kind) {
+            case TypeKind.RowEmptyType:
+                reporter?.(
+                    location,
+                    DiagnosticKind.RecordTypeMismatch,
+                    actual.source,
+                    expected.source,
+                    [expected.rowLabel],
+                    undefined
+                );
+                // TODO:
+                return expected.rows;
 
-    function unifyNamedTypes(actual: NamedType, expected: NamedType) {
-        if (actual.name !== expected.name) {
-            reporter?.(
-                location,
-                DiagnosticKind.TypeMismatch,
-                actual.source,
-                expected.source
-            );
-        }
-        return;
-    }
-
-    function unifyRecordTypes(actual: RecordType, expected: RecordType) {
-        // キーが一致しているかチェック
-        let requiredKeys;
-        let excessKeys;
-        for (const expectedKey of expected.entries.keys()) {
-            if (!actual.entries.has(expectedKey)) {
-                (requiredKeys ??= []).push(expectedKey);
+            case TypeKind.RowExtendType: {
+                if (actual.rowLabel === expected.rowLabel) {
+                    unifyType(actual.rowValue, expected.rowValue);
+                    return actual.rows;
+                }
+                return createRowExtendType(
+                    location,
+                    actual.rowLabel,
+                    actual.rowValue,
+                    unifyAsRowAndGetRows(actual.rows, expected)
+                );
             }
-        }
-        for (const actualKey of actual.entries.keys()) {
-            if (!expected.entries.has(actualKey)) {
-                (excessKeys ??= []).push(actualKey);
+            case TypeKind.TypeVariable: {
+                const actualRows = createTypeVariable(
+                    expected.source,
+                    actual.letDepth,
+                    actual.displayName
+                );
+                substitutions.set(
+                    actual.typeId,
+                    createRowExtendType(
+                        expected.source,
+                        expected.rowLabel,
+                        expected.rowValue,
+                        actualRows
+                    )
+                );
+                return actualRows;
             }
-        }
-        if (requiredKeys || excessKeys) {
-            requiredKeys?.sort();
-            excessKeys?.sort();
-            reporter?.(
-                location,
-                DiagnosticKind.RecordTypeMismatch,
-                actual.source,
-                expected.source,
-                requiredKeys,
-                excessKeys
-            );
-        }
-
-        // 要素の型をチェック
-        for (const key of expected.entries.keys()) {
-            unifyType(
-                // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-                actual.entries.get(key)!,
-                // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-                expected.entries.get(key)!
-            );
+            case TypeKind.AbstractionType:
+            case TypeKind.ApplicationType:
+            case TypeKind.NamedType:
+            case TypeKind.ParameterType:
+            case TypeKind.RecordType:
+                return expected.rows;
+            default:
+                return error`Invalid type: ${actual satisfies never}`;
         }
     }
     function unifyApplicationTypes(
@@ -367,22 +416,32 @@ export function createTypeSystem(reporter: TypeDiagnosticReporter | undefined) {
             substitutions = undefined as any;
         }
     }
+    const variables = new Map<TypeId, TypeVariable>();
+    const variableToParameter = new Map<TypeId, ParameterType>();
+    const typeParameters: ParameterType[] = [];
     function generalize(location: Syntax, type: Type, letDepth: number) {
-        const map = new Map<TypeId, Type>();
-        const typeParameters = [];
-        collectFreeVariables(type, map);
-        for (const [key, t] of [...map.entries()]) {
-            if (t.kind === TypeKind.TypeVariable && letDepth < t.letDepth) {
-                const parameter = createParameterType(location, t.displayName);
-                typeParameters.push(parameter);
-                map.set(key, parameter);
+        try {
+            collectFreeVariables(type, variables);
+            for (const v of variables.values()) {
+                if (letDepth < v.letDepth) {
+                    const parameter = createParameterType(
+                        location,
+                        v.displayName
+                    );
+                    variableToParameter.set(v.typeId, parameter);
+                    typeParameters.push(parameter);
+                }
             }
+            type = applyTypes(variableToParameter, type);
+            for (let parameter; (parameter = typeParameters.pop()); ) {
+                type = createAbstractionType(location, parameter, type);
+            }
+            return type;
+        } finally {
+            variables.clear();
+            variableToParameter.clear();
+            typeParameters.length = 0;
         }
-        type = applyTypes(map, type);
-        for (let parameter; (parameter = typeParameters.pop()); ) {
-            type = createAbstractionType(location, parameter, type);
-        }
-        return type;
     }
     function instantiate(location: Syntax, type: Type, letDepth: number): Type {
         let parameterIdToVariable;
@@ -424,45 +483,19 @@ function collectFreeVariables(type: Type, result: Map<TypeId, Type>) {
             collectFreeVariables(type.type1, result);
             collectFreeVariables(type.type2, result);
             return;
-        case TypeKind.RecordType: {
-            for (const t of type.entries.values())
-                collectFreeVariables(t, result);
+        case TypeKind.RowEmptyType:
             return;
-        }
+        case TypeKind.RowExtendType:
+            collectFreeVariables(type.rowValue, result);
+            collectFreeVariables(type.rows, result);
+            return;
+        case TypeKind.RecordType:
+            collectFreeVariables(type.rows, result);
+            return;
         case TypeKind.AbstractionType:
             collectFreeVariables(type.body, result);
             return;
         default:
             return error`Invalid type ${type satisfies never}`;
-    }
-}
-function applyTypes(mapping: ReadonlyMap<TypeId, Type>, type: Type): Type {
-    switch (type.kind) {
-        case TypeKind.NamedType:
-            return type;
-
-        case TypeKind.TypeVariable:
-        case TypeKind.ParameterType:
-            return mapping.get(type.typeId) ?? type;
-
-        case TypeKind.ApplicationType:
-            return createApplicationType(
-                type.source,
-                applyTypes(mapping, type.type1),
-                applyTypes(mapping, type.type2)
-            );
-        case TypeKind.RecordType: {
-            const entries = new Map<string, Type>();
-            for (const [k, t] of type.entries) {
-                entries.set(k, applyTypes(mapping, t));
-            }
-            return createRecordType(type.source, entries);
-        }
-        case TypeKind.AbstractionType:
-            return createAbstractionType(
-                type.source,
-                type.parameter,
-                applyTypes(mapping, type.body)
-            );
     }
 }

@@ -15,8 +15,10 @@ import {
     type TypeDiagnosticReporter,
     createApplicationType,
     createRecordType,
-    simplify,
+    applyTypes,
     createTypeSystem,
+    createRowEmptyType,
+    createRowExtendType,
 } from "./type";
 
 export function createChecker(
@@ -95,11 +97,39 @@ export function createChecker(
         return createRecoveryType(expression);
     }
     function checkRecordExpression(expression: RecordExpression): RecordType {
-        const entries = new Map<string, Type>();
+        let rows: Type = createRowEmptyType(expression);
         for (const [k, v] of expression.entries) {
-            entries.set(k.value, checkExpression(v));
+            rows = createRowExtendType(v, k.value, checkExpression(v), rows);
         }
-        return createRecordType(expression, entries);
+        return createRecordType(expression, rows);
+    }
+    function checkGetFormExpression(
+        head: Identifier,
+        { items: [, value, key] }: SequenceExpression
+    ) {
+        if (
+            value === undefined ||
+            key === undefined ||
+            (key.kind !== SyntaxKind.Identifier &&
+                key.kind !== SyntaxKind.StringToken)
+        ) {
+            report?.(head, DiagnosticKind.InvalidGetForm);
+        }
+        const valueType = checkOrRecoveryType(head, value);
+        const label =
+            key?.kind === SyntaxKind.Identifier ||
+            key?.kind === SyntaxKind.StringToken
+                ? key.value
+                : "";
+
+        const rowValue = createTypeVariable(key ?? head, letDepth, label);
+        const rows = createTypeVariable(head, letDepth, "fields");
+        const expectedRecordType = createRecordType(
+            key ?? head,
+            createRowExtendType(key ?? head, label, rowValue, rows)
+        );
+        unify(key ?? head, typeSubstitutions, valueType, expectedRecordType);
+        return rowValue;
     }
     function checkSequenceExpression(expression: SequenceExpression) {
         const {
@@ -120,6 +150,8 @@ export function createChecker(
                     return checkFunctionFormExpression(head, expression);
                 case "#let":
                     return checkLetFormExpression(head, expression);
+                case "#get":
+                    return checkGetFormExpression(head, expression);
             }
         }
         let headType = checkExpression(head);
@@ -160,12 +192,20 @@ export function createChecker(
         head: Identifier,
         { items: [, ...items] }: SequenceExpression
     ) {
-        const types = new Map<string, Type>();
+        let rows: Type = createRowEmptyType(head);
         for (let i = 0; i < items.length; i++) {
             // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-            types.set(String(i), checkExpression(items[i]!));
+            const item = items[i]!;
+            rows = createRowExtendType(
+                item,
+                // TODO:
+                String(i),
+                checkExpression(item),
+                rows
+            );
+            i++;
         }
-        return createRecordType(head, types);
+        return createRecordType(head, rows);
     }
     function checkIfFormExpression(
         head: Identifier,
@@ -249,7 +289,7 @@ export function createChecker(
                 variable.value,
                 generalize(
                     variable,
-                    simplify(typeSubstitutions, valueType),
+                    applyTypes(typeSubstitutions, valueType),
                     letDepth
                 ),
                 locals
