@@ -229,10 +229,53 @@ describe("record", () => {
             });
         });
     });
+    function pure(
+        entries: Readonly<Record<string, unknown>>
+    ): Record<string, unknown> {
+        return Object.assign(Object.create(null), entries);
+    }
     describe("extend", () => {
-        test("extendXY", () => {
+        test("XExtendY", () => {
             const source = `(#extend { x: 10 } y "abc")`;
-            expect(checkOk(source)).toStrictEqual({ x: 10, y: "abc" });
+            expect(checkOk(source)).toStrictEqual(pure({ x: 10, y: "abc" }));
+        });
+        test("extendX", () => {
+            const source = `
+                #let extendX (#function r (#extend r x 10))
+                (#tuple (extendX {}) (extendX { x: "abc" }) (extendX { y: "abc" }))
+            `;
+            expect(checkOk(source)).toStrictEqual([
+                pure({ x: 10 }),
+                pure({ x: 10 }),
+                pure({ x: 10, y: "abc" }),
+            ]);
+        });
+        test("extendXAndRecordX", () => {
+            const source = `(#list
+                (#extend {} x 10)
+                { x: 20 }
+            )`;
+            expect(checkOk(source)).toStrictEqual([
+                pure({ x: 10 }),
+                pure({ x: 20 }),
+            ]);
+        });
+        describe("error", () => {
+            test("numberExtend", () => {
+                const source = `(#extend 10 x "abc")`;
+                expect(checkError(source)).toStrictEqual(["TypeMismatch"]);
+            });
+            test("YAndX", () => {
+                const source = `(#list { x: "abc" } { y: "abc" })`;
+                expect(checkError(source)).toStrictEqual([
+                    "RecordTypeMismatch",
+                    "TypeMismatch",
+                ]);
+            });
+            test("fieldType", () => {
+                const source = `(#list { x: "abc" } { x: 123 })`;
+                expect(checkError(source)).toStrictEqual(["TypeMismatch"]);
+            });
         });
     });
 });
