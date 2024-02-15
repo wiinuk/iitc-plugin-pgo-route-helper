@@ -187,7 +187,7 @@ describe("level", () => {
     });
 });
 describe("record", () => {
-    describe("get", () => {
+    describe("#get", () => {
         test("getX", () => {
             const source = `
                 #let getX (#function p (#get p x))
@@ -234,7 +234,7 @@ describe("record", () => {
     ): Record<string, unknown> {
         return Object.assign(Object.create(null), entries);
     }
-    describe("extend", () => {
+    describe("#extend", () => {
         test("XExtendY", () => {
             const source = `(#extend { x: 10 } y "abc")`;
             expect(checkOk(source)).toStrictEqual(pure({ x: 10, y: "abc" }));
@@ -274,6 +274,50 @@ describe("record", () => {
             });
             test("fieldType", () => {
                 const source = `(#list { x: "abc" } { x: 123 })`;
+                expect(checkError(source)).toStrictEqual(["TypeMismatch"]);
+            });
+        });
+    });
+});
+describe("#tuple", () => {
+    describe("get", () => {
+        test("get0", () => {
+            const source = `
+                #let get0 (#function p (#get p 0))
+                (#tuple
+                    (get0 (#tuple 10))
+                    (get0 (#tuple "a" 12))
+                )
+            `;
+            expect(checkOk(source)).toStrictEqual([10, "a"]);
+        });
+        test("get01", () => {
+            const source = `
+                #let get01 (#function p (#tuple (#get p 0) (#get p 1)))
+                (get01 (#tuple "a" 12))
+            `;
+            expect(checkOk(source)).toStrictEqual(["a", 12]);
+        });
+        describe("error", () => {
+            test("get1", () => {
+                const source = `
+                    #let get1 (#function p (#get p 1))
+                    (get1 (#tuple "a"))
+                `;
+                expect(checkError(source)).toStrictEqual(["TypeMismatch"]);
+            });
+            test("get1 (#tuple 10)", () => {
+                const source = `
+                    #let get1 (#function p (#get p 1))
+                    (get1 (#tuple 10))
+                `;
+                expect(checkError(source)).toStrictEqual(["TypeMismatch"]);
+            });
+            test("get1 10", () => {
+                const source = `
+                    #let get1 (#function p (#get p 1))
+                    (get1 10)
+                `;
                 expect(checkError(source)).toStrictEqual(["TypeMismatch"]);
             });
         });
