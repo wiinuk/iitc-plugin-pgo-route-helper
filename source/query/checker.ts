@@ -7,7 +7,6 @@ import {
     type Identifier,
     type RecordExpression,
     type SequenceExpression,
-    type StringToken,
 } from "./syntax";
 import {
     type Type,
