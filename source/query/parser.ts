@@ -348,23 +348,20 @@ export function createParser(
                 return parseParenthesisExpressionTail();
             case SyntaxKind["{"]:
                 return parseRecordTail();
-            case SyntaxKind.StringToken: {
+            case SyntaxKind.StringToken:
                 token = setPositionsOfCurrentToken(
                     createStringToken(JSON.parse(getText()) as string)
                 );
                 break;
-            }
-            case SyntaxKind.NumberToken: {
+            case SyntaxKind.NumberToken:
                 token = setPositionsOfCurrentToken(
                     createNumberToken(JSON.parse(getText()) as number)
                 );
                 break;
-            }
-            case SyntaxKind.Identifier: {
+            case SyntaxKind.Identifier:
                 token = setPositionsOfCurrentToken(createIdentifier(getText()));
                 break;
-            }
-            default: {
+            default:
                 kind satisfies
                     | SyntaxKind.Unknown
                     | (typeof SyntaxKind)[")"]
@@ -380,7 +377,6 @@ export function createParser(
                 );
                 token = setPositionsOfCurrentToken(createIdentifier(getText()));
                 break;
-            }
         }
         nextToken();
         return token;
