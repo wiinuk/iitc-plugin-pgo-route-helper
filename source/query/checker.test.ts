@@ -229,4 +229,10 @@ describe("record", () => {
             });
         });
     });
+    describe("extend", () => {
+        test("extendXY", () => {
+            const source = `(#extend { x: 10 } y "abc")`;
+            expect(checkOk(source)).toStrictEqual({ x: 10, y: "abc" });
+        });
+    });
 });
