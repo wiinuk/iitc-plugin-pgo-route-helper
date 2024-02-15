@@ -1,12 +1,42 @@
 import type { Json } from "../standard-extensions";
 
-export enum SyntaxKind {
+export const enum SyntaxKind {
+    Unknown = "Unknown",
+    EndOfSource = "EndOfSource",
+
+    SequenceExpression = "SequenceExpression",
+    RecordExpression = "RecordExpression",
+
+    WhiteSpaces = "WhiteSpaces",
+    Comment = "Comment",
     NumberToken = "NumberToken",
     StringToken = "StringToken",
     Identifier = "Identifier",
-    SequenceExpression = "SequenceExpression",
-    RecordExpression = "RecordExpression",
+    ["("] = "(",
+    [")"] = ")",
+    ["{"] = "{",
+    ["}"] = "}",
+    [","] = ",",
+    [":"] = ":",
+    AtName = "AtName",
+    ["_"] = "",
 }
+export type TokenKind =
+    | SyntaxKind.Unknown
+    | (typeof SyntaxKind)["("]
+    | (typeof SyntaxKind)[")"]
+    | (typeof SyntaxKind)["{"]
+    | (typeof SyntaxKind)["}"]
+    | (typeof SyntaxKind)[","]
+    | (typeof SyntaxKind)[","]
+    | (typeof SyntaxKind)[":"]
+    | SyntaxKind.NumberToken
+    | SyntaxKind.StringToken
+    | SyntaxKind.Identifier
+    | SyntaxKind.AtName
+    | SyntaxKind.WhiteSpaces
+    | SyntaxKind.Comment
+    | SyntaxKind.EndOfSource;
 
 const privateSyntaxIdBrand = Symbol("privateSyntaxIdBrand");
 export type SyntaxId = number & { readonly [privateSyntaxIdBrand]: never };

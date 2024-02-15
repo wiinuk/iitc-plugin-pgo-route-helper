@@ -7,6 +7,8 @@ import {
     createStringToken,
     createSequenceExpression,
     createNumberToken,
+    type TokenKind,
+    SyntaxKind,
 } from "./syntax";
 const enum CharacterCodes {
     ['"'] = 34,
@@ -99,53 +101,81 @@ function isUnicodeWhiteSpace(codePoint: number) {
 
 type TokenDefinition<T> = readonly [
     pattern: RegExp,
-    action?: (xs: readonly [string, ...string[]]) => T
+    action: (xs: readonly [string, ...string[]]) => T
 ];
-type TokenDefinitions<T> = readonly TokenDefinition<T>[];
+type TokenDefinitions<T> = {
+    getEos(): T;
+    getDefault(): T;
+    tokens: readonly TokenDefinition<T>[];
+};
 
+interface Tokenizer<T> {
+    next(): T;
+    getTokenText(): string;
+    getPosition(): number;
+}
 export function createTokenizer<T>(
     source: string,
-    definitions: TokenDefinitions<T>
-) {
+    { tokens, getDefault, getEos }: TokenDefinitions<T>
+): Tokenizer<T> {
+    const sourceLength = source.length;
     let remainingSource = source;
+    let lastSource = source;
+    let lastMatchLength = 0;
+    function getTokenText() {
+        return lastSource.slice(0, lastMatchLength);
+    }
+    function getPosition() {
+        return sourceLength - remainingSource.length;
+    }
     function next() {
-        if (remainingSource.length <= 0) return;
-        for (const [pattern, action] of definitions) {
+        if (remainingSource.length <= 0) return getEos();
+        for (const [pattern, action] of tokens) {
             const match = pattern.exec(remainingSource);
             if (match && match.index === 0) {
-                const token = action
-                    ? action(
-                          match as readonly string[] as readonly [
-                              string,
-                              ...string[]
-                          ]
-                      )
-                    : match[0];
-                remainingSource = remainingSource.slice(match[0].length);
+                const token = action(
+                    match as readonly string[] as readonly [string, ...string[]]
+                );
+
+                lastSource = remainingSource;
+                lastMatchLength = match[0].length;
+                remainingSource = remainingSource.slice(lastMatchLength);
                 return token;
             }
         }
+        return getDefault();
     }
-    return { next };
+    return { next, getTokenText, getPosition };
 }
-export const tokenDefinitions: TokenDefinitions<string> = [
-    // 行コメント // comment
-    [/\/\/.*?(\n|$)/],
-    // 複数行コメント /* comment */
-    [/\/\*[\s\S]*?\*\//],
-    // キーワードや記号
-    [/true|false|null|[[\](){},:]/],
-    // @始まりの中置き演算子
-    [/@[^\s/[\](){}@,:"\\]+/],
-    // 識別子形式の文字列 { key: 0 }
-    [/[^\s/[\](){}@,:"\\\d][^\s/[\](){}@,:"\\]*/],
-    // 空白
-    [/\s+/],
-    // 数値リテラル
-    [/-?\d+(\.\d+)?([eE]\d+)?/],
-    // 文字列リテラル
-    [/"([^"]|\\")*"/],
-];
+export const tokenDefinitions: TokenDefinitions<TokenKind> = {
+    tokens: [
+        // 行コメント // comment
+        [/\/\/.*?(\n|$)/, () => SyntaxKind.Comment],
+        // 複数行コメント /* comment */
+        [/\/\*[\s\S]*?\*\//, () => SyntaxKind.Comment],
+        // 記号
+        [/[[\](){},:]/, ([x]) => getTokenKind(x)],
+        // @始まりの中置き演算子
+        [/@[^\s/[\](){}@,:"\\]+/, () => SyntaxKind.AtName],
+        // 識別子形式の文字列 { key: 0 }
+        [
+            /[^\s/[\](){}@,:"\\\d][^\s/[\](){}@,:"\\]*/,
+            () => SyntaxKind.Identifier,
+        ],
+        // 空白
+        [/\s+/, () => SyntaxKind.WhiteSpaces],
+        // 数値リテラル
+        [/-?\d+(\.\d+)?([eE]\d+)?/, () => SyntaxKind.NumberToken],
+        // 文字列リテラル
+        [/"([^"]|\\")*"/, () => SyntaxKind.StringToken],
+    ],
+    getEos() {
+        return SyntaxKind.EndOfSource;
+    },
+    getDefault() {
+        return SyntaxKind.Unknown;
+    },
+};
 
 type Token = string | undefined;
 export const enum DiagnosticKind {
@@ -169,67 +199,64 @@ export const enum DiagnosticKind {
     TypeMismatch = "TypeMismatch",
     RecordTypeMismatch = "RecordTypeMismatch",
 }
-type TokenKind =
-    | "Unknown"
-    | "("
-    | ")"
-    | "{"
-    | "}"
-    | ","
-    | ":"
-    | "Number"
-    | "String"
-    | "Name"
-    | "AtName"
-    | "WhiteSpace"
-    | "Comment"
-    | "EndOfSource";
 
 function getTokenKind(token: Token): TokenKind {
     switch (token) {
         case undefined:
-            return "EndOfSource";
+            return SyntaxKind.EndOfSource;
         case "(":
+            return SyntaxKind["("];
         case ")":
+            return SyntaxKind[")"];
         case "{":
+            return SyntaxKind["{"];
         case "}":
+            return SyntaxKind["}"];
         case ",":
+            return SyntaxKind[","];
         case ":":
-            return token;
+            return SyntaxKind[":"];
     }
     const code0 = token.codePointAt(0) ?? error`internal error`;
-    if (code0 === CharacterCodes["/"]) return "Comment";
-    if (code0 === CharacterCodes['"']) return "String";
-    if (code0 === CharacterCodes["@"]) return "AtName";
-    if (isAsciiDigit(code0)) return "Number";
-    if (isUnicodeWhiteSpace(code0)) return "WhiteSpace";
-    return "Name";
+    if (code0 === CharacterCodes["/"]) return SyntaxKind.Comment;
+    if (code0 === CharacterCodes['"']) return SyntaxKind.StringToken;
+    if (code0 === CharacterCodes["@"]) return SyntaxKind.AtName;
+    if (isAsciiDigit(code0)) return SyntaxKind.NumberToken;
+    if (isUnicodeWhiteSpace(code0)) return SyntaxKind.WhiteSpaces;
+    return SyntaxKind.Identifier;
 }
 
 export function createParser(
-    { next }: { next(): string | undefined },
+    { next, getTokenText, getPosition }: Tokenizer<TokenKind>,
     reporter?: (kind: DiagnosticKind) => void
 ) {
-    let currentToken: Token;
-    let currentTokenKind: TokenKind = "Unknown";
+    let fullStart = -1;
+    let position = -1;
+    let end = -1;
+    let currentTokenKind: TokenKind = SyntaxKind.Unknown;
     function nextToken() {
+        fullStart = getPosition();
         do {
-            currentToken = next();
-            currentTokenKind = getTokenKind(currentToken);
+            position = getPosition();
+            currentTokenKind = next();
         } while (
-            currentTokenKind === "WhiteSpace" ||
-            currentTokenKind === "Comment"
+            currentTokenKind === SyntaxKind.WhiteSpaces ||
+            currentTokenKind === SyntaxKind.Comment
         );
+        end = getPosition();
     }
-    function skipToken(expectedToken: string, diagnosticKind: DiagnosticKind) {
-        if (currentToken !== expectedToken) {
+    function skipToken(
+        expectedToken: TokenKind,
+        diagnosticKind: DiagnosticKind
+    ) {
+        if (currentTokenKind !== expectedToken) {
             reporter?.(diagnosticKind);
             return;
         }
         nextToken();
     }
-    function trySkipToken(expectedToken: string) {
-        return currentToken === expectedToken && (nextToken(), true);
+    function trySkipToken(expectedToken: TokenKind) {
+        return currentTokenKind === expectedToken && (nextToken(), true);
     }
     function createRecoveryToken() {
         return createIdentifier("");
@@ -241,8 +268,8 @@ export function createParser(
     // operator-expression-or-higher := concatenation-expression (at-name concatenation-expression)*
     function parseOperatorExpressionOrHigher() {
         let left = parseConcatenationExpression();
-        while (currentTokenKind === "AtName") {
-            const operatorName = `_${currentToken?.slice(1)}_`;
+        while (currentTokenKind === SyntaxKind.AtName) {
+            const operatorName = `_${getTokenText().slice(1)}_`;
             nextToken();
             const right = parseConcatenationExpression();
             left = createSequenceExpression([
@@ -272,83 +299,98 @@ export function createParser(
     //     | record-expression
     function isPrimaryExpressionHead() {
         switch (currentTokenKind) {
-            case "{":
-            case "Number":
-            case "String":
-            case "Name":
-            case "(":
+            case SyntaxKind["{"]:
+            case SyntaxKind["("]:
+            case SyntaxKind.NumberToken:
+            case SyntaxKind.StringToken:
+            case SyntaxKind.Identifier:
                 return true;
             default:
                 return false;
         }
     }
     function parsePrimaryExpression(): Expression {
-        const token = currentToken;
         const tokenKind = currentTokenKind;
-        if (token === undefined) {
+        if (tokenKind === SyntaxKind.EndOfSource) {
             reporter?.(DiagnosticKind.AnyTokenRequired);
             return createRecoveryToken();
         }
 
-        nextToken();
         switch (tokenKind) {
-            // リスト
-            case "(":
+            case SyntaxKind["("]:
                 return parseParenthesisExpressionTail();
-            // レコード
-            case "{":
+            case SyntaxKind["{"]:
                 return parseRecordTail();
-            // 文字列リテラル: "abc" => ["abc"]
-            case "String":
-                return createStringToken(JSON.parse(token) as string);
-            // 数値リテラル
-            case "Number":
-                return createNumberToken(JSON.parse(token) as number);
-            // 名前: xyz => "xyz"
-            case "Name":
-                return createIdentifier(token);
-            default:
+            case SyntaxKind.StringToken: {
+                const value = JSON.parse(getTokenText()) as string;
+                nextToken();
+                return createStringToken(value);
+            }
+            case SyntaxKind.NumberToken: {
+                const value = JSON.parse(getTokenText()) as number;
+                nextToken();
+                return createNumberToken(value);
+            }
+            case SyntaxKind.Identifier: {
+                const value = getTokenText();
+                nextToken();
+                return createIdentifier(value);
+            }
+            default: {
                 tokenKind satisfies
-                    | "Unknown"
-                    | ")"
-                    | "}"
-                    | ","
-                    | ":"
-                    | "AtName"
-                    | "WhiteSpace"
-                    | "Comment"
-                    | "EndOfSource";
+                    | SyntaxKind.Unknown
+                    | (typeof SyntaxKind)[")"]
+                    | (typeof SyntaxKind)["}"]
+                    | (typeof SyntaxKind)[","]
+                    | (typeof SyntaxKind)[":"]
+                    | SyntaxKind.AtName
+                    | SyntaxKind.WhiteSpaces
+                    | SyntaxKind.Comment
+                    | SyntaxKind.EndOfSource;
                 reporter?.(
                     DiagnosticKind.LeftParenthesesOrLeftCurlyBracketOrLiteralOrNameRequired
                 );
-                return createIdentifier(token);
+                const value = getTokenText();
+                nextToken();
+                return createIdentifier(value);
+            }
         }
     }
     function parseParenthesisExpressionTail() {
+        // (
+        nextToken();
         const value = parseExpression();
-        skipToken(")", DiagnosticKind.RightParenthesisTokenExpected);
+        skipToken(
+            SyntaxKind[")"],
+            DiagnosticKind.RightParenthesisTokenExpected
+        );
         return value;
     }
     function parseRecordTail() {
+        // {
+        nextToken();
         const entries: RecordEntry[] = [];
         parseEntries: {
             do {
-                if (trySkipToken("}")) break parseEntries;
+                if (trySkipToken(SyntaxKind["}"])) break parseEntries;
                 const key = parseRecordKey();
-                skipToken(":", DiagnosticKind.CommaTokenExpected);
+                skipToken(SyntaxKind[":"], DiagnosticKind.CommaTokenExpected);
                 entries.push([key, parseExpression()]);
-            } while (trySkipToken(","));
-            skipToken("}", DiagnosticKind.RightCurlyBracketTokenExpected);
+            } while (trySkipToken(SyntaxKind[","]));
+            skipToken(
+                SyntaxKind["}"],
+                DiagnosticKind.RightCurlyBracketTokenExpected
+            );
         }
         return createRecordExpression(entries);
     }
     function parseRecordKey() {
-        const token = currentToken;
+        const token = getTokenText();
         switch (currentTokenKind) {
-            case "Name":
+            case SyntaxKind.Identifier:
                 nextToken();
-                return createIdentifier(token ?? error`internal error`);
-            case "String":
+                return createIdentifier(token);
+            case SyntaxKind.StringToken:
                 nextToken();
                 return createStringToken(JSON.stringify(token) as string);
         }
