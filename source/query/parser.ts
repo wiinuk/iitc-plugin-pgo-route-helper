@@ -419,25 +419,22 @@ export function createParser(
     }
     function parseRecordKey() {
         const text = getText();
+        let token;
         switch (tokenKind) {
-            case SyntaxKind.Identifier: {
-                const token = setPositionsOfCurrentToken(
-                    createIdentifier(text)
-                );
-                nextToken();
-                return token;
-            }
-            case SyntaxKind.StringToken: {
-                const token = setPositionsOfCurrentToken(
+            case SyntaxKind.Identifier:
+                token = setPositionsOfCurrentToken(createIdentifier(text));
+                break;
+            case SyntaxKind.StringToken:
+                token = setPositionsOfCurrentToken(
                     createStringToken(JSON.parse(text) as string)
                 );
-                nextToken();
-                return token;
-            }
+                break;
+            default:
+                reporter?.(DiagnosticKind.StringLiteralOrNameRequired);
+                token = createRecoveryToken();
         }
-        reporter?.(DiagnosticKind.StringLiteralOrNameRequired);
         nextToken();
-        return createRecoveryToken();
+        return token;
     }
     return {
         parse() {
