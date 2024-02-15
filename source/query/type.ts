@@ -244,7 +244,7 @@ export function createTypeSystem(reporter: TypeDiagnosticReporter | undefined) {
         };
     }
 
-    let location: Syntax;
+    let source: Syntax;
     let substitutions: Map<TypeId, Type>;
     function unifyType(actual: Type, expected: Type) {
         actual = getSubstitutedType(substitutions, actual);
@@ -295,7 +295,7 @@ export function createTypeSystem(reporter: TypeDiagnosticReporter | undefined) {
         ) {
             if (actual.typeId !== expected.typeId) {
                 reporter?.(
-                    location,
+                    source,
                     DiagnosticKind.TypeMismatch,
                     actual.source,
                     expected.source
@@ -312,7 +312,7 @@ export function createTypeSystem(reporter: TypeDiagnosticReporter | undefined) {
                 return;
             }
             const newVariable = createTypeVariable(
-                location,
+                source,
                 Math.min(actual.letDepth, expected.letDepth),
                 actual.displayName
             );
@@ -332,7 +332,7 @@ export function createTypeSystem(reporter: TypeDiagnosticReporter | undefined) {
         }
 
         return reporter?.(
-            location,
+            source,
             DiagnosticKind.TypeMismatch,
             actual.source,
             expected.source
@@ -343,7 +343,7 @@ export function createTypeSystem(reporter: TypeDiagnosticReporter | undefined) {
         switch (actual.kind) {
             case TypeKind.RowEmptyType:
                 reporter?.(
-                    location,
+                    source,
                     DiagnosticKind.RecordTypeMismatch,
                     actual.source,
                     expected.source,
@@ -359,7 +359,7 @@ export function createTypeSystem(reporter: TypeDiagnosticReporter | undefined) {
                     return actual.rows;
                 }
                 return createRowExtendType(
-                    location,
+                    source,
                     actual.rowLabel,
                     actual.rowValue,
                     unifyAsRowAndGetRows(actual.rows, expected)
@@ -399,19 +399,19 @@ export function createTypeSystem(reporter: TypeDiagnosticReporter | undefined) {
         unifyType(actual.type1, expected.type1);
         unifyType(actual.type2, expected.type2);
     }
-    function unify(
-        source: Syntax,
+    function initializeAndUnify(
+        location: Syntax,
         typeSubstitutions: Map<TypeId, Type>,
         actual: Type,
         expected: Type
     ) {
-        location = source;
+        source = location;
         substitutions = typeSubstitutions;
         try {
             unifyType(actual, expected);
         } finally {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            location = undefined as any;
+            source = undefined as any;
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             substitutions = undefined as any;
         }
@@ -465,7 +465,7 @@ export function createTypeSystem(reporter: TypeDiagnosticReporter | undefined) {
     return {
         createTypeVariable,
         createParameterType,
-        unify,
+        unify: initializeAndUnify,
         generalize,
         instantiate,
     };
