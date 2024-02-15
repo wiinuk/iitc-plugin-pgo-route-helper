@@ -112,7 +112,7 @@ type TokenDefinitions<T> = {
 
 interface Tokenizer<T> {
     next(): T;
-    getTokenText(): string;
+    getText(): string;
     getPosition(): number;
 }
 export function createTokenizer<T>(
@@ -123,7 +123,7 @@ export function createTokenizer<T>(
     let remainingSource = source;
     let lastSource = source;
     let lastMatchLength = 0;
-    function getTokenText() {
+    function getText() {
         return lastSource.slice(0, lastMatchLength);
     }
     function getPosition() {
@@ -146,7 +146,7 @@ export function createTokenizer<T>(
         }
         return getDefault();
     }
-    return { next, getTokenText, getPosition };
+    return { next, getText, getPosition };
 }
 export const tokenDefinitions: TokenDefinitions<TokenKind> = {
     tokens: [
@@ -245,7 +245,7 @@ function setPositionsOfSyntax<T extends Syntax>(
     return setPositions(target, start.start, end.end);
 }
 export function createParser(
-    { next, getTokenText, getPosition }: Tokenizer<TokenKind>,
+    { next, getText, getPosition }: Tokenizer<TokenKind>,
     reporter?: (kind: DiagnosticKind) => void
 ) {
     let tokenStart = -1;
@@ -288,7 +288,7 @@ export function createParser(
     function parseOperatorExpressionOrHigher() {
         let left = parseConcatenationExpression();
         while (tokenKind === SyntaxKind.AtName) {
-            const operatorName = `_${getTokenText().slice(1)}_`;
+            const operatorName = `_${getText().slice(1)}_`;
             const operator = setPositionsOfCurrentToken(
                 createIdentifier(operatorName)
             );
@@ -350,20 +350,18 @@ export function createParser(
                 return parseRecordTail();
             case SyntaxKind.StringToken: {
                 token = setPositionsOfCurrentToken(
-                    createStringToken(JSON.parse(getTokenText()) as string)
+                    createStringToken(JSON.parse(getText()) as string)
                 );
                 break;
             }
             case SyntaxKind.NumberToken: {
                 token = setPositionsOfCurrentToken(
-                    createNumberToken(JSON.parse(getTokenText()) as number)
+                    createNumberToken(JSON.parse(getText()) as number)
                 );
                 break;
             }
             case SyntaxKind.Identifier: {
-                token = setPositionsOfCurrentToken(
-                    createIdentifier(getTokenText())
-                );
+                token = setPositionsOfCurrentToken(createIdentifier(getText()));
                 break;
             }
             default: {
@@ -380,9 +378,7 @@ export function createParser(
                 reporter?.(
                     DiagnosticKind.LeftParenthesesOrLeftCurlyBracketOrLiteralOrNameRequired
                 );
-                token = setPositionsOfCurrentToken(
-                    createIdentifier(getTokenText())
-                );
+                token = setPositionsOfCurrentToken(createIdentifier(getText()));
                 break;
             }
         }
@@ -426,7 +422,7 @@ export function createParser(
         return setPositions(createRecordExpression(entries), start, end);
     }
     function parseRecordKey() {
-        const text = getTokenText();
+        const text = getText();
         switch (tokenKind) {
             case SyntaxKind.Identifier: {
                 const token = setPositionsOfCurrentToken(
