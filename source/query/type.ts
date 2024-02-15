@@ -56,7 +56,7 @@ export function createRowEmptyType(source: Syntax): RowEmptyType {
 }
 export interface RowExtendType extends TypeBase {
     readonly kind: TypeKind.RowExtendType;
-    readonly rowLabel: string;
+    readonly rowLabel: string | number;
     readonly rowValue: Type;
     readonly rows: Type;
 }
@@ -143,8 +143,8 @@ export type TypeDiagnostics =
           kind: DiagnosticKind.RecordTypeMismatch,
           actualSource: Syntax,
           expectedTypeSource: Syntax,
-          requiredKeys: readonly [string, ...string[]] | undefined,
-          excessKeys: readonly [string, ...string[]] | undefined
+          requiredKeys: readonly (string | number)[] | undefined,
+          excessKeys: readonly (string | number)[] | undefined
       ];
 export type TypeDiagnosticReporter = (
     location: Syntax,

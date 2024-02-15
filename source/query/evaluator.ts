@@ -167,12 +167,14 @@ function evaluateGetForm(
         record === undefined ||
         key === undefined ||
         (key.kind !== SyntaxKind.Identifier &&
-            key.kind !== SyntaxKind.StringToken)
+            key.kind !== SyntaxKind.StringToken &&
+            (key.kind !== SyntaxKind.NumberToken ||
+                (key.value | 0) !== key.value))
     ) {
-        return error`#get 形式の要素1には式、要素2にはフィールド名が必要です。`;
+        return error`#get 形式の要素1には式、要素2にはフィールド名またはインデックスが必要です。`;
     }
     const value = evaluateExpression(record, variables, getUnresolved);
-    return (value as Record<string, unknown>)[key.value];
+    return (value as Record<string | number, unknown>)[key.value];
 }
 function evaluateExtendForm(
     [, record, key, field]: readonly Expression[],

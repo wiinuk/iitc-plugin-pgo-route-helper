@@ -104,10 +104,13 @@ export function createChecker(
         return createRecordType(expression, rows);
     }
     function getLabel(key: Expression | undefined) {
-        return key?.kind === SyntaxKind.Identifier ||
-            key?.kind === SyntaxKind.StringToken
-            ? key.value
-            : "";
+        switch (key?.kind) {
+            case SyntaxKind.Identifier:
+            case SyntaxKind.StringToken:
+            case SyntaxKind.NumberToken:
+                return key.value;
+        }
+        return "";
     }
     function checkGetFormExpression(
         head: Identifier,
@@ -117,13 +120,19 @@ export function createChecker(
             record === undefined ||
             key === undefined ||
             (key.kind !== SyntaxKind.Identifier &&
-                key.kind !== SyntaxKind.StringToken)
+                key.kind !== SyntaxKind.StringToken &&
+                (key.kind !== SyntaxKind.NumberToken ||
+                    (key.value | 0) !== key.value))
         ) {
             report?.(head, DiagnosticKind.InvalidGetForm);
         }
         const recordType = checkOrRecoveryType(head, record);
         const label = getLabel(key);
-        const fieldType = createTypeVariable(key ?? head, letDepth, label);
+        const fieldType = createTypeVariable(
+            key ?? head,
+            letDepth,
+            String(label)
+        );
         const fieldsType = createTypeVariable(head, letDepth, "fields");
         const expectedRecordType = createRecordType(
             key ?? head,
@@ -228,13 +237,7 @@ export function createChecker(
         for (let i = 0; i < items.length; i++) {
             // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
             const item = items[i]!;
-            rows = createRowExtendType(
-                item,
-                // TODO:
-                String(i),
-                checkExpression(item),
-                rows
-            );
+            rows = createRowExtendType(item, i, checkExpression(item), rows);
             i++;
         }
         return createRecordType(head, rows);
