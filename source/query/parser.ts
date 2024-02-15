@@ -156,9 +156,9 @@ export const tokenDefinitions: TokenDefinitions<TokenKind> = {
         [/\/\*[\s\S]*?\*\//, () => SyntaxKind.Comment],
         // 記号
         [/[[\](){},:]/, ([x]) => getTokenKind(x)],
-        // @始まりの中置き演算子
+        // @始まりの中置演算子
         [/@[^\s/[\](){}@,:"\\]+/, () => SyntaxKind.AtName],
-        // 識別子形式の文字列 { key: 0 }
+        // 識別子形式の文字列
         [
             /[^\s/[\](){}@,:"\\\d][^\s/[\](){}@,:"\\]*/,
             () => SyntaxKind.Identifier,
