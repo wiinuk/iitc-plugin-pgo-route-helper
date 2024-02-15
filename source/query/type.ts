@@ -126,6 +126,7 @@ export type TypeDiagnostics =
               | DiagnosticKind.InvalidFunctionForm
               | DiagnosticKind.InvalidLetForm
               | DiagnosticKind.InvalidGetForm
+              | DiagnosticKind.InvalidExtendForm
       ]
     | [
           kind:

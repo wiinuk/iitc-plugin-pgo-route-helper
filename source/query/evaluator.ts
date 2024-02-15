@@ -2,9 +2,10 @@ import * as Assoc from "../assoc";
 import { error } from "../standard-extensions";
 import { SyntaxKind, type Expression, type SequenceExpression } from "./syntax";
 
+type Locals = Assoc.Assoc<string, unknown>;
 export function evaluateExpression(
     expression: Expression,
-    variables: Assoc.Assoc<string, unknown>,
+    variables: Locals,
     getUnresolved: (name: string) => unknown
 ): unknown {
     switch (expression.kind) {
@@ -40,7 +41,7 @@ export function evaluateExpression(
 }
 function evaluateSequenceExpression(
     { items }: SequenceExpression,
-    variables: Assoc.Assoc<string, unknown>,
+    variables: Locals,
     getUnresolved: (name: string) => unknown
 ) {
     const head = items[0];
@@ -58,6 +59,8 @@ function evaluateSequenceExpression(
                 return evaluateLetForm(items, variables, getUnresolved);
             case "#get":
                 return evaluateGetForm(items, variables, getUnresolved);
+            case "#extend":
+                return evaluateExtendForm(items, variables, getUnresolved);
         }
     }
     let headValue = evaluateExpression(head, variables, getUnresolved);
@@ -79,7 +82,7 @@ function evaluateSequenceExpression(
 }
 function evaluateListOrTupleForm(
     items: readonly Expression[],
-    variables: Assoc.Assoc<string, unknown>,
+    variables: Locals,
     getUnresolved: (name: string) => unknown
 ) {
     const list = [];
@@ -97,7 +100,7 @@ function evaluateListOrTupleForm(
 }
 function evaluateIfForm(
     [, condition, ifNotFalsy, ifFalsy]: readonly Expression[],
-    variables: Assoc.Assoc<string, unknown>,
+    variables: Locals,
     getUnresolved: (name: string) => unknown
 ) {
     if (
@@ -117,7 +120,7 @@ function evaluateIfForm(
 }
 function evaluateFunctionForm(
     [, parameter, body]: readonly Expression[],
-    variables: Assoc.Assoc<string, unknown>,
+    variables: Locals,
     getUnresolved: (name: string) => unknown
 ) {
     if (
@@ -137,7 +140,7 @@ function evaluateFunctionForm(
 }
 function evaluateLetForm(
     [, variable, value, scope]: readonly Expression[],
-    variables: Assoc.Assoc<string, unknown>,
+    variables: Locals,
     getUnresolved: (name: string) => unknown
 ) {
     if (
@@ -157,7 +160,7 @@ function evaluateLetForm(
 }
 function evaluateGetForm(
     [, record, key]: readonly Expression[],
-    variables: Assoc.Assoc<string, unknown>,
+    variables: Locals,
     getUnresolved: (name: string) => unknown
 ) {
     if (
@@ -170,4 +173,25 @@ function evaluateGetForm(
     }
     const value = evaluateExpression(record, variables, getUnresolved);
     return (value as Record<string, unknown>)[key.value];
+}
+function evaluateExtendForm(
+    [, record, key, field]: readonly Expression[],
+    variables: Locals,
+    getUnresolved: (name: string) => unknown
+) {
+    if (
+        record === undefined ||
+        key === undefined ||
+        (key.kind !== SyntaxKind.Identifier &&
+            key.kind !== SyntaxKind.StringToken) ||
+        field === undefined
+    ) {
+        return error`#extend 形式の要素1には式、要素2にはフィールド名、要素3には式が必要です。`;
+    }
+    const recordValue = evaluateExpression(record, variables, getUnresolved);
+    const fieldValue = evaluateExpression(field, variables, getUnresolved);
+
+    const result = Object.assign(recordValue as object);
+    result[key.value] = fieldValue;
+    return result;
 }

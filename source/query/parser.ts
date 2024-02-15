@@ -157,6 +157,7 @@ export const enum DiagnosticKind {
     LeftParenthesesOrLeftCurlyBracketOrLiteralOrNameRequired = "LeftParenthesesOrLeftCurlyBracketOrLiteralOrNameRequired",
     EndOfSourceOrAtNameExpected = "EndOfSourceOrAtNameExpected",
     InvalidGetForm = "InvalidGetForm",
+    InvalidExtendForm = "InvalidExtendForm",
 }
 // for checker
 export const enum DiagnosticKind {

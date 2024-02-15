@@ -7,6 +7,7 @@ import {
     type Identifier,
     type RecordExpression,
     type SequenceExpression,
+    type StringToken,
 } from "./syntax";
 import {
     type Type,
@@ -103,33 +104,63 @@ export function createChecker(
         }
         return createRecordType(expression, rows);
     }
+    function getLabel(key: Expression | undefined) {
+        return key?.kind === SyntaxKind.Identifier ||
+            key?.kind === SyntaxKind.StringToken
+            ? key.value
+            : "";
+    }
     function checkGetFormExpression(
         head: Identifier,
-        { items: [, value, key] }: SequenceExpression
+        { items: [, record, key] }: SequenceExpression
     ) {
         if (
-            value === undefined ||
+            record === undefined ||
             key === undefined ||
             (key.kind !== SyntaxKind.Identifier &&
                 key.kind !== SyntaxKind.StringToken)
         ) {
             report?.(head, DiagnosticKind.InvalidGetForm);
         }
-        const valueType = checkOrRecoveryType(head, value);
-        const label =
-            key?.kind === SyntaxKind.Identifier ||
-            key?.kind === SyntaxKind.StringToken
-                ? key.value
-                : "";
-
-        const rowValue = createTypeVariable(key ?? head, letDepth, label);
-        const rows = createTypeVariable(head, letDepth, "fields");
+        const recordType = checkOrRecoveryType(head, record);
+        const label = getLabel(key);
+        const fieldType = createTypeVariable(key ?? head, letDepth, label);
+        const fieldsType = createTypeVariable(head, letDepth, "fields");
         const expectedRecordType = createRecordType(
             key ?? head,
-            createRowExtendType(key ?? head, label, rowValue, rows)
+            createRowExtendType(key ?? head, label, fieldType, fieldsType)
         );
-        unify(key ?? head, typeSubstitutions, valueType, expectedRecordType);
-        return rowValue;
+        unify(key ?? head, typeSubstitutions, recordType, expectedRecordType);
+        return fieldType;
+    }
+    function checkExtendFormExpression(
+        head: Identifier,
+        { items: [, record, key, field] }: SequenceExpression
+    ) {
+        if (
+            record === undefined ||
+            key === undefined ||
+            (key.kind !== SyntaxKind.Identifier &&
+                key.kind !== SyntaxKind.StringToken) ||
+            field === undefined
+        ) {
+            report?.(head, DiagnosticKind.InvalidExtendForm);
+        }
+        const recordType = checkOrRecoveryType(head, record);
+        const expectedRowsType = createTypeVariable(head, letDepth, "rows");
+        // TODO: レコード制約
+        unify(
+            head,
+            typeSubstitutions,
+            recordType,
+            createRecordType(head, expectedRowsType)
+        );
+        const label = getLabel(key);
+        const fieldType = checkOrRecoveryType(head, field);
+        return createRecordType(
+            head,
+            createRowExtendType(head, label, fieldType, expectedRowsType)
+        );
     }
     function checkSequenceExpression(expression: SequenceExpression) {
         const {
@@ -152,6 +183,8 @@ export function createChecker(
                     return checkLetFormExpression(head, expression);
                 case "#get":
                     return checkGetFormExpression(head, expression);
+                case "#extend":
+                    return checkExtendFormExpression(head, expression);
             }
         }
         let headType = checkExpression(head);
