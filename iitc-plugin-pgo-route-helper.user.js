@@ -6,7 +6,7 @@
 // @downloadURL  https://github.com/wiinuk/iitc-plugin-pgo-route-helper/raw/master/iitc-plugin-pgo-route-helper.user.js
 // @updateURL    https://github.com/wiinuk/iitc-plugin-pgo-route-helper/raw/master/iitc-plugin-pgo-route-helper.user.js
 // @homepageURL  https://github.com/wiinuk/iitc-plugin-pgo-route-helper
-// @version      0.9.9
+// @version      0.9.10
 // @description  IITC plugin to assist in Pokémon GO route creation.
 // @author       Wiinuk
 // @include      https://*.ingress.com/intel*
@@ -66,7 +66,8 @@ __webpack_require__.d(iitc_plugin_pgo_route_helper_namespaceObject, {
 });
 
 ;// CONCATENATED MODULE: ./source/environment.ts
-const isIITCMobile = typeof android !== "undefined" && android && android.addPane;
+const isIITCMobile = (typeof android !== "undefined" && android && android.addPane) ||
+    navigator.userAgent.toLowerCase().includes("android");
 
 ;// CONCATENATED MODULE: ./source/document-jsx/jsx-runtime.ts
 function jsxs(name, properties, 
@@ -1850,6 +1851,7 @@ var DiagnosticKind;
     DiagnosticKind["CommaTokenExpected"] = "CommaTokenExpected";
     DiagnosticKind["StringLiteralOrNameRequired"] = "StringLiteralOrNameRequired";
     DiagnosticKind["LeftParenthesesOrLeftCurlyBracketOrLiteralOrNameRequired"] = "LeftParenthesesOrLeftCurlyBracketOrLiteralOrNameRequired";
+    DiagnosticKind["EndOfSourceOrAtNameExpected"] = "EndOfSourceOrAtNameExpected";
 })(DiagnosticKind || (DiagnosticKind = {}));
 function getTokenKind(token) {
     var _a;
@@ -2018,7 +2020,10 @@ function createParser({ next }, reporter) {
     return {
         parse() {
             nextToken();
-            return parseExpression();
+            const value = parseExpression();
+            if (currentTokenKind !== "EndOfSource")
+                reporter(DiagnosticKind.EndOfSourceOrAtNameExpected);
+            return value;
         },
     };
 }
