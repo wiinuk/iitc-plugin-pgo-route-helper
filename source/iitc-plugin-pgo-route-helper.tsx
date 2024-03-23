@@ -18,7 +18,9 @@ import {
     type RouteKind,
     getRouteIsTemplate,
     setRouteIsTemplate,
-    type Coordinate,
+    latLngToCoordinate,
+    coordinateToLatLng,
+    includesIn,
 } from "./route";
 import {
     error,
@@ -142,17 +144,32 @@ function waitLayerAdded(map: L.Map, layer: L.ILayer) {
     });
 }
 
-function latLngToCoordinate({ lat, lng }: L.LatLng): Coordinate {
-    return [lat, lng];
-}
-function coordinateToLatLng([lat, lng]: Coordinate): L.LatLng {
-    return L.latLng(lat, lng);
-}
 function getMiddleCoordinate(
     p1: L.LatLngExpression,
     p2: L.LatLngExpression
 ): L.LatLng {
     return L.latLngBounds(p1, p2).getCenter();
+}
+
+function createScheduler() {
+    type Handle = ReturnType<typeof requestAnimationFrame>;
+    const yieldInterval = (1000 / 60) * 0.1;
+    let lastYieldEnd = -Infinity;
+    return {
+        yieldRequested() {
+            return lastYieldEnd + yieldInterval < performance.now();
+        },
+        async yield(options?: { signal?: AbortSignal }) {
+            const signal = options?.signal;
+            const handle = await new Promise<Handle>(requestAnimationFrame);
+            if (signal) {
+                signal.addEventListener("abort", () =>
+                    cancelAnimationFrame(handle)
+                );
+            }
+            lastYieldEnd = performance.now();
+        },
+    };
 }
 
 async function asyncMain() {
@@ -240,7 +257,11 @@ async function asyncMain() {
               }
             | { type: "downloaded"; routeCount: number }
             | { type: "adding"; routeName: string; routeId: string }
-            | { type: "routes-added"; count: number }
+            | {
+                  type: "routes-added";
+                  count: number;
+                  durationMilliseconds: number;
+              }
             | {
                   type: "query-parse-completed";
                   language: "words" | "parentheses" | undefined;
@@ -261,8 +282,6 @@ async function asyncMain() {
                   center: Readonly<{ lat: number; lng: number }> | null;
               }
     ) => {
-        console.log(JSON.stringify(message));
-
         const { type } = message;
         switch (type) {
             case "upload-waiting": {
@@ -306,7 +325,7 @@ async function asyncMain() {
                 break;
             }
             case "routes-added": {
-                reportElement.innerText = `${message.count} 個のルートを追加しました`;
+                reportElement.innerText = `${message.count} 個のルートを追加しました ( ${message.durationMilliseconds}ミリ秒 )`;
                 break;
             }
             case "query-parse-completed": {
@@ -1274,8 +1293,6 @@ async function asyncMain() {
             default:
                 return exhaustive(kind);
         }
-        routeLayerGroup.addLayer(view.layer);
-
         const listView = createRouteListView(route);
 
         routeListElement.appendChild(listView.listItem);
@@ -1287,6 +1304,52 @@ async function asyncMain() {
         });
         updateRoutesListElement();
     }
+    const scheduler = createScheduler();
+    async function syncVisibleRoutesInMap(signal: AbortSignal) {
+        const { routes } = state;
+        if (routes === "routes-unloaded") return;
+
+        // 範囲内のスポットを計算する
+        const layerToRoutesRequiringAddition = new Map<
+            L.ILayer,
+            RouteWithView
+        >();
+        // 範囲外のスポットがはみ出してしまい見える場合があるのでマップの可視範囲を広めに取る
+        const visibleBounds = map.getBounds().pad(0.2);
+        for (const view of routes.values()) {
+            if (includesIn(visibleBounds, view.route)) {
+                layerToRoutesRequiringAddition.set(
+                    view.coordinatesEditor.layer,
+                    view
+                );
+            }
+        }
+
+        // 現在追加されているレイヤーが範囲外なら削除する
+        for (const oldLayer of routeLayerGroup.getLayers()) {
+            if (scheduler.yieldRequested()) await scheduler.yield({ signal });
+
+            const route = layerToRoutesRequiringAddition.get(oldLayer);
+            if (route != null) {
+                layerToRoutesRequiringAddition.delete(oldLayer);
+            } else {
+                routeLayerGroup.removeLayer(oldLayer);
+            }
+        }
+
+        // 範囲内レイヤーのうち追加されていないものを追加する
+        for (const [layer, route] of layerToRoutesRequiringAddition.entries()) {
+            if (scheduler.yieldRequested()) await scheduler.yield({ signal });
+            routeLayerGroup.addLayer(layer);
+        }
+    }
+    const syncVisibleRoutesInMapScope =
+        createAsyncCancelScope(handleAsyncError);
+
+    function updateVisibleRoutesInMap() {
+        syncVisibleRoutesInMapScope(syncVisibleRoutesInMap);
+    }
+    // routeLayerGroup.addLayer(view.layer);
 
     const routeLayerGroup = L.layerGroup();
     window.addLayerGroup(routeLayerGroupName, routeLayerGroup, true);
@@ -1309,8 +1372,11 @@ async function asyncMain() {
             type: "downloaded",
             routeCount: routeList.length,
         });
+
+        const beforeTime = performance.now();
         for (const route of routeList) {
-            await new Promise(requestAnimationFrame);
+            if (scheduler.yieldRequested()) await scheduler.yield();
+
             addRouteView(routeMap, {
                 ...route,
                 coordinates: parseCoordinates(route.coordinates),
@@ -1321,10 +1387,16 @@ async function asyncMain() {
                 routeId: route.routeId,
             });
         }
+        const afterTime = performance.now();
         state.routes = routeMap;
         progress({
             type: "routes-added",
             count: state.routes.size,
+            durationMilliseconds: afterTime - beforeTime,
         });
+
+        updateVisibleRoutesInMap();
+        map.on("moveend", updateVisibleRoutesInMap);
+        map.on("zoomend", updateVisibleRoutesInMap);
     }
 }
