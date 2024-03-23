@@ -6,7 +6,7 @@
 // @downloadURL  https://github.com/wiinuk/iitc-plugin-pgo-route-helper/raw/master/iitc-plugin-pgo-route-helper.user.js
 // @updateURL    https://github.com/wiinuk/iitc-plugin-pgo-route-helper/raw/master/iitc-plugin-pgo-route-helper.user.js
 // @homepageURL  https://github.com/wiinuk/iitc-plugin-pgo-route-helper
-// @version      0.9.10
+// @version      0.9.11
 // @description  IITC plugin to assist in Pokémon GO route creation.
 // @author       Wiinuk
 // @include      https://*.ingress.com/intel*
@@ -746,6 +746,19 @@ function setRouteIsTemplate(route, isTemplate) {
 }
 function getRouteIsTemplate(route) {
     return route.data["isTemplate"] === true;
+}
+function latLngToCoordinate({ lat, lng }) {
+    return [lat, lng];
+}
+function coordinateToLatLng([lat, lng]) {
+    return L.latLng(lat, lng);
+}
+function includesIn(bounds, route) {
+    if (getRouteKind(route) === "spot") {
+        return bounds.contains(coordinateToLatLng(route.coordinates[0]));
+    }
+    const routeBounds = L.latLngBounds(route.coordinates.map(coordinateToLatLng));
+    return bounds.intersects(routeBounds);
 }
 
 ;// CONCATENATED MODULE: ./source/styles.module.css
@@ -2504,14 +2517,27 @@ function waitLayerAdded(map, layer) {
         map.on("layeradd", onLayerAdd);
     });
 }
-function latLngToCoordinate({ lat, lng }) {
-    return [lat, lng];
-}
-function coordinateToLatLng([lat, lng]) {
-    return L.latLng(lat, lng);
-}
 function getMiddleCoordinate(p1, p2) {
     return L.latLngBounds(p1, p2).getCenter();
+}
+function createScheduler() {
+    const yieldInterval = (1000 / 60) * 0.1;
+    let lastYieldEnd = -Infinity;
+    return {
+        yieldRequested() {
+            return lastYieldEnd + yieldInterval < performance.now();
+        },
+        yield(options) {
+            return iitc_plugin_pgo_route_helper_awaiter(this, void 0, void 0, function* () {
+                const signal = options === null || options === void 0 ? void 0 : options.signal;
+                const handle = yield new Promise(requestAnimationFrame);
+                if (signal) {
+                    signal.addEventListener("abort", () => cancelAnimationFrame(handle));
+                }
+                lastYieldEnd = performance.now();
+            });
+        },
+    };
 }
 function asyncMain() {
     var _a, _b, _c;
@@ -2540,7 +2566,6 @@ function asyncMain() {
             routeListQuery: { queryText: "", query: undefined },
         };
         const progress = (message) => {
-            console.log(JSON.stringify(message));
             const { type } = message;
             switch (type) {
                 case "upload-waiting": {
@@ -2574,7 +2599,7 @@ function asyncMain() {
                     break;
                 }
                 case "routes-added": {
-                    reportElement.innerText = `${message.count} 個のルートを追加しました`;
+                    reportElement.innerText = `${message.count} 個のルートを追加しました ( ${message.durationMilliseconds}ミリ秒 )`;
                     break;
                 }
                 case "query-parse-completed": {
@@ -3328,7 +3353,6 @@ function asyncMain() {
                 default:
                     return exhaustive(kind);
             }
-            routeLayerGroup.addLayer(view.layer);
             const listView = createRouteListView(route);
             routeListElement.appendChild(listView.listItem);
             routeMap.set(routeId, {
@@ -3339,6 +3363,46 @@ function asyncMain() {
             });
             updateRoutesListElement();
         }
+        const scheduler = createScheduler();
+        function syncVisibleRoutesInMap(signal) {
+            return iitc_plugin_pgo_route_helper_awaiter(this, void 0, void 0, function* () {
+                const { routes } = state;
+                if (routes === "routes-unloaded")
+                    return;
+                // 範囲内のスポットを計算する
+                const layerToRoutesRequiringAddition = new Map();
+                // 範囲外のスポットがはみ出してしまい見える場合があるのでマップの可視範囲を広めに取る
+                const visibleBounds = map.getBounds().pad(0.2);
+                for (const view of routes.values()) {
+                    if (includesIn(visibleBounds, view.route)) {
+                        layerToRoutesRequiringAddition.set(view.coordinatesEditor.layer, view);
+                    }
+                }
+                // 現在追加されているレイヤーが範囲外なら削除する
+                for (const oldLayer of routeLayerGroup.getLayers()) {
+                    if (scheduler.yieldRequested())
+                        yield scheduler.yield({ signal });
+                    const route = layerToRoutesRequiringAddition.get(oldLayer);
+                    if (route != null) {
+                        layerToRoutesRequiringAddition.delete(oldLayer);
+                    }
+                    else {
+                        routeLayerGroup.removeLayer(oldLayer);
+                    }
+                }
+                // 範囲内レイヤーのうち追加されていないものを追加する
+                for (const [layer, route] of layerToRoutesRequiringAddition.entries()) {
+                    if (scheduler.yieldRequested())
+                        yield scheduler.yield({ signal });
+                    routeLayerGroup.addLayer(layer);
+                }
+            });
+        }
+        const syncVisibleRoutesInMapScope = createAsyncCancelScope(handleAsyncError);
+        function updateVisibleRoutesInMap() {
+            syncVisibleRoutesInMapScope(syncVisibleRoutesInMap);
+        }
+        // routeLayerGroup.addLayer(view.layer);
         const routeLayerGroup = L.layerGroup();
         window.addLayerGroup(routeLayerGroupName, routeLayerGroup, true);
         // Routes レイヤーが表示されるまで読み込みを中止
@@ -3355,8 +3419,10 @@ function asyncMain() {
                 type: "downloaded",
                 routeCount: routeList.length,
             });
+            const beforeTime = performance.now();
             for (const route of routeList) {
-                yield new Promise(requestAnimationFrame);
+                if (scheduler.yieldRequested())
+                    yield scheduler.yield();
                 addRouteView(routeMap, Object.assign(Object.assign({}, route), { coordinates: parseCoordinates(route.coordinates) }));
                 progress({
                     type: "adding",
@@ -3364,11 +3430,16 @@ function asyncMain() {
                     routeId: route.routeId,
                 });
             }
+            const afterTime = performance.now();
             state.routes = routeMap;
             progress({
                 type: "routes-added",
                 count: state.routes.size,
+                durationMilliseconds: afterTime - beforeTime,
             });
+            updateVisibleRoutesInMap();
+            map.on("moveend", updateVisibleRoutesInMap);
+            map.on("zoomend", updateVisibleRoutesInMap);
         }
     });
 }
