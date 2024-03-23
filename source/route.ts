@@ -37,3 +37,19 @@ export function setRouteIsTemplate(route: Route, isTemplate: boolean) {
 export function getRouteIsTemplate(route: Route) {
     return route.data["isTemplate"] === true;
 }
+
+export function latLngToCoordinate({ lat, lng }: L.LatLng): Coordinate {
+    return [lat, lng];
+}
+export function coordinateToLatLng([lat, lng]: Coordinate): L.LatLng {
+    return L.latLng(lat, lng);
+}
+export function includesIn(bounds: L.LatLngBounds, route: Route) {
+    if (getRouteKind(route) === "spot") {
+        return bounds.contains(coordinateToLatLng(route.coordinates[0]));
+    }
+    const routeBounds = L.latLngBounds(
+        route.coordinates.map(coordinateToLatLng)
+    );
+    return bounds.intersects(routeBounds);
+}
