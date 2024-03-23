@@ -1338,7 +1338,7 @@ async function asyncMain() {
         }
 
         // 範囲内レイヤーのうち追加されていないものを追加する
-        for (const [layer, route] of layerToRoutesRequiringAddition.entries()) {
+        for (const layer of layerToRoutesRequiringAddition.keys()) {
             if (scheduler.yieldRequested()) await scheduler.yield({ signal });
             routeLayerGroup.addLayer(layer);
         }
