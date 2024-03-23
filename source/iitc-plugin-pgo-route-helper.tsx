@@ -282,8 +282,6 @@ async function asyncMain() {
                   center: Readonly<{ lat: number; lng: number }> | null;
               }
     ) => {
-        console.log(JSON.stringify(message));
-
         const { type } = message;
         switch (type) {
             case "upload-waiting": {
@@ -1334,7 +1332,6 @@ async function asyncMain() {
             const route = layerToRoutesRequiringAddition.get(oldLayer);
             if (route != null) {
                 layerToRoutesRequiringAddition.delete(oldLayer);
-                console.log(`hold: ${route.route.routeName}`);
             } else {
                 routeLayerGroup.removeLayer(oldLayer);
             }
@@ -1343,7 +1340,6 @@ async function asyncMain() {
         // 範囲内レイヤーのうち追加されていないものを追加する
         for (const [layer, route] of layerToRoutesRequiringAddition.entries()) {
             if (scheduler.yieldRequested()) await scheduler.yield({ signal });
-            console.log(`add: ${route.route.routeName}`);
             routeLayerGroup.addLayer(layer);
         }
     }
