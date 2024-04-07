@@ -1259,6 +1259,7 @@ async function asyncMain() {
             route.coordinates = [latLngToCoordinate(circle.getLatLng())];
             queueSetRouteCommandDelayed(3000, route);
         });
+        circle.on("add", changeStyle);
         const label = L.marker(circle.getLatLng(), {
             icon: createSpotLabel(route.routeName),
         });
