@@ -1,17 +1,20 @@
-import { isArray, type Json } from "../standard-extensions";
+import { error, isArray, type Json } from "../standard-extensions";
 import * as Assoc from "../assoc";
 
 export type Expression = Json;
-function throwFunctionExpressionError(): never {
-    throw new Error(
-        `#function 形式には引数リストと式が必要です。例: ["#function", ["x", "y"], ["+", "x", "y"]]`
-    );
+function throwFunctionExpressionError() {
+    return error`#function 形式には引数リストと式が必要です。例: ["#function", ["x", "y"], ["+", "x", "y"]]`;
 }
 function throwLetExpressionError() {
-    throw new Error(
-        `#let 形式には要素1と要素2が必要です。例: ["#let", ["result", ["complexTask"]], "result"]`
-    );
+    return error`#let 形式には要素1と要素2が必要です。例: ["#let", ["result", ["complexTask"]], "result"]`;
 }
+function throwWhereFormError() {
+    return error`_#where_ 形式には要素1と2が必要です。例: ["_#where_", "result", ["result", ["headTask"]]]`;
+}
+function throwAsFormError() {
+    return error`_#as_ 形式には要素1と2が必要です。例: ["_#as_", ["headTask"], ["result", "result"]]`;
+}
+
 const hasOwnProperty = Object.prototype.hasOwnProperty;
 export function evaluateExpression(
     expression: Expression,
@@ -81,9 +84,7 @@ export function evaluateExpression(
                 ifNotFalsy === undefined ||
                 ifFalsy === undefined
             ) {
-                throw new Error(
-                    `#if 形式には要素1から3が必要です。例: ["#if", "isEven", ["#", "this is even"], ["#", "this is odd"]]`
-                );
+                return error`#if 形式には要素1から3が必要です。例: ["#if", "isEven", ["#", "this is even"], ["#", "this is odd"]]`;
             }
             return evaluateExpression(
                 evaluateExpression(condition, variables, getUnresolved)
@@ -94,14 +95,19 @@ export function evaluateExpression(
             );
         }
         case "#function": {
-            const [, parameters, body] = expression;
+            const [, parameterOrParameters, body] = expression;
             if (
-                parameters === undefined ||
-                !isArray(parameters) ||
+                parameterOrParameters === undefined ||
+                (!isArray(parameterOrParameters) &&
+                    typeof parameterOrParameters !== "string") ||
                 body === undefined
             ) {
                 return throwFunctionExpressionError();
             }
+            const parameters =
+                typeof parameterOrParameters === "string"
+                    ? [parameterOrParameters]
+                    : parameterOrParameters;
             for (const parameter of parameters) {
                 if (typeof parameter !== "string") {
                     return throwFunctionExpressionError();
@@ -110,11 +116,11 @@ export function evaluateExpression(
             const ps = parameters as readonly string[];
             return (...args: unknown[]) => {
                 let vs = variables;
-                for (let i = 0; i < parameters.length; i++) {
+                for (let i = 0; i < parameterOrParameters.length; i++) {
                     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
                     vs = Assoc.add(ps[i]!, args[i]!, vs);
                 }
-                return evaluateExpression(body, variables, getUnresolved);
+                return evaluateExpression(body, vs, getUnresolved);
             };
         }
         case "#let": {
@@ -134,6 +140,38 @@ export function evaluateExpression(
                 variables = Assoc.add(variable, v, variables);
             }
             return evaluateExpression(scope, variables, getUnresolved);
+        }
+        case "_#where_": {
+            const [, scope, binding] = expression;
+            if (!isArray(binding) || scope === undefined) {
+                return throwWhereFormError();
+            }
+            const [variable, value] = binding;
+            if (typeof variable !== "string" || value === undefined) {
+                return throwWhereFormError();
+            }
+            const v = evaluateExpression(value, variables, getUnresolved);
+            return evaluateExpression(
+                scope,
+                Assoc.add(variable, v, variables),
+                getUnresolved
+            );
+        }
+        case "_#as_": {
+            const [, value, variableAndScope] = expression;
+            if (!isArray(variableAndScope) || value === undefined) {
+                return throwAsFormError();
+            }
+            const [variable, scope] = variableAndScope;
+            if (typeof variable !== "string" || scope === undefined) {
+                return throwAsFormError();
+            }
+            const v = evaluateExpression(value, variables, getUnresolved);
+            return evaluateExpression(
+                scope,
+                Assoc.add(variable, v, variables),
+                getUnresolved
+            );
         }
         default: {
             const head = expression[0];
@@ -155,7 +193,7 @@ export function evaluateExpression(
                 args.push(p);
             }
             if (typeof f !== "function") {
-                throw new Error("関数ではない値を呼び出す事はできません。");
+                return error`関数ではない値を呼び出す事はできません。`;
             }
             return f(...args);
         }
