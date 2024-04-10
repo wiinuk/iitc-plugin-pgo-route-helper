@@ -1,7 +1,7 @@
 export type Assoc<K, V> = null | readonly [readonly [K, V], Assoc<K, V>];
 export function get<K, V>(k: K, kvs: Assoc<K, V>) {
     while (kvs !== null) {
-        if (Object.is(kvs[0], k)) {
+        if (Object.is(kvs[0][0], k)) {
             return kvs[0];
         }
         kvs = kvs[1];
