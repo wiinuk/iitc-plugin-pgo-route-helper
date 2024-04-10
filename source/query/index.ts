@@ -2,13 +2,14 @@
 import type { Json as MutableJson } from "../../../gas-drivetunnel/source/json-schema-core";
 import { evaluateExpression, type Expression } from "./expression";
 import {
+    coordinateToLatLng,
     getRouteKind,
     getRouteTags,
     type Coordinate,
     type Route,
 } from "../route";
 import { exhaustive, isArray } from "../standard-extensions";
-import { getGymsOrderKinds, orderByGyms } from "./gyms";
+import { countByGyms, getGymsOrderKinds, orderByGyms } from "./gyms";
 import {
     createParser,
     createTokenizer,
@@ -228,6 +229,8 @@ export function orderBy(kind: OrderByKinds, query: RouteQuery): RouteQuery {
             return orderByKey(query, (r) => r.coordinates[0][1], true);
         case "potentialGyms":
         case "potentialStops":
+        case "currentStops":
+        case "currentGyms":
             return orderByGyms(kind, query);
         default:
             throw new Error(
@@ -330,7 +333,57 @@ const library = {
     ["_orderBy_"](query: RouteQuery, kind: OrderByKinds) {
         return orderBy(kind, query);
     },
+    potentialStops(count: number): RouteQuery {
+        return countByGyms("potentialStops", count);
+    },
+    cell(
+        level: number,
+        options?: { location?: readonly [number, number] }
+    ): RouteQuery {
+        return {
+            initialize(e) {
+                const location = options?.location ?? e.getUserCoordinate();
+                if (location == null) return emptyUnit;
+
+                const cell = S2.S2Cell.FromLatLng(
+                    coordinateToLatLng(location),
+                    level
+                );
+                const cellId = cell.toString();
+                return {
+                    predicate(r) {
+                        const cell = S2.S2Cell.FromLatLng(
+                            coordinateToLatLng(r.coordinates[0]),
+                            level
+                        );
+                        return cellId === cell.toString();
+                    },
+                };
+            },
+        };
+    },
     any: anyQuery,
+    ["_add_"](x: number, y: number) {
+        return x + y;
+    },
+    ["_sub_"](x: number, y: number) {
+        return x - y;
+    },
+    ["_mul_"](x: number, y: number) {
+        return x * y;
+    },
+    ["_div_"](x: number, y: number) {
+        return x / y;
+    },
+    ["_eq_"](x: number, y: number) {
+        return x === y;
+    },
+    ["_ne_"](x: number, y: number) {
+        return x !== y;
+    },
+    ["_neg"](x: number) {
+        return -x;
+    },
 };
 function evaluateWithLibrary(expression: Expression) {
     const getUnresolved = (name: string) => {

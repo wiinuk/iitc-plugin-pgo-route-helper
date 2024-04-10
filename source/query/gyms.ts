@@ -1,5 +1,10 @@
 // spell-checker: ignore pokestop pokestops
-import { queryAsFactory, type QuerySorter, type RouteQuery } from ".";
+import {
+    queryAsFactory,
+    type QueryEnvironment,
+    type QuerySorter,
+    type RouteQuery,
+} from ".";
 import {
     buildCells,
     getSpotLatLng,
@@ -95,24 +100,32 @@ function getCell14Gyms(cell14: Cell14) {
         potentialPokestopsForNextGym,
     } satisfies Cell14Gyms;
 }
-export function getGymsOrderKinds() {
-    return ["potentialStops", "potentialGyms"] as const;
+
+function initializeRouteStatisticsResolver(e: QueryEnvironment) {
+    const cells = buildCells(e.routes);
+    const gymCounts = new WeakMap<Cell14, Cell14Gyms>();
+    return (r: Route) =>
+        getCell14Statistics(cells, gymCounts, getCell14Gyms, r);
 }
-type GymsSortKind = ReturnType<typeof getGymsOrderKinds>[number];
+
+export function getGymsOrderKinds() {
+    return [
+        "potentialStops",
+        "potentialGyms",
+        "currentStops",
+        "currentGyms",
+    ] as const;
+}
+export type GymsSortKind = ReturnType<typeof getGymsOrderKinds>[number];
 export function orderByGyms(kind: GymsSortKind, query: RouteQuery): RouteQuery {
     return {
         initialize(e) {
             const unit = queryAsFactory(query).initialize(e);
-            const cells = buildCells(e.routes);
-            const gymCounts = new WeakMap<Cell14, Cell14Gyms>();
-            function routeGymsWith<T>(
+            const resolve = initializeRouteStatisticsResolver(e);
+            function createGetter<T>(
                 scope: (s: Cell14Gyms | undefined, r: Route) => T
             ) {
-                return (r: Route) =>
-                    scope(
-                        getCell14Statistics(cells, gymCounts, getCell14Gyms, r),
-                        r
-                    );
+                return (r: Route) => scope(resolve(r), r);
             }
 
             let getNote;
@@ -120,22 +133,36 @@ export function orderByGyms(kind: GymsSortKind, query: RouteQuery): RouteQuery {
             let isAscendent: QuerySorter["isAscendent"];
             switch (kind) {
                 case "potentialStops":
-                    getNote = routeGymsWith(
+                    getNote = createGetter(
                         (s, r) =>
-                            `P${s?.potentialPokestopsForNextGym ?? Infinity},${
+                            `PS${s?.potentialPokestopsForNextGym ?? Infinity},${
                                 r.note
                             }`
                     );
-                    getKey = routeGymsWith(
+                    getKey = createGetter(
                         (s) => s?.potentialPokestopsForNextGym ?? Infinity
                     );
                     isAscendent = true;
                     break;
                 case "potentialGyms":
-                    getNote = routeGymsWith(
-                        (s, r) => `G${s?.potentialGyms ?? 0},${r.note}`
+                    getNote = createGetter(
+                        (s, r) => `PG${s?.potentialGyms ?? 0},${r.note}`
                     );
-                    getKey = routeGymsWith((s) => s?.potentialGyms ?? 0);
+                    getKey = createGetter((s) => s?.potentialGyms ?? 0);
+                    isAscendent = false;
+                    break;
+                case "currentStops":
+                    getNote = createGetter(
+                        (s, r) => `S${s?.currentPokestops ?? 0},${r.note}`
+                    );
+                    getKey = createGetter((s) => s?.currentPokestops ?? 0);
+                    isAscendent = true;
+                    break;
+                case "currentGyms":
+                    getNote = createGetter(
+                        (s, r) => `G${s?.currentGyms ?? 0},${r.note}`
+                    );
+                    getKey = createGetter((s) => s?.currentGyms ?? 0);
                     isAscendent = false;
                     break;
                 default:
@@ -153,6 +180,37 @@ export function orderByGyms(kind: GymsSortKind, query: RouteQuery): RouteQuery {
                         getKey,
                         isAscendent,
                     };
+                },
+            };
+        },
+    };
+}
+export function countByGyms(kind: GymsSortKind, value: number): RouteQuery {
+    return {
+        initialize(e) {
+            const resolve = initializeRouteStatisticsResolver(e);
+            let selector: keyof Cell14Gyms;
+            switch (kind) {
+                case "potentialStops":
+                    selector = "potentialPokestopsForNextGym";
+                    break;
+                case "potentialGyms":
+                case "currentGyms":
+                    selector = kind;
+                    break;
+                case "currentStops":
+                    selector = "currentPokestops";
+                    break;
+                default:
+                    throw new Error(
+                        `Invalid kind: ${
+                            kind satisfies never
+                        }. Expected ${getGymsOrderKinds().join(" or ")}.`
+                    );
+            }
+            return {
+                predicate(r) {
+                    return resolve(r)?.[selector] === value;
                 },
             };
         },
