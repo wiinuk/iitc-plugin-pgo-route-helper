@@ -6,7 +6,7 @@
 // @downloadURL  https://github.com/wiinuk/iitc-plugin-pgo-route-helper/raw/master/iitc-plugin-pgo-route-helper.user.js
 // @updateURL    https://github.com/wiinuk/iitc-plugin-pgo-route-helper/raw/master/iitc-plugin-pgo-route-helper.user.js
 // @homepageURL  https://github.com/wiinuk/iitc-plugin-pgo-route-helper
-// @version      0.9.12
+// @version      0.9.13
 // @description  IITC plugin to assist in Pokémon GO route creation.
 // @author       Wiinuk
 // @include      https://*.ingress.com/intel*
@@ -681,6 +681,25 @@ let e;
 function escapeHtml(text) {
     (e !== null && e !== void 0 ? e : (e = document.createElement("div"))).innerText = text;
     return e.innerHTML;
+}
+function sleepUntilNextAnimationFrame(options) {
+    return new Promise((resolve, reject) => {
+        const signal = options === null || options === void 0 ? void 0 : options.signal;
+        if (signal === null || signal === void 0 ? void 0 : signal.aborted) {
+            return reject(newAbortError());
+        }
+        const onAbort = signal
+            ? () => {
+                cancelAnimationFrame(id);
+                reject(newAbortError());
+            }
+            : ignore;
+        const id = requestAnimationFrame((time) => {
+            signal === null || signal === void 0 ? void 0 : signal.removeEventListener("abort", onAbort);
+            resolve(time);
+        });
+        signal === null || signal === void 0 ? void 0 : signal.addEventListener("abort", onAbort);
+    });
 }
 
 ;// CONCATENATED MODULE: ./source/kml.ts
@@ -2646,7 +2665,7 @@ function getMiddleCoordinate(p1, p2) {
     return L.latLngBounds(p1, p2).getCenter();
 }
 function createScheduler() {
-    const yieldInterval = (1000 / 60) * 0.1;
+    const yieldInterval = 1000 / 60;
     let lastYieldEnd = -Infinity;
     return {
         yieldRequested() {
@@ -2654,11 +2673,7 @@ function createScheduler() {
         },
         yield(options) {
             return iitc_plugin_pgo_route_helper_awaiter(this, void 0, void 0, function* () {
-                const signal = options === null || options === void 0 ? void 0 : options.signal;
-                const handle = yield new Promise(requestAnimationFrame);
-                if (signal) {
-                    signal.addEventListener("abort", () => cancelAnimationFrame(handle));
-                }
+                yield sleepUntilNextAnimationFrame(options);
                 lastYieldEnd = performance.now();
             });
         },
@@ -3203,12 +3218,26 @@ function asyncMain() {
                     views.sort((r1, r2) => bias * compareQueryKey(r1.sortKey, r2.sortKey));
                 }
                 // クエリ結果をDOMに反映する
-                const fragment = document.createDocumentFragment();
-                for (const { listView, route } of views) {
-                    updateRouteListView(route, listView);
-                    fragment.appendChild(listView.listItem);
+                function createScrollPositionRestorer(e) {
+                    if (!e)
+                        return;
+                    const { scrollTop, scrollLeft } = e;
+                    return () => {
+                        e.scrollTop = scrollTop;
+                        e.scrollLeft = scrollLeft;
+                    };
                 }
-                routeListElement.appendChild(fragment);
+                const restoreScrollPosition = createScrollPositionRestorer(routeListElement.parentElement);
+                routeListElement.innerHTML = "";
+                for (const { listView, route } of views) {
+                    if (scheduler.yieldRequested()) {
+                        yield scheduler.yield({ signal });
+                    }
+                    updateRouteListView(route, listView);
+                    routeListElement.appendChild(listView.listItem);
+                    restoreScrollPosition === null || restoreScrollPosition === void 0 ? void 0 : restoreScrollPosition();
+                }
+                restoreScrollPosition === null || restoreScrollPosition === void 0 ? void 0 : restoreScrollPosition();
                 if (!isQueryUndefined) {
                     progress({
                         type: "query-evaluation-completed",
