@@ -6,7 +6,7 @@
 // @downloadURL  https://github.com/wiinuk/iitc-plugin-pgo-route-helper/raw/master/iitc-plugin-pgo-route-helper.user.js
 // @updateURL    https://github.com/wiinuk/iitc-plugin-pgo-route-helper/raw/master/iitc-plugin-pgo-route-helper.user.js
 // @homepageURL  https://github.com/wiinuk/iitc-plugin-pgo-route-helper
-// @version      0.9.11
+// @version      0.9.12
 // @description  IITC plugin to assist in Pokémon GO route creation.
 // @author       Wiinuk
 // @include      https://*.ingress.com/intel*
@@ -1376,7 +1376,7 @@ function polyfill($) {
 ;// CONCATENATED MODULE: ./source/assoc.ts
 function get(k, kvs) {
     while (kvs !== null) {
-        if (Object.is(kvs[0], k)) {
+        if (Object.is(kvs[0][0], k)) {
             return kvs[0];
         }
         kvs = kvs[1];
@@ -1420,10 +1420,16 @@ function map(kvs, mapping) {
 
 
 function throwFunctionExpressionError() {
-    throw new Error(`#function 形式には引数リストと式が必要です。例: ["#function", ["x", "y"], ["+", "x", "y"]]`);
+    return standard_extensions_error `#function 形式には引数リストと式が必要です。例: ["#function", ["x", "y"], ["+", "x", "y"]]`;
 }
 function throwLetExpressionError() {
-    throw new Error(`#let 形式には要素1と要素2が必要です。例: ["#let", ["result", ["complexTask"]], "result"]`);
+    return standard_extensions_error `#let 形式には要素1と要素2が必要です。例: ["#let", ["result", ["complexTask"]], "result"]`;
+}
+function throwWhereFormError() {
+    return standard_extensions_error `_#where_ 形式には要素1と2が必要です。例: ["_#where_", "result", ["result", ["headTask"]]]`;
+}
+function throwAsFormError() {
+    return standard_extensions_error `_#as_ 形式には要素1と2が必要です。例: ["_#as_", ["headTask"], ["result", "result"]]`;
 }
 const expression_hasOwnProperty = Object.prototype.hasOwnProperty;
 function evaluateExpression(expression, variables, getUnresolved) {
@@ -1479,19 +1485,23 @@ function evaluateExpression(expression, variables, getUnresolved) {
             if (condition === undefined ||
                 ifNotFalsy === undefined ||
                 ifFalsy === undefined) {
-                throw new Error(`#if 形式には要素1から3が必要です。例: ["#if", "isEven", ["#", "this is even"], ["#", "this is odd"]]`);
+                return standard_extensions_error `#if 形式には要素1から3が必要です。例: ["#if", "isEven", ["#", "this is even"], ["#", "this is odd"]]`;
             }
             return evaluateExpression(evaluateExpression(condition, variables, getUnresolved)
                 ? ifNotFalsy
                 : ifFalsy, variables, getUnresolved);
         }
         case "#function": {
-            const [, parameters, body] = expression;
-            if (parameters === undefined ||
-                !isArray(parameters) ||
+            const [, parameterOrParameters, body] = expression;
+            if (parameterOrParameters === undefined ||
+                (!isArray(parameterOrParameters) &&
+                    typeof parameterOrParameters !== "string") ||
                 body === undefined) {
                 return throwFunctionExpressionError();
             }
+            const parameters = typeof parameterOrParameters === "string"
+                ? [parameterOrParameters]
+                : parameterOrParameters;
             for (const parameter of parameters) {
                 if (typeof parameter !== "string") {
                     return throwFunctionExpressionError();
@@ -1500,11 +1510,11 @@ function evaluateExpression(expression, variables, getUnresolved) {
             const ps = parameters;
             return (...args) => {
                 let vs = variables;
-                for (let i = 0; i < parameters.length; i++) {
+                for (let i = 0; i < parameterOrParameters.length; i++) {
                     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
                     vs = add(ps[i], args[i], vs);
                 }
-                return evaluateExpression(body, variables, getUnresolved);
+                return evaluateExpression(body, vs, getUnresolved);
             };
         }
         case "#let": {
@@ -1525,6 +1535,30 @@ function evaluateExpression(expression, variables, getUnresolved) {
             }
             return evaluateExpression(scope, variables, getUnresolved);
         }
+        case "_#where_": {
+            const [, scope, binding] = expression;
+            if (!isArray(binding) || scope === undefined) {
+                return throwWhereFormError();
+            }
+            const [variable, value] = binding;
+            if (typeof variable !== "string" || value === undefined) {
+                return throwWhereFormError();
+            }
+            const v = evaluateExpression(value, variables, getUnresolved);
+            return evaluateExpression(scope, add(variable, v, variables), getUnresolved);
+        }
+        case "_#as_": {
+            const [, value, variableAndScope] = expression;
+            if (!isArray(variableAndScope) || value === undefined) {
+                return throwAsFormError();
+            }
+            const [variable, scope] = variableAndScope;
+            if (typeof variable !== "string" || scope === undefined) {
+                return throwAsFormError();
+            }
+            const v = evaluateExpression(value, variables, getUnresolved);
+            return evaluateExpression(scope, add(variable, v, variables), getUnresolved);
+        }
         default: {
             const head = expression[0];
             if (head === undefined) {
@@ -1542,7 +1576,7 @@ function evaluateExpression(expression, variables, getUnresolved) {
                 args.push(p);
             }
             if (typeof f !== "function") {
-                throw new Error("関数ではない値を呼び出す事はできません。");
+                return standard_extensions_error `関数ではない値を呼び出す事はできません。`;
             }
             return f(...args);
         }
@@ -1686,33 +1720,52 @@ function getCell14Gyms(cell14) {
         potentialPokestopsForNextGym,
     };
 }
+function initializeRouteStatisticsResolver(e) {
+    const cells = buildCells(e.routes);
+    const gymCounts = new WeakMap();
+    return (r) => getCell14Statistics(cells, gymCounts, getCell14Gyms, r);
+}
 function getGymsOrderKinds() {
-    return ["potentialStops", "potentialGyms"];
+    return [
+        "potentialStops",
+        "potentialGyms",
+        "currentStops",
+        "currentGyms",
+    ];
 }
 function orderByGyms(kind, query) {
     return {
         initialize(e) {
             const unit = queryAsFactory(query).initialize(e);
-            const cells = buildCells(e.routes);
-            const gymCounts = new WeakMap();
-            function routeGymsWith(scope) {
-                return (r) => scope(getCell14Statistics(cells, gymCounts, getCell14Gyms, r), r);
+            const resolve = initializeRouteStatisticsResolver(e);
+            function createGetter(scope) {
+                return (r) => scope(resolve(r), r);
             }
             let getNote;
             let getKey;
             let isAscendent;
             switch (kind) {
                 case "potentialStops":
-                    getNote = routeGymsWith((s, r) => {
+                    getNote = createGetter((s, r) => {
                         var _a;
-                        return `P${(_a = s === null || s === void 0 ? void 0 : s.potentialPokestopsForNextGym) !== null && _a !== void 0 ? _a : Infinity},${r.note}`;
+                        return `PS${(_a = s === null || s === void 0 ? void 0 : s.potentialPokestopsForNextGym) !== null && _a !== void 0 ? _a : Infinity},${r.note}`;
                     });
-                    getKey = routeGymsWith((s) => { var _a; return (_a = s === null || s === void 0 ? void 0 : s.potentialPokestopsForNextGym) !== null && _a !== void 0 ? _a : Infinity; });
+                    getKey = createGetter((s) => { var _a; return (_a = s === null || s === void 0 ? void 0 : s.potentialPokestopsForNextGym) !== null && _a !== void 0 ? _a : Infinity; });
                     isAscendent = true;
                     break;
                 case "potentialGyms":
-                    getNote = routeGymsWith((s, r) => { var _a; return `G${(_a = s === null || s === void 0 ? void 0 : s.potentialGyms) !== null && _a !== void 0 ? _a : 0},${r.note}`; });
-                    getKey = routeGymsWith((s) => { var _a; return (_a = s === null || s === void 0 ? void 0 : s.potentialGyms) !== null && _a !== void 0 ? _a : 0; });
+                    getNote = createGetter((s, r) => { var _a; return `PG${(_a = s === null || s === void 0 ? void 0 : s.potentialGyms) !== null && _a !== void 0 ? _a : 0},${r.note}`; });
+                    getKey = createGetter((s) => { var _a; return (_a = s === null || s === void 0 ? void 0 : s.potentialGyms) !== null && _a !== void 0 ? _a : 0; });
+                    isAscendent = false;
+                    break;
+                case "currentStops":
+                    getNote = createGetter((s, r) => { var _a; return `S${(_a = s === null || s === void 0 ? void 0 : s.currentPokestops) !== null && _a !== void 0 ? _a : 0},${r.note}`; });
+                    getKey = createGetter((s) => { var _a; return (_a = s === null || s === void 0 ? void 0 : s.currentPokestops) !== null && _a !== void 0 ? _a : 0; });
+                    isAscendent = true;
+                    break;
+                case "currentGyms":
+                    getNote = createGetter((s, r) => { var _a; return `G${(_a = s === null || s === void 0 ? void 0 : s.currentGyms) !== null && _a !== void 0 ? _a : 0},${r.note}`; });
+                    getKey = createGetter((s) => { var _a; return (_a = s === null || s === void 0 ? void 0 : s.currentGyms) !== null && _a !== void 0 ? _a : 0; });
                     isAscendent = false;
                     break;
                 default:
@@ -1725,6 +1778,34 @@ function orderByGyms(kind, query) {
                         isAscendent,
                     };
                 } });
+        },
+    };
+}
+function countByGyms(kind, value) {
+    return {
+        initialize(e) {
+            const resolve = initializeRouteStatisticsResolver(e);
+            let selector;
+            switch (kind) {
+                case "potentialStops":
+                    selector = "potentialPokestopsForNextGym";
+                    break;
+                case "potentialGyms":
+                case "currentGyms":
+                    selector = kind;
+                    break;
+                case "currentStops":
+                    selector = "currentPokestops";
+                    break;
+                default:
+                    throw new Error(`Invalid kind: ${kind}. Expected ${getGymsOrderKinds().join(" or ")}.`);
+            }
+            return {
+                predicate(r) {
+                    var _a;
+                    return ((_a = resolve(r)) === null || _a === void 0 ? void 0 : _a[selector]) === value;
+                },
+            };
         },
     };
 }
@@ -2223,6 +2304,8 @@ function orderBy(kind, query) {
             return orderByKey(query, (r) => r.coordinates[0][1], true);
         case "potentialGyms":
         case "potentialStops":
+        case "currentStops":
+        case "currentGyms":
             return orderByGyms(kind, query);
         default:
             throw new Error(`Invalid order kind: ${kind}. Expected ${getOrderByKinds().join(" or ")}.`);
@@ -2305,7 +2388,49 @@ const library = {
     ["_orderBy_"](query, kind) {
         return orderBy(kind, query);
     },
+    potentialStops(count) {
+        return countByGyms("potentialStops", count);
+    },
+    cell(level, options) {
+        return {
+            initialize(e) {
+                var _a;
+                const location = (_a = options === null || options === void 0 ? void 0 : options.location) !== null && _a !== void 0 ? _a : e.getUserCoordinate();
+                if (location == null)
+                    return emptyUnit;
+                const cell = S2.S2Cell.FromLatLng(coordinateToLatLng(location), level);
+                const cellId = cell.toString();
+                return {
+                    predicate(r) {
+                        const cell = S2.S2Cell.FromLatLng(coordinateToLatLng(r.coordinates[0]), level);
+                        return cellId === cell.toString();
+                    },
+                };
+            },
+        };
+    },
     any: anyQuery,
+    ["_add_"](x, y) {
+        return x + y;
+    },
+    ["_sub_"](x, y) {
+        return x - y;
+    },
+    ["_mul_"](x, y) {
+        return x * y;
+    },
+    ["_div_"](x, y) {
+        return x / y;
+    },
+    ["_eq_"](x, y) {
+        return x === y;
+    },
+    ["_ne_"](x, y) {
+        return x !== y;
+    },
+    ["_neg"](x) {
+        return -x;
+    },
 };
 function evaluateWithLibrary(expression) {
     const getUnresolved = (name) => {
@@ -3037,55 +3162,66 @@ function asyncMain() {
                 return defaultValue();
             }
         }
-        function updateRoutesListElement() {
+        const asyncUpdateRouteListElementScope = createAsyncCancelScope(handleAsyncError);
+        function updateRouteListElementAsync(signal) {
             var _a;
-            if (state.routes === "routes-unloaded") {
-                return;
-            }
-            const { queryText, query } = state.routeListQuery;
-            const views = [...state.routes.values()];
-            const routes = views.map((r) => r.route);
-            const isQueryUndefined = query === undefined;
-            const getQuery = (_a = query === null || query === void 0 ? void 0 : query.getQuery) !== null && _a !== void 0 ? _a : (() => anyQuery);
-            const environment = Object.assign(Object.assign({}, defaultEnvironment), { routes });
-            const { predicate, getTitle, getNote, getSorter } = protectedCallQueryFunction(() => getQuery().initialize(environment), () => anyQuery.initialize(environment));
-            const sorter = protectedCallQueryFunction(() => { var _a; return (_a = getSorter === null || getSorter === void 0 ? void 0 : getSorter()) !== null && _a !== void 0 ? _a : null; }, () => null);
-            let visibleListItemCount = 0;
-            for (const view of views) {
-                const { route, listView, coordinatesEditor } = view;
+            return iitc_plugin_pgo_route_helper_awaiter(this, void 0, void 0, function* () {
+                if (state.routes === "routes-unloaded")
+                    return;
+                const { query, queryText } = state.routeListQuery;
+                const views = [...state.routes.values()];
+                const routes = views.map((r) => r.route);
+                const isQueryUndefined = query === undefined;
+                const getQuery = (_a = query === null || query === void 0 ? void 0 : query.getQuery) !== null && _a !== void 0 ? _a : (() => anyQuery);
+                const environment = Object.assign(Object.assign({}, defaultEnvironment), { routes });
+                const { predicate, getTitle, getNote, getSorter } = protectedCallQueryFunction(() => getQuery().initialize(environment), () => anyQuery.initialize(environment));
+                const sorter = protectedCallQueryFunction(() => { var _a; return (_a = getSorter === null || getSorter === void 0 ? void 0 : getSorter()) !== null && _a !== void 0 ? _a : null; }, () => null);
+                // 検索クエリを実行し結果を得る
+                // DOM要素へ反映はしない
+                let visibleListItemCount = 0;
+                for (const view of views) {
+                    if (scheduler.yieldRequested()) {
+                        yield scheduler.yield({ signal });
+                    }
+                    const { route, listView, coordinatesEditor } = view;
+                    if (sorter != null) {
+                        view.sortKey = protectedCallQueryFunction(() => sorter.getKey(route), () => null);
+                    }
+                    else {
+                        view.sortKey = null;
+                    }
+                    listView.visible = protectedCallQueryFunction(() => predicate(route), () => false);
+                    listView.title = protectedCallQueryFunction(() => { var _a; return (_a = getTitle === null || getTitle === void 0 ? void 0 : getTitle(route)) !== null && _a !== void 0 ? _a : null; }, () => null);
+                    listView.note = protectedCallQueryFunction(() => { var _a; return (_a = getNote === null || getNote === void 0 ? void 0 : getNote(route)) !== null && _a !== void 0 ? _a : null; }, () => null);
+                    if (listView.visible)
+                        visibleListItemCount++;
+                    if (!isQueryUndefined)
+                        coordinatesEditor.highlight(listView.visible);
+                }
                 if (sorter != null) {
-                    view.sortKey = protectedCallQueryFunction(() => sorter.getKey(route), () => null);
+                    const bias = sorter.isAscendent ? 1 : -1;
+                    views.sort((r1, r2) => bias * compareQueryKey(r1.sortKey, r2.sortKey));
                 }
-                else {
-                    view.sortKey = null;
-                }
-                listView.visible = protectedCallQueryFunction(() => predicate(route), () => false);
-                listView.title = protectedCallQueryFunction(() => { var _a; return (_a = getTitle === null || getTitle === void 0 ? void 0 : getTitle(route)) !== null && _a !== void 0 ? _a : null; }, () => null);
-                listView.note = protectedCallQueryFunction(() => { var _a; return (_a = getNote === null || getNote === void 0 ? void 0 : getNote(route)) !== null && _a !== void 0 ? _a : null; }, () => null);
-                if (listView.visible)
-                    visibleListItemCount++;
-                updateRouteListView(route, listView);
-                if (!isQueryUndefined)
-                    coordinatesEditor.highlight(listView.visible);
-            }
-            if (sorter != null) {
+                // クエリ結果をDOMに反映する
                 const fragment = document.createDocumentFragment();
-                views.sort((r1, r2) => (sorter.isAscendent ? 1 : -1) *
-                    compareQueryKey(r1.sortKey, r2.sortKey));
-                for (const { listView } of views) {
+                for (const { listView, route } of views) {
+                    updateRouteListView(route, listView);
                     fragment.appendChild(listView.listItem);
                 }
                 routeListElement.appendChild(fragment);
-            }
-            if (!isQueryUndefined) {
-                progress({
-                    type: "query-evaluation-completed",
-                    language: query.syntax,
-                    hitCount: visibleListItemCount,
-                    allCount: state.routes.size,
-                });
-            }
-            saveQueryHistory(queryText);
+                if (!isQueryUndefined) {
+                    progress({
+                        type: "query-evaluation-completed",
+                        language: query.syntax,
+                        hitCount: visibleListItemCount,
+                        allCount: views.length,
+                    });
+                }
+                saveQueryHistory(queryText);
+            });
+        }
+        function updateRoutesListElement() {
+            asyncUpdateRouteListElementScope(updateRouteListElementAsync);
         }
         const elementToRouteId = new WeakMap();
         function onListItemClicked(element) {
@@ -3322,6 +3458,7 @@ function asyncMain() {
                 route.coordinates = [latLngToCoordinate(circle.getLatLng())];
                 queueSetRouteCommandDelayed(3000, route);
             });
+            circle.on("add", changeStyle);
             const label = L.marker(circle.getLatLng(), {
                 icon: createSpotLabel(route.routeName),
             });
@@ -3391,7 +3528,7 @@ function asyncMain() {
                     }
                 }
                 // 範囲内レイヤーのうち追加されていないものを追加する
-                for (const [layer, route] of layerToRoutesRequiringAddition.entries()) {
+                for (const layer of layerToRoutesRequiringAddition.keys()) {
                     if (scheduler.yieldRequested())
                         yield scheduler.yield({ signal });
                     routeLayerGroup.addLayer(layer);
