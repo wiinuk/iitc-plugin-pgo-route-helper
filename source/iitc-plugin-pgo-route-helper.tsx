@@ -923,12 +923,27 @@ async function asyncMain() {
         }
 
         // クエリ結果をDOMに反映する
-        const fragment = document.createDocumentFragment();
-        for (const { listView, route } of views) {
-            updateRouteListView(route, listView);
-            fragment.appendChild(listView.listItem);
+        function createScrollPositionRestorer(e: HTMLElement | null) {
+            if (!e) return;
+            const { scrollTop, scrollLeft } = e;
+            return () => {
+                e.scrollTop = scrollTop;
+                e.scrollLeft = scrollLeft;
+            };
         }
-        routeListElement.appendChild(fragment);
+        const restoreScrollPosition = createScrollPositionRestorer(
+            routeListElement.parentElement
+        );
+        routeListElement.innerHTML = "";
+        for (const { listView, route } of views) {
+            if (scheduler.yieldRequested()) {
+                await scheduler.yield({ signal });
+            }
+            updateRouteListView(route, listView);
+            routeListElement.appendChild(listView.listItem);
+            restoreScrollPosition?.();
+        }
+        restoreScrollPosition?.();
 
         if (!isQueryUndefined) {
             progress({
