@@ -1,5 +1,5 @@
 import packageJson from "../package.json";
-import { error } from "./standard-extensions";
+import { error, ignore, newAbortError } from "./standard-extensions";
 export function waitElementLoaded() {
     if (document.readyState !== "loading") {
         return Promise.resolve();
@@ -146,4 +146,26 @@ let e: HTMLElement | undefined;
 export function escapeHtml(text: string) {
     (e ??= document.createElement("div")).innerText = text;
     return e.innerHTML;
+}
+
+export function sleepUntilNextAnimationFrame(options?: {
+    signal?: AbortSignal;
+}) {
+    return new Promise<DOMHighResTimeStamp>((resolve, reject) => {
+        const signal = options?.signal;
+        if (signal?.aborted) {
+            return reject(newAbortError());
+        }
+        const onAbort = signal
+            ? () => {
+                  cancelAnimationFrame(id);
+                  reject(newAbortError());
+              }
+            : ignore;
+        const id = requestAnimationFrame((time) => {
+            signal?.removeEventListener("abort", onAbort);
+            resolve(time);
+        });
+        signal?.addEventListener("abort", onAbort);
+    });
 }
