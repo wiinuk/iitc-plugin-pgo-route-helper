@@ -4,6 +4,7 @@ import {
     addListeners,
     addStyle,
     escapeHtml,
+    sleepUntilNextAnimationFrame,
     waitElementLoaded,
 } from "./document-extensions";
 import {
@@ -152,21 +153,14 @@ function getMiddleCoordinate(
 }
 
 function createScheduler() {
-    type Handle = ReturnType<typeof requestAnimationFrame>;
-    const yieldInterval = (1000 / 60) * 0.1;
+    const yieldInterval = 1000 / 60;
     let lastYieldEnd = -Infinity;
     return {
         yieldRequested() {
             return lastYieldEnd + yieldInterval < performance.now();
         },
         async yield(options?: { signal?: AbortSignal }) {
-            const signal = options?.signal;
-            const handle = await new Promise<Handle>(requestAnimationFrame);
-            if (signal) {
-                signal.addEventListener("abort", () =>
-                    cancelAnimationFrame(handle)
-                );
-            }
+            await sleepUntilNextAnimationFrame(options);
             lastYieldEnd = performance.now();
         },
     };
