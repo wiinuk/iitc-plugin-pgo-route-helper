@@ -864,12 +864,12 @@ async function asyncMain() {
         }
     }
 
-    function updateRoutesListElement() {
-        if (state.routes === "routes-unloaded") {
-            return;
-        }
-        const { queryText, query } = state.routeListQuery;
+    const asyncUpdateRouteListElementScope =
+        createAsyncCancelScope(handleAsyncError);
+    async function updateRouteListElementAsync(signal: AbortSignal) {
+        if (state.routes === "routes-unloaded") return;
 
+        const { query, queryText } = state.routeListQuery;
         const views = [...state.routes.values()];
         const routes = views.map((r) => r.route);
         const isQueryUndefined = query === undefined;
@@ -886,8 +886,14 @@ async function asyncMain() {
             () => null
         );
 
+        // 検索クエリを実行し結果を得る
+        // DOM要素へ反映はしない
         let visibleListItemCount = 0;
         for (const view of views) {
+            if (scheduler.yieldRequested()) {
+                await scheduler.yield({ signal });
+            }
+
             const { route, listView, coordinatesEditor } = view;
             if (sorter != null) {
                 view.sortKey = protectedCallQueryFunction(
@@ -911,32 +917,37 @@ async function asyncMain() {
                 () => null
             );
             if (listView.visible) visibleListItemCount++;
-            updateRouteListView(route, listView);
 
             if (!isQueryUndefined)
                 coordinatesEditor.highlight(listView.visible);
         }
         if (sorter != null) {
-            const fragment = document.createDocumentFragment();
+            const bias = sorter.isAscendent ? 1 : -1;
             views.sort(
-                (r1, r2) =>
-                    (sorter.isAscendent ? 1 : -1) *
-                    compareQueryKey(r1.sortKey, r2.sortKey)
+                (r1, r2) => bias * compareQueryKey(r1.sortKey, r2.sortKey)
             );
-            for (const { listView } of views) {
-                fragment.appendChild(listView.listItem);
-            }
-            routeListElement.appendChild(fragment);
         }
+
+        // クエリ結果をDOMに反映する
+        const fragment = document.createDocumentFragment();
+        for (const { listView, route } of views) {
+            updateRouteListView(route, listView);
+            fragment.appendChild(listView.listItem);
+        }
+        routeListElement.appendChild(fragment);
+
         if (!isQueryUndefined) {
             progress({
                 type: "query-evaluation-completed",
                 language: query.syntax,
                 hitCount: visibleListItemCount,
-                allCount: state.routes.size,
+                allCount: views.length,
             });
         }
         saveQueryHistory(queryText);
+    }
+    function updateRoutesListElement() {
+        asyncUpdateRouteListElementScope(updateRouteListElementAsync);
     }
 
     const elementToRouteId = new WeakMap<Element, string>();
