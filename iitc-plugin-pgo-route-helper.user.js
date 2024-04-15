@@ -6,7 +6,7 @@
 // @downloadURL  https://github.com/wiinuk/iitc-plugin-pgo-route-helper/raw/master/iitc-plugin-pgo-route-helper.user.js
 // @updateURL    https://github.com/wiinuk/iitc-plugin-pgo-route-helper/raw/master/iitc-plugin-pgo-route-helper.user.js
 // @homepageURL  https://github.com/wiinuk/iitc-plugin-pgo-route-helper
-// @version      0.9.13
+// @version      0.9.14
 // @description  IITC plugin to assist in Pokémon GO route creation.
 // @author       Wiinuk
 // @include      https://*.ingress.com/intel*
@@ -2665,7 +2665,7 @@ function getMiddleCoordinate(p1, p2) {
     return L.latLngBounds(p1, p2).getCenter();
 }
 function createScheduler() {
-    const yieldInterval = 1000 / 60;
+    const yieldInterval = (1000 / 60) * 2;
     let lastYieldEnd = -Infinity;
     return {
         yieldRequested() {
@@ -3235,7 +3235,6 @@ function asyncMain() {
                     }
                     updateRouteListView(route, listView);
                     routeListElement.appendChild(listView.listItem);
-                    restoreScrollPosition === null || restoreScrollPosition === void 0 ? void 0 : restoreScrollPosition();
                 }
                 restoreScrollPosition === null || restoreScrollPosition === void 0 ? void 0 : restoreScrollPosition();
                 if (!isQueryUndefined) {
