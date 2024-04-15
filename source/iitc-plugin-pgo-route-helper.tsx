@@ -221,12 +221,7 @@ async function asyncMain() {
         routes: "routes-unloaded" | Map<string, RouteWithView>;
         routeListQuery: Readonly<{
             queryText: string;
-            query:
-                | {
-                      syntax: "words" | "parentheses";
-                      getQuery: () => UnitQueryFactory;
-                  }
-                | undefined;
+            query: (() => UnitQueryFactory) | undefined;
         }>;
     } = {
         selectedRouteId: null,
@@ -258,11 +253,10 @@ async function asyncMain() {
               }
             | {
                   type: "query-parse-completed";
-                  language: "words" | "parentheses" | undefined;
+                  hasFilter: boolean;
               }
             | {
                   type: "query-evaluation-completed";
-                  language: "words" | "parentheses";
                   allCount: number;
                   hitCount: number;
               }
@@ -323,34 +317,15 @@ async function asyncMain() {
                 break;
             }
             case "query-parse-completed": {
-                switch (message.language) {
-                    case "words":
-                        reportElement.innerText = "通常検索";
-                        break;
-                    case "parentheses":
-                        reportElement.innerText = "式検索";
-                        break;
-                    case undefined:
-                        reportElement.innerText = "全件";
-                        break;
-                    default:
-                        return exhaustive(message);
+                if (message.hasFilter) {
+                    reportElement.innerText = "式検索";
+                } else {
+                    reportElement.innerText = "全件";
                 }
                 break;
             }
             case "query-evaluation-completed": {
-                let comment;
-                switch (message.language) {
-                    case "words":
-                        comment = "通常検索";
-                        break;
-                    case "parentheses":
-                        comment = "式検索";
-                        break;
-                    default:
-                        return exhaustive(message);
-                }
-                reportElement.innerText = `${comment} (表示 ${message.hitCount} 件 / 全体 ${message.allCount} 件)`;
+                reportElement.innerText = `検索完了 (表示 ${message.hitCount} 件 / 全体 ${message.allCount} 件)`;
                 break;
             }
             case "query-parse-error-occurred": {
@@ -867,7 +842,7 @@ async function asyncMain() {
         const views = [...state.routes.values()];
         const routes = views.map((r) => r.route);
         const isQueryUndefined = query === undefined;
-        const getQuery = query?.getQuery ?? (() => anyQuery);
+        const getQuery = query ?? (() => anyQuery);
 
         const environment = { ...defaultEnvironment, routes };
         const { predicate, getTitle, getNote, getSorter } =
@@ -947,7 +922,6 @@ async function asyncMain() {
         if (!isQueryUndefined) {
             progress({
                 type: "query-evaluation-completed",
-                language: query.syntax,
                 hitCount: visibleListItemCount,
                 allCount: views.length,
             });
@@ -1046,12 +1020,11 @@ async function asyncMain() {
                 };
                 progress({
                     type: "query-parse-completed",
-                    language: undefined,
+                    hasFilter: false,
                 });
             } else {
                 queryEditor.clearDiagnostics();
-                const { getQuery, diagnostics, syntax } =
-                    createQuery(queryText);
+                const { getQuery, diagnostics } = createQuery(queryText);
 
                 for (const diagnostic of diagnostics) {
                     queryEditor.addDiagnostic(diagnostic);
@@ -1064,12 +1037,12 @@ async function asyncMain() {
                 } else {
                     progress({
                         type: "query-parse-completed",
-                        language: syntax,
+                        hasFilter: true,
                     });
                 }
                 state.routeListQuery = {
                     queryText,
-                    query: { getQuery, syntax },
+                    query: getQuery,
                 };
             }
             updateRoutesListElement();

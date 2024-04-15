@@ -141,7 +141,6 @@ export const anyQuery: UnitQueryFactory = {
 };
 export type QueryCreateResult = {
     getQuery: () => UnitQueryFactory;
-    syntax: "words" | "parentheses";
     diagnostics: string[];
 };
 function includes(words: readonly string[]): UnitQueryFactory {
@@ -267,6 +266,18 @@ function or(...queries: RouteQuery[]): RouteQuery {
     };
 }
 const library = {
+    _lisq_(
+        xs:
+            | [f: (...args: unknown[]) => unknown, xs: unknown[]]
+            | [q: RouteQuery, qs: RouteQuery[]]
+    ) {
+        const [head, ...tail] = xs;
+        if (typeof head === "function") {
+            return head(...tail);
+        } else {
+            return and(...(xs as RouteQuery[]));
+        }
+    },
     ["tag?"](route: Route, tagNames: readonly string[]) {
         const tags = getRouteTags(route);
         if (tags === undefined) return false;
@@ -405,19 +416,11 @@ export function createQuery(expression: string): QueryCreateResult {
     const tokenizer = createTokenizer(expression, tokenDefinitions);
     const parser = createParser(tokenizer, (d) => diagnostics.push(d));
     const json = parser.parse();
-    if (json == null || typeof json !== "object") {
-        return {
-            getQuery: () => createSimpleQuery(expression),
-            syntax: "words",
-            diagnostics: [],
-        };
-    }
     return {
         getQuery: () => {
             // TODO: 静的チェックする
             return queryAsFactory(evaluateWithLibrary(json) as RouteQuery);
         },
-        syntax: "parentheses",
         diagnostics,
     };
 }
