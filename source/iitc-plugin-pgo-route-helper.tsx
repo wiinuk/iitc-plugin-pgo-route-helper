@@ -153,7 +153,7 @@ function getMiddleCoordinate(
 }
 
 function createScheduler() {
-    const yieldInterval = 1000 / 60;
+    const yieldInterval = (1000 / 60) * 2;
     let lastYieldEnd = -Infinity;
     return {
         yieldRequested() {
@@ -941,7 +941,6 @@ async function asyncMain() {
             }
             updateRouteListView(route, listView);
             routeListElement.appendChild(listView.listItem);
-            restoreScrollPosition?.();
         }
         restoreScrollPosition?.();
 
