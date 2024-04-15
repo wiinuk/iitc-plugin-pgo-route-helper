@@ -26,17 +26,17 @@ function evaluateOk(source: string) {
     );
 }
 it("@#where", () => {
-    expect(evaluateOk(`a @#where a 123`)).toStrictEqual(123);
-    expect(evaluateOk(`b @#where b a @#where a 123`)).toStrictEqual(123);
+    expect(evaluateOk(`$a @#where $a 123`)).toStrictEqual(123);
+    expect(evaluateOk(`$b @#where $b $a @#where $a 123`)).toStrictEqual(123);
 });
 it("@#as", () => {
-    expect(evaluateOk(`123 @#as a a`)).toStrictEqual(123);
-    expect(evaluateOk(`123 @#as a a @#as b b`)).toStrictEqual(123);
+    expect(evaluateOk(`123 @#as $a $a`)).toStrictEqual(123);
+    expect(evaluateOk(`123 @#as $a $a @#as $b $b`)).toStrictEqual(123);
 });
 it("#function", () => {
-    expect(evaluateOk("(#function a a) 123")).toStrictEqual(123);
-    expect(evaluateOk("(#function (a) a) 123")).toStrictEqual(123);
-    expect(evaluateOk("(#function (x y) (#list x y)) 123 456")).toStrictEqual([
-        123, 456,
-    ]);
+    expect(evaluateOk("($#function $a $a) 123")).toStrictEqual(123);
+    expect(evaluateOk("($#function ($a) $a) 123")).toStrictEqual(123);
+    expect(
+        evaluateOk("($#function ($x $y) ($#list $x $y)) 123 456")
+    ).toStrictEqual([123, 456]);
 });

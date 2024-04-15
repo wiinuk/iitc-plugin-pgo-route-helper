@@ -1,6 +1,7 @@
 import { error, type Json } from "../standard-extensions";
 const enum CharacterCodes {
     ['"'] = 34,
+    $ = 36,
     ["/"] = 47,
     C0 = 48,
     C9 = 57,
@@ -126,6 +127,8 @@ export const tokenDefinitions: TokenDefinitions<string> = [
     [/\/\*[\s\S]*?\*\//],
     // キーワードや記号
     [/true|false|null|[[\](){},:]/],
+    // $始まりの変数
+    [/\$[^\s/[\](){}@,:"\\]+/],
     // @始まりの中置き演算子
     [/@[^\s/[\](){}@,:"\\]+/],
     // 識別子形式の文字列 { key: 0 }
@@ -163,6 +166,7 @@ type TokenKind =
     | "String"
     | "Name"
     | "AtName"
+    | "DollarName"
     | "WhiteSpace"
     | "Comment"
     | "EndOfSource";
@@ -185,6 +189,7 @@ function getTokenKind(token: Token): TokenKind {
     const code0 = token.codePointAt(0) ?? error`internal error`;
     if (code0 === CharacterCodes["/"]) return "Comment";
     if (code0 === CharacterCodes['"']) return "String";
+    if (code0 === CharacterCodes["$"]) return "DollarName";
     if (code0 === CharacterCodes["@"]) return "AtName";
     if (isAsciiDigit(code0)) return "Number";
     if (isUnicodeWhiteSpace(code0)) return "WhiteSpace";
@@ -248,6 +253,7 @@ export function createParser(
     //     | "(" expression ")"
     //     | literal
     //     | name
+    //     | dollar-name
     //     | record-expression
     function isPrimaryExpressionHead() {
         switch (currentTokenKind) {
@@ -258,6 +264,7 @@ export function createParser(
             case "Number":
             case "String":
             case "Name":
+            case "DollarName":
             case "(":
                 return true;
             default:
@@ -295,7 +302,10 @@ export function createParser(
                 return JSON.parse(token) as number;
             // 名前: xyz => "xyz"
             case "Name":
-                return token;
+                return [token];
+            // 変数名: $abc => abc
+            case "DollarName":
+                return token.slice(1);
             default:
                 tokenKind satisfies
                     | "Unknown"

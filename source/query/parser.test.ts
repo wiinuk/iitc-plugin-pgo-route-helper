@@ -20,25 +20,28 @@ function parseOk(source: string) {
     return syntax;
 }
 const recoveryToken = "<recover>";
+it("name", () => {
+    expect(parseOk("abc")).toStrictEqual(["abc"]);
+});
 it("list", () => {
-    expect(parseOk("(f x)")).toStrictEqual(["f", "x"]);
-    expect(parseOk("(f x )")).toStrictEqual(["f", "x"]);
-    expect(parse("(f x")).toStrictEqual({
+    expect(parseOk("($f $x)")).toStrictEqual(["f", "x"]);
+    expect(parseOk("($f $x )")).toStrictEqual(["f", "x"]);
+    expect(parse("($f $x")).toStrictEqual({
         syntax: ["f", "x"],
         diagnostics: ["RightParenthesisTokenExpected"],
     });
 });
 it("concat", () => {
-    expect(parseOk("f x y")).toStrictEqual(["f", "x", "y"]);
+    expect(parseOk("$f $x $y")).toStrictEqual(["f", "x", "y"]);
 });
 it("infix", () => {
-    expect(parseOk("x @f y")).toStrictEqual(["_f_", "x", "y"]);
-    expect(parseOk("x @f y @g z")).toStrictEqual([
+    expect(parseOk("$x @f $y")).toStrictEqual(["_f_", "x", "y"]);
+    expect(parseOk("$x @f $y @g $z")).toStrictEqual([
         "_g_",
         ["_f_", "x", "y"],
         "z",
     ]);
-    expect(parse("x @f")).toStrictEqual({
+    expect(parse("$x @f")).toStrictEqual({
         syntax: ["_f_", "x", recoveryToken],
         diagnostics: ["AnyTokenRequired"],
     });
@@ -60,7 +63,7 @@ it("failure", () => {
     });
 });
 it("eos", () => {
-    expect(parse("expr }")).toStrictEqual({
+    expect(parse("$expr }")).toStrictEqual({
         syntax: "expr",
         diagnostics: ["EndOfSourceOrAtNameExpected"],
     });
