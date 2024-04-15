@@ -7,6 +7,7 @@ import {
 } from "./parser";
 import { evaluateExpression } from "./expression";
 import { error } from "../standard-extensions";
+import * as Assoc from "../assoc";
 
 function parse(source: string) {
     const diagnostics: DiagnosticKind[] = [];
@@ -21,7 +22,14 @@ function evaluateOk(source: string) {
     }
     return evaluateExpression(
         syntax,
-        null,
+        Assoc.add(
+            "_lisq_",
+            (values: unknown[]) =>
+                typeof values[0] === "function"
+                    ? values[0](...values.slice(1))
+                    : error`not function`,
+            null
+        ),
         (x) => error`undefined variable "${x}"`
     );
 }
@@ -39,4 +47,9 @@ it("#function", () => {
     expect(
         evaluateOk("($#function ($x $y) ($#list $x $y)) 123 456")
     ).toStrictEqual([123, 456]);
+});
+it("@lisq", () => {
+    expect(
+        evaluateOk(`1 2 3 @#where $_lisq_ ($#function ($xs) $xs)`)
+    ).toStrictEqual([1, 2, 3]);
 });
