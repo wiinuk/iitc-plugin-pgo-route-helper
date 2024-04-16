@@ -157,9 +157,6 @@ type TokenKind =
     | ":"
     | "@"
     | "$"
-    | "true"
-    | "false"
-    | "null"
     | "Number"
     | "String"
     | "Name"
@@ -177,9 +174,6 @@ function getTokenKind(token: Token): TokenKind {
         case "}":
         case ",":
         case ":":
-        case "true":
-        case "false":
-        case "null":
         case "@":
         case "$":
             return token;
@@ -284,9 +278,6 @@ export function createParser(
     function isPrimaryExpressionHead() {
         switch (currentTokenKind) {
             case "{":
-            case "true":
-            case "false":
-            case "null":
             case "Number":
             case "String":
             case "Name":
@@ -335,13 +326,6 @@ export function createParser(
             // レコード
             case "{":
                 return parseRecordTail();
-            // true, false, null
-            case "true":
-                return true;
-            case "false":
-                return false;
-            case "null":
-                return null;
             // 文字列リテラル: "abc" => ["abc"]
             case "String":
                 return [JSON.parse(token) as string];

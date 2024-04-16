@@ -22,6 +22,9 @@ function parseOk(source: string) {
 const recoveryToken = "<recover>";
 it("name", () => {
     expect(parseOk("abc")).toStrictEqual(["abc"]);
+    expect(parseOk("null")).toStrictEqual(["null"]);
+    expect(parseOk("true")).toStrictEqual(["true"]);
+    expect(parseOk("false")).toStrictEqual(["false"]);
 });
 it("variable", () => {
     expect(parseOk("$abc")).toStrictEqual("abc");
