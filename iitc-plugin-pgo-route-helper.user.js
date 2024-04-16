@@ -6,7 +6,7 @@
 // @downloadURL  https://github.com/wiinuk/iitc-plugin-pgo-route-helper/raw/master/iitc-plugin-pgo-route-helper.user.js
 // @updateURL    https://github.com/wiinuk/iitc-plugin-pgo-route-helper/raw/master/iitc-plugin-pgo-route-helper.user.js
 // @homepageURL  https://github.com/wiinuk/iitc-plugin-pgo-route-helper
-// @version      0.9.14
+// @version      0.9.15
 // @description  IITC plugin to assist in Pokémon GO route creation.
 // @author       Wiinuk
 // @include      https://*.ingress.com/intel*
@@ -1451,17 +1451,19 @@ function throwAsFormError() {
     return standard_extensions_error `_#as_ 形式には要素1と2が必要です。例: ["_#as_", ["headTask"], ["result", "result"]]`;
 }
 const expression_hasOwnProperty = Object.prototype.hasOwnProperty;
+function evaluateVariable(expression, variables, getUnresolved) {
+    const kv = get(expression, variables);
+    if (kv)
+        return kv[1];
+    return getUnresolved(expression);
+}
 function evaluateExpression(expression, variables, getUnresolved) {
     switch (typeof expression) {
         case "boolean":
         case "number":
             return expression;
-        case "string": {
-            const kv = get(expression, variables);
-            if (kv)
-                return kv[1];
-            return getUnresolved(expression);
-        }
+        case "string":
+            return evaluateVariable(expression, variables, getUnresolved);
     }
     if (!isArray(expression)) {
         const result = Object.create(null);
@@ -1586,18 +1588,19 @@ function evaluateExpression(expression, variables, getUnresolved) {
             if (expression.length === 1 && typeof head === "string") {
                 return head;
             }
-            const f = evaluateExpression(head, variables, getUnresolved);
-            const args = [];
-            for (let i = 1; i < expression.length; i++) {
+            const items = [];
+            for (let i = 0; i < expression.length; i++) {
                 const p = evaluateExpression(
                 // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
                 expression[i], variables, getUnresolved);
-                args.push(p);
+                items.push(p);
             }
-            if (typeof f !== "function") {
-                return standard_extensions_error `関数ではない値を呼び出す事はできません。`;
+            const listProcessorName = "_lisq_";
+            const listProcessor = evaluateVariable(listProcessorName, variables, getUnresolved);
+            if (typeof listProcessor !== "function") {
+                return standard_extensions_error `変数 ${listProcessorName} は関数ではありません。`;
             }
-            return f(...args);
+            return listProcessor(items);
         }
     }
 }
@@ -1834,6 +1837,7 @@ function countByGyms(kind, value) {
 var CharacterCodes;
 (function (CharacterCodes) {
     CharacterCodes[CharacterCodes['"'] = 34] = '"';
+    CharacterCodes[CharacterCodes["$"] = 36] = "$";
     CharacterCodes[CharacterCodes["/"] = 47] = "/";
     CharacterCodes[CharacterCodes["C0"] = 48] = "C0";
     CharacterCodes[CharacterCodes["C9"] = 57] = "C9";
@@ -1944,11 +1948,9 @@ const tokenDefinitions = [
     // 複数行コメント /* comment */
     [/\/\*[\s\S]*?\*\//],
     // キーワードや記号
-    [/true|false|null|[[\](){},:]/],
-    // @始まりの中置き演算子
-    [/@[^\s/[\](){}@,:"\\]+/],
+    [/true|false|null|[[\](){},:@$]/],
     // 識別子形式の文字列 { key: 0 }
-    [/[^\s/[\](){}@,:"\\\d][^\s/[\](){}@,:"\\]*/],
+    [/[^\s/[\](){}@,:"\\\d][^\s/[\](){}@$,:"\\]*/],
     // 空白
     [/\s+/],
     // 数値リテラル
@@ -1977,9 +1979,8 @@ function getTokenKind(token) {
         case "}":
         case ",":
         case ":":
-        case "true":
-        case "false":
-        case "null":
+        case "@":
+        case "$":
             return token;
     }
     const code0 = (_a = token.codePointAt(0)) !== null && _a !== void 0 ? _a : standard_extensions_error `internal error`;
@@ -1987,8 +1988,6 @@ function getTokenKind(token) {
         return "Comment";
     if (code0 === CharacterCodes['"'])
         return "String";
-    if (code0 === CharacterCodes["@"])
-        return "AtName";
     if (isAsciiDigit(code0))
         return "Number";
     if (isUnicodeWhiteSpace(code0))
@@ -2019,14 +2018,37 @@ function createParser({ next }, reporter) {
     function parseExpression() {
         return parseOperatorExpressionOrHigher();
     }
-    // operator-expression-or-higher := concatenation-expression (at-name concatenation-expression)*
+    // infix-operator :=
+    //     | "@" name
+    //     | "@" string-literal
+    //     | "@" primary-expression
+    function isInfixOperatorHead() {
+        return currentTokenKind === "@";
+    }
+    function parseInfixOperatorTail(baseName) {
+        nextToken();
+        return `_${baseName}_`;
+    }
+    function parseInfixOperator() {
+        // skip "@"
+        nextToken();
+        if (currentToken != null) {
+            switch (currentTokenKind) {
+                case "Name":
+                    return parseInfixOperatorTail(currentToken);
+                case "String":
+                    return parseInfixOperatorTail(JSON.parse(currentToken));
+            }
+        }
+        return parsePrimaryExpression();
+    }
+    // operator-expression-or-higher := concatenation-expression (infix-operator concatenation-expression)*
     function parseOperatorExpressionOrHigher() {
         let left = parseConcatenationExpression();
-        while (currentTokenKind === "AtName") {
-            const operatorName = `_${currentToken === null || currentToken === void 0 ? void 0 : currentToken.slice(1)}_`;
-            nextToken();
+        while (isInfixOperatorHead()) {
+            const operator = parseInfixOperator();
             const right = parseConcatenationExpression();
-            left = [operatorName, left, right];
+            left = [operator, left, right];
         }
         return left;
     }
@@ -2042,25 +2064,50 @@ function createParser({ next }, reporter) {
         }
         return left;
     }
+    // variable :=
+    //     | "$" name
+    //     | "$" string-literal
+    //
     // primary-expression :=
     //     | "(" expression ")"
     //     | literal
     //     | name
+    //     | variable
     //     | record-expression
     function isPrimaryExpressionHead() {
         switch (currentTokenKind) {
             case "{":
-            case "true":
-            case "false":
-            case "null":
             case "Number":
             case "String":
             case "Name":
+            case "$":
             case "(":
                 return true;
             default:
                 return false;
         }
+    }
+    function recoveryVariable() {
+        reporter(DiagnosticKind.StringLiteralOrNameRequired);
+        return recoveryToken;
+    }
+    function parseVariableTail() {
+        if (currentToken == null) {
+            return recoveryVariable();
+        }
+        let variable;
+        switch (currentTokenKind) {
+            case "Name":
+                variable = currentToken;
+                break;
+            case "String":
+                variable = JSON.parse(currentToken);
+                break;
+            default:
+                return recoveryVariable();
+        }
+        nextToken();
+        return variable;
     }
     function parsePrimaryExpression() {
         const token = currentToken;
@@ -2077,13 +2124,6 @@ function createParser({ next }, reporter) {
             // レコード
             case "{":
                 return parseRecordTail();
-            // true, false, null
-            case "true":
-                return true;
-            case "false":
-                return false;
-            case "null":
-                return null;
             // 文字列リテラル: "abc" => ["abc"]
             case "String":
                 return [JSON.parse(token)];
@@ -2092,7 +2132,11 @@ function createParser({ next }, reporter) {
                 return JSON.parse(token);
             // 名前: xyz => "xyz"
             case "Name":
-                return token;
+                return [token];
+            // 変数: $abc => abc
+            // $"abc" => abc
+            case "$":
+                return parseVariableTail();
             default:
                 tokenKind;
                 reporter(DiagnosticKind.LeftParenthesesOrLeftCurlyBracketOrLiteralOrNameRequired);
@@ -2275,9 +2319,6 @@ function includes(words) {
         },
     };
 }
-function createSimpleQuery(expression) {
-    return includes(expression.split(/\s+/));
-}
 function reachableWith(options) {
     return {
         initialize({ getUserCoordinate, distance }) {
@@ -2351,6 +2392,15 @@ function or(...queries) {
     };
 }
 const library = {
+    _lisq_(xs) {
+        const [head, ...tail] = xs;
+        if (typeof head === "function") {
+            return head(...tail);
+        }
+        else {
+            return and(...xs);
+        }
+    },
     ["tag?"](route, tagNames) {
         const tags = getRouteTags(route);
         if (tags === undefined)
@@ -2465,19 +2515,11 @@ function createQuery(expression) {
     const tokenizer = createTokenizer(expression, tokenDefinitions);
     const parser = createParser(tokenizer, (d) => diagnostics.push(d));
     const json = parser.parse();
-    if (json == null || typeof json !== "object") {
-        return {
-            getQuery: () => createSimpleQuery(expression),
-            syntax: "words",
-            diagnostics: [],
-        };
-    }
     return {
         getQuery: () => {
             // TODO: 静的チェックする
             return queryAsFactory(evaluateWithLibrary(json));
         },
-        syntax: "parentheses",
         diagnostics,
     };
 }
@@ -2743,34 +2785,16 @@ function asyncMain() {
                     break;
                 }
                 case "query-parse-completed": {
-                    switch (message.language) {
-                        case "words":
-                            reportElement.innerText = "通常検索";
-                            break;
-                        case "parentheses":
-                            reportElement.innerText = "式検索";
-                            break;
-                        case undefined:
-                            reportElement.innerText = "全件";
-                            break;
-                        default:
-                            return exhaustive(message);
+                    if (message.hasFilter) {
+                        reportElement.innerText = "式検索";
+                    }
+                    else {
+                        reportElement.innerText = "全件";
                     }
                     break;
                 }
                 case "query-evaluation-completed": {
-                    let comment;
-                    switch (message.language) {
-                        case "words":
-                            comment = "通常検索";
-                            break;
-                        case "parentheses":
-                            comment = "式検索";
-                            break;
-                        default:
-                            return exhaustive(message);
-                    }
-                    reportElement.innerText = `${comment} (表示 ${message.hitCount} 件 / 全体 ${message.allCount} 件)`;
+                    reportElement.innerText = `検索完了 (表示 ${message.hitCount} 件 / 全体 ${message.allCount} 件)`;
                     break;
                 }
                 case "query-parse-error-occurred": {
@@ -3179,7 +3203,6 @@ function asyncMain() {
         }
         const asyncUpdateRouteListElementScope = createAsyncCancelScope(handleAsyncError);
         function updateRouteListElementAsync(signal) {
-            var _a;
             return iitc_plugin_pgo_route_helper_awaiter(this, void 0, void 0, function* () {
                 if (state.routes === "routes-unloaded")
                     return;
@@ -3187,7 +3210,7 @@ function asyncMain() {
                 const views = [...state.routes.values()];
                 const routes = views.map((r) => r.route);
                 const isQueryUndefined = query === undefined;
-                const getQuery = (_a = query === null || query === void 0 ? void 0 : query.getQuery) !== null && _a !== void 0 ? _a : (() => anyQuery);
+                const getQuery = query !== null && query !== void 0 ? query : (() => anyQuery);
                 const environment = Object.assign(Object.assign({}, defaultEnvironment), { routes });
                 const { predicate, getTitle, getNote, getSorter } = protectedCallQueryFunction(() => getQuery().initialize(environment), () => anyQuery.initialize(environment));
                 const sorter = protectedCallQueryFunction(() => { var _a; return (_a = getSorter === null || getSorter === void 0 ? void 0 : getSorter()) !== null && _a !== void 0 ? _a : null; }, () => null);
@@ -3240,7 +3263,6 @@ function asyncMain() {
                 if (!isQueryUndefined) {
                     progress({
                         type: "query-evaluation-completed",
-                        language: query.syntax,
                         hitCount: visibleListItemCount,
                         allCount: views.length,
                     });
@@ -3312,12 +3334,12 @@ function asyncMain() {
                     };
                     progress({
                         type: "query-parse-completed",
-                        language: undefined,
+                        hasFilter: false,
                     });
                 }
                 else {
                     queryEditor.clearDiagnostics();
-                    const { getQuery, diagnostics, syntax } = createQuery(queryText);
+                    const { getQuery, diagnostics } = createQuery(queryText);
                     for (const diagnostic of diagnostics) {
                         queryEditor.addDiagnostic(diagnostic);
                     }
@@ -3330,12 +3352,12 @@ function asyncMain() {
                     else {
                         progress({
                             type: "query-parse-completed",
-                            language: syntax,
+                            hasFilter: true,
                         });
                     }
                     state.routeListQuery = {
                         queryText,
-                        query: { getQuery, syntax },
+                        query: getQuery,
                     };
                 }
                 updateRoutesListElement();
