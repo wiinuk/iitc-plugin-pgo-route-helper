@@ -1,6 +1,7 @@
 import { error, type Json } from "../standard-extensions";
 const enum CharacterCodes {
     ['"'] = 34,
+    $ = 36,
     ["/"] = 47,
     C0 = 48,
     C9 = 57,
@@ -125,11 +126,9 @@ export const tokenDefinitions: TokenDefinitions<string> = [
     // 複数行コメント /* comment */
     [/\/\*[\s\S]*?\*\//],
     // キーワードや記号
-    [/true|false|null|[[\](){},:]/],
-    // @始まりの中置き演算子
-    [/@[^\s/[\](){}@,:"\\]+/],
+    [/true|false|null|[[\](){},:@$]/],
     // 識別子形式の文字列 { key: 0 }
-    [/[^\s/[\](){}@,:"\\\d][^\s/[\](){}@,:"\\]*/],
+    [/[^\s/[\](){}@,:"\\\d][^\s/[\](){}@$,:"\\]*/],
     // 空白
     [/\s+/],
     // 数値リテラル
@@ -156,13 +155,11 @@ type TokenKind =
     | "}"
     | ","
     | ":"
-    | "true"
-    | "false"
-    | "null"
+    | "@"
+    | "$"
     | "Number"
     | "String"
     | "Name"
-    | "AtName"
     | "WhiteSpace"
     | "Comment"
     | "EndOfSource";
@@ -177,15 +174,13 @@ function getTokenKind(token: Token): TokenKind {
         case "}":
         case ",":
         case ":":
-        case "true":
-        case "false":
-        case "null":
+        case "@":
+        case "$":
             return token;
     }
     const code0 = token.codePointAt(0) ?? error`internal error`;
     if (code0 === CharacterCodes["/"]) return "Comment";
     if (code0 === CharacterCodes['"']) return "String";
-    if (code0 === CharacterCodes["@"]) return "AtName";
     if (isAsciiDigit(code0)) return "Number";
     if (isUnicodeWhiteSpace(code0)) return "WhiteSpace";
     return "Name";
@@ -221,14 +216,40 @@ export function createParser(
     function parseExpression() {
         return parseOperatorExpressionOrHigher();
     }
-    // operator-expression-or-higher := concatenation-expression (at-name concatenation-expression)*
+    // infix-operator :=
+    //     | "@" name
+    //     | "@" string-literal
+    //     | "@" primary-expression
+    function isInfixOperatorHead() {
+        return currentTokenKind === "@";
+    }
+    function parseInfixOperatorTail(baseName: string) {
+        nextToken();
+        return `_${baseName}_`;
+    }
+    function parseInfixOperator() {
+        // skip "@"
+        nextToken();
+
+        if (currentToken != null) {
+            switch (currentTokenKind) {
+                case "Name":
+                    return parseInfixOperatorTail(currentToken);
+                case "String":
+                    return parseInfixOperatorTail(
+                        JSON.parse(currentToken) as string
+                    );
+            }
+        }
+        return parsePrimaryExpression();
+    }
+    // operator-expression-or-higher := concatenation-expression (infix-operator concatenation-expression)*
     function parseOperatorExpressionOrHigher() {
         let left = parseConcatenationExpression();
-        while (currentTokenKind === "AtName") {
-            const operatorName = `_${currentToken?.slice(1)}_`;
-            nextToken();
+        while (isInfixOperatorHead()) {
+            const operator = parseInfixOperator();
             const right = parseConcatenationExpression();
-            left = [operatorName, left, right];
+            left = [operator, left, right];
         }
         return left;
     }
@@ -244,25 +265,50 @@ export function createParser(
         }
         return left;
     }
+    // variable :=
+    //     | "$" name
+    //     | "$" string-literal
+    //
     // primary-expression :=
     //     | "(" expression ")"
     //     | literal
     //     | name
+    //     | variable
     //     | record-expression
     function isPrimaryExpressionHead() {
         switch (currentTokenKind) {
             case "{":
-            case "true":
-            case "false":
-            case "null":
             case "Number":
             case "String":
             case "Name":
+            case "$":
             case "(":
                 return true;
             default:
                 return false;
         }
+    }
+    function recoveryVariable() {
+        reporter(DiagnosticKind.StringLiteralOrNameRequired);
+        return recoveryToken;
+    }
+    function parseVariableTail() {
+        if (currentToken == null) {
+            return recoveryVariable();
+        }
+        let variable;
+        switch (currentTokenKind) {
+            case "Name":
+                variable = currentToken;
+                break;
+            case "String":
+                variable = JSON.parse(currentToken) as string;
+                break;
+            default:
+                return recoveryVariable();
+        }
+        nextToken();
+        return variable;
     }
     function parsePrimaryExpression(): Json {
         const token = currentToken;
@@ -280,13 +326,6 @@ export function createParser(
             // レコード
             case "{":
                 return parseRecordTail();
-            // true, false, null
-            case "true":
-                return true;
-            case "false":
-                return false;
-            case "null":
-                return null;
             // 文字列リテラル: "abc" => ["abc"]
             case "String":
                 return [JSON.parse(token) as string];
@@ -295,7 +334,11 @@ export function createParser(
                 return JSON.parse(token) as number;
             // 名前: xyz => "xyz"
             case "Name":
-                return token;
+                return [token];
+            // 変数: $abc => abc
+            // $"abc" => abc
+            case "$":
+                return parseVariableTail();
             default:
                 tokenKind satisfies
                     | "Unknown"
@@ -303,7 +346,7 @@ export function createParser(
                     | "}"
                     | ","
                     | ":"
-                    | "AtName"
+                    | "@"
                     | "WhiteSpace"
                     | "Comment"
                     | "EndOfSource";

@@ -16,6 +16,16 @@ function throwAsFormError() {
 }
 
 const hasOwnProperty = Object.prototype.hasOwnProperty;
+function evaluateVariable(
+    expression: string,
+    variables: Assoc.Assoc<string, unknown>,
+    getUnresolved: (name: string) => unknown
+) {
+    const kv = Assoc.get(expression, variables);
+    if (kv) return kv[1];
+    return getUnresolved(expression);
+}
+
 export function evaluateExpression(
     expression: Expression,
     variables: Assoc.Assoc<string, unknown>,
@@ -25,11 +35,8 @@ export function evaluateExpression(
         case "boolean":
         case "number":
             return expression;
-        case "string": {
-            const kv = Assoc.get(expression, variables);
-            if (kv) return kv[1];
-            return getUnresolved(expression);
-        }
+        case "string":
+            return evaluateVariable(expression, variables, getUnresolved);
     }
     if (!isArray(expression)) {
         const result = Object.create(null);
@@ -181,21 +188,27 @@ export function evaluateExpression(
             if (expression.length === 1 && typeof head === "string") {
                 return head;
             }
-            const f = evaluateExpression(head, variables, getUnresolved);
-            const args = [];
-            for (let i = 1; i < expression.length; i++) {
+            const items = [];
+            for (let i = 0; i < expression.length; i++) {
                 const p = evaluateExpression(
                     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
                     expression[i]!,
                     variables,
                     getUnresolved
                 );
-                args.push(p);
+                items.push(p);
             }
-            if (typeof f !== "function") {
-                return error`関数ではない値を呼び出す事はできません。`;
+
+            const listProcessorName = "_lisq_";
+            const listProcessor = evaluateVariable(
+                listProcessorName,
+                variables,
+                getUnresolved
+            );
+            if (typeof listProcessor !== "function") {
+                return error`変数 ${listProcessorName} は関数ではありません。`;
             }
-            return f(...args);
+            return listProcessor(items);
         }
     }
 }
