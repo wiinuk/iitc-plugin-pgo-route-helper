@@ -23,6 +23,12 @@ const recoveryToken = "<recover>";
 it("name", () => {
     expect(parseOk("abc")).toStrictEqual(["abc"]);
 });
+it("variable", () => {
+    expect(parseOk("$abc")).toStrictEqual("abc");
+    expect(parseOk("$ abc")).toStrictEqual("abc");
+    expect(parseOk(`$"abc"`)).toStrictEqual("abc");
+    expect(parseOk(`$ "abc"`)).toStrictEqual("abc");
+});
 it("list", () => {
     expect(parseOk("($f $x)")).toStrictEqual(["f", "x"]);
     expect(parseOk("($f $x )")).toStrictEqual(["f", "x"]);
@@ -36,6 +42,9 @@ it("concat", () => {
 });
 it("infix", () => {
     expect(parseOk("$x @f $y")).toStrictEqual(["_f_", "x", "y"]);
+    expect(parseOk("$x @ f $y")).toStrictEqual(["_f_", "x", "y"]);
+    expect(parseOk(`$x @"f" $y`)).toStrictEqual(["_f_", "x", "y"]);
+    expect(parseOk(`$x @ "f" $y`)).toStrictEqual(["_f_", "x", "y"]);
     expect(parseOk("$x @f $y @g $z")).toStrictEqual([
         "_g_",
         ["_f_", "x", "y"],
