@@ -162,10 +162,6 @@ function includes(words: readonly string[]): UnitQueryFactory {
     };
 }
 
-function createSimpleQuery(expression: string): UnitQueryFactory {
-    return includes(expression.split(/\s+/));
-}
-
 function reachableWith(options?: {
     radius?: number;
     center?: Coordinate;
