@@ -10,12 +10,8 @@ import {
 } from "../route";
 import { exhaustive, isArray } from "../standard-extensions";
 import { countByGyms, getGymsOrderKinds, orderByGyms } from "./gyms";
-import {
-    createParser,
-    createTokenizer,
-    DiagnosticKind,
-    tokenDefinitions,
-} from "./parser";
+import { createParser, createTokenizer, tokenDefinitions } from "./parser";
+import type { Diagnostic } from "./service";
 
 function eachJsonStrings(
     json: MutableJson,
@@ -125,7 +121,7 @@ interface UnitQuery {
     getNote?(route: Route): string;
     getSorter?(): Readonly<QuerySorter>;
 }
-export type RouteQuery = string | UnitQueryFactory;
+export type RouteQuery = string | number | UnitQueryFactory;
 export interface UnitQueryFactory {
     initialize(environment: QueryEnvironment): UnitQuery;
 }
@@ -141,7 +137,7 @@ export const anyQuery: UnitQueryFactory = {
 };
 export type QueryCreateResult = {
     getQuery: () => UnitQueryFactory;
-    diagnostics: string[];
+    diagnostics: Diagnostic[];
 };
 function includes(words: readonly string[]): UnitQueryFactory {
     const unit: UnitQuery = {
@@ -187,7 +183,9 @@ function reachableWith(options?: {
 const reachable = reachableWith();
 
 export function queryAsFactory(query: RouteQuery) {
-    return typeof query === "string" ? includes([query]) : query;
+    return typeof query === "string" || typeof query === "number"
+        ? includes([String(query)])
+        : query;
 }
 function orderByKey(
     query: RouteQuery,
@@ -408,9 +406,14 @@ export interface QueryEnvironment {
     distance(c1: Coordinate, c2: Coordinate): number;
 }
 export function createQuery(expression: string): QueryCreateResult {
-    const diagnostics: DiagnosticKind[] = [];
+    const diagnostics: Diagnostic[] = [];
     const tokenizer = createTokenizer(expression, tokenDefinitions);
-    const parser = createParser(tokenizer, (d) => diagnostics.push(d));
+    const parser = createParser(tokenizer, (d, start, end) =>
+        diagnostics.push({
+            message: d,
+            range: { start, end },
+        })
+    );
     const json = parser.parse();
     return {
         getQuery: () => {

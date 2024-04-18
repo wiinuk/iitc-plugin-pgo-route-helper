@@ -89,55 +89,80 @@ function isUnicodeWhiteSpace(codePoint: number) {
     return false;
 }
 
-type TokenDefinition<T> = readonly [
-    pattern: RegExp,
-    action?: (xs: readonly [string, ...string[]]) => T
-];
-type TokenDefinitions<T> = readonly TokenDefinition<T>[];
+export type TokenDefinitions<T> = {
+    getEos(): T;
+    getDefault(): T;
+    getTokenKind(text: string): T;
+    tokens: readonly RegExp[];
+};
 
+interface Tokenizer<T> {
+    next(): T;
+    getText(): string;
+    getPosition(): number;
+}
 export function createTokenizer<T>(
     source: string,
-    definitions: TokenDefinitions<T>
+    { tokens, getEos, getDefault, getTokenKind }: TokenDefinitions<T>
 ) {
+    const sourceLength = source.length;
     let remainingSource = source;
+    let lastSource = source;
+    let lastMatchLength = 0;
+    function getText() {
+        return lastSource.slice(0, lastMatchLength);
+    }
+    function getPosition() {
+        return sourceLength - remainingSource.length;
+    }
+    function advance(text: string) {
+        lastSource = remainingSource;
+        lastMatchLength = text.length;
+        remainingSource = remainingSource.slice(lastMatchLength);
+        return text;
+    }
     function next() {
-        if (remainingSource.length <= 0) return;
-        for (const [pattern, action] of definitions) {
+        if (remainingSource.length <= 0) return getEos();
+        for (const pattern of tokens) {
             const match = pattern.exec(remainingSource);
             if (match && match.index === 0) {
-                const token = action
-                    ? action(
-                          match as readonly string[] as readonly [
-                              string,
-                              ...string[]
-                          ]
-                      )
-                    : match[0];
-                remainingSource = remainingSource.slice(match[0].length);
-                return token;
+                const text = match[0];
+                advance(text);
+                return getTokenKind(text);
             }
         }
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        advance(remainingSource[0]!);
+        return getDefault();
     }
-    return { next };
+    return { next, getText, getPosition };
 }
-export const tokenDefinitions: TokenDefinitions<string> = [
-    // 行コメント // comment
-    [/\/\/.*?(\n|$)/],
-    // 複数行コメント /* comment */
-    [/\/\*[\s\S]*?\*\//],
-    // 記号
-    [/[[\](){},:@$]/],
-    // 識別子形式の文字列 { key: 0 }
-    [/[^\s/[\](){},:@$"\\\d][^\s/[\](){},:@$"\\]*/],
-    // 空白
-    [/\s+/],
-    // 数値リテラル
-    [/-?\d+(\.\d+)?([eE]\d+)?/],
-    // 文字列リテラル
-    [/"([^"]|\\")*"/],
-];
+export const tokenDefinitions: TokenDefinitions<TokenKind> = {
+    tokens: [
+        // 行コメント // comment
+        /\/\/.*?(\n|$)/,
+        // 複数行コメント /* comment */
+        /\/\*[\s\S]*?\*\//,
+        // 記号
+        /[[\](){},:@$]/,
+        // 識別子形式の文字列 { key: 0 }
+        /[^\s/[\](){},:@$"\\\d][^\s/[\](){},:@$"\\]*/,
+        // 空白
+        /\s+/,
+        // 数値リテラル
+        /-?\d+(\.\d+)?([eE]\d+)?/,
+        // 文字列リテラル
+        /"([^"]|\\")*"/,
+    ],
+    getEos() {
+        return "EndOfSource";
+    },
+    getDefault() {
+        return "Unknown";
+    },
+    getTokenKind,
+};
 
-type Token = string | undefined;
 export const enum DiagnosticKind {
     AnyTokenRequired = "AnyTokenRequired",
     RightParenthesisTokenExpected = "RightParenthesisTokenExpected",
@@ -147,7 +172,7 @@ export const enum DiagnosticKind {
     LeftParenthesesOrLeftCurlyBracketOrLiteralOrNameRequired = "LeftParenthesesOrLeftCurlyBracketOrLiteralOrNameRequired",
     EndOfSourceOrAtNameExpected = "EndOfSourceOrAtNameExpected",
 }
-type TokenKind =
+export type TokenKind =
     | "Unknown"
     | "("
     | ")"
@@ -164,10 +189,8 @@ type TokenKind =
     | "Comment"
     | "EndOfSource";
 
-function getTokenKind(token: Token): TokenKind {
+function getTokenKind(token: string): TokenKind {
     switch (token) {
-        case undefined:
-            return "EndOfSource";
         case "(":
         case ")":
         case "{":
@@ -187,29 +210,34 @@ function getTokenKind(token: Token): TokenKind {
 }
 
 export function createParser(
-    { next }: { next(): string | undefined },
-    reporter: (kind: DiagnosticKind) => void
+    { next, getText: getCurrentTokenText, getPosition }: Tokenizer<TokenKind>,
+    reporter?: (kind: DiagnosticKind, start: number, end: number) => void
 ) {
-    let currentToken: Token;
     let currentTokenKind: TokenKind = "Unknown";
+    let currentTokenStart = -1;
+    let currentTokenEnd = -1;
     function nextToken() {
         do {
-            currentToken = next();
-            currentTokenKind = getTokenKind(currentToken);
+            currentTokenStart = getPosition();
+            currentTokenKind = next();
         } while (
             currentTokenKind === "WhiteSpace" ||
             currentTokenKind === "Comment"
         );
+        currentTokenEnd = getPosition();
     }
-    function skipToken(expectedToken: string, diagnosticKind: DiagnosticKind) {
-        if (currentToken !== expectedToken) {
-            reporter(diagnosticKind);
+    function skipToken(
+        expectedToken: TokenKind,
+        diagnosticKind: DiagnosticKind
+    ) {
+        if (currentTokenKind !== expectedToken) {
+            reporter?.(diagnosticKind, currentTokenStart, currentTokenEnd);
             return;
         }
         nextToken();
     }
-    function trySkipToken(expectedToken: string) {
-        return currentToken === expectedToken && (nextToken(), true);
+    function trySkipToken(expectedTokenKind: TokenKind) {
+        return currentTokenKind === expectedTokenKind && (nextToken(), true);
     }
     const recoveryToken = "<recover>";
 
@@ -223,25 +251,23 @@ export function createParser(
     function isInfixOperatorHead() {
         return currentTokenKind === "@";
     }
-    function parseInfixOperatorTail(baseName: string) {
-        nextToken();
-        return `_${baseName}_`;
-    }
     function parseInfixOperator() {
         // skip "@"
         nextToken();
 
-        if (currentToken != null) {
-            switch (currentTokenKind) {
-                case "Name":
-                    return parseInfixOperatorTail(currentToken);
-                case "String":
-                    return parseInfixOperatorTail(
-                        JSON.parse(currentToken) as string
-                    );
-            }
+        let value;
+        switch (currentTokenKind) {
+            case "Name":
+                value = getCurrentTokenText();
+                break;
+            case "String":
+                value = JSON.parse(getCurrentTokenText()) as string;
+                break;
+            default:
+                return parsePrimaryExpression();
         }
-        return parsePrimaryExpression();
+        nextToken();
+        return `_${value}_`;
     }
     // operator-expression-or-higher := concatenation-expression (infix-operator concatenation-expression)*
     function parseOperatorExpressionOrHigher() {
@@ -288,38 +314,38 @@ export function createParser(
                 return false;
         }
     }
-    function recoveryVariable() {
-        reporter(DiagnosticKind.StringLiteralOrNameRequired);
-        return recoveryToken;
-    }
     function parseVariableTail() {
-        if (currentToken == null) {
-            return recoveryVariable();
-        }
+        nextToken();
         let variable;
         switch (currentTokenKind) {
             case "Name":
-                variable = currentToken;
+                variable = getCurrentTokenText();
                 break;
             case "String":
-                variable = JSON.parse(currentToken) as string;
+                variable = JSON.parse(getCurrentTokenText()) as string;
                 break;
             default:
-                return recoveryVariable();
+                reporter?.(
+                    DiagnosticKind.StringLiteralOrNameRequired,
+                    currentTokenStart,
+                    currentTokenEnd
+                );
+                return recoveryToken;
         }
         nextToken();
         return variable;
     }
     function parsePrimaryExpression(): Json {
-        const token = currentToken;
-        const tokenKind = currentTokenKind;
-        if (token === undefined) {
-            reporter(DiagnosticKind.AnyTokenRequired);
-            return recoveryToken;
-        }
+        let result;
+        switch (currentTokenKind) {
+            case "EndOfSource":
+                reporter?.(
+                    DiagnosticKind.AnyTokenRequired,
+                    currentTokenStart,
+                    currentTokenEnd
+                );
+                return recoveryToken;
 
-        nextToken();
-        switch (tokenKind) {
             // リスト
             case "(":
                 return parseParenthesisExpressionTail();
@@ -328,19 +354,22 @@ export function createParser(
                 return parseRecordTail();
             // 文字列リテラル: "abc" => ["abc"]
             case "String":
-                return [JSON.parse(token) as string];
+                result = [JSON.parse(getCurrentTokenText()) as string];
+                break;
             // 数値リテラル
             case "Number":
-                return JSON.parse(token) as number;
+                result = JSON.parse(getCurrentTokenText()) as number;
+                break;
             // 名前: xyz => "xyz"
             case "Name":
-                return [token];
+                result = [getCurrentTokenText()];
+                break;
             // 変数: $abc => abc
             // $"abc" => abc
             case "$":
                 return parseVariableTail();
             default:
-                tokenKind satisfies
+                currentTokenKind satisfies
                     | "Unknown"
                     | ")"
                     | "}"
@@ -348,20 +377,25 @@ export function createParser(
                     | ":"
                     | "@"
                     | "WhiteSpace"
-                    | "Comment"
-                    | "EndOfSource";
-                reporter(
-                    DiagnosticKind.LeftParenthesesOrLeftCurlyBracketOrLiteralOrNameRequired
+                    | "Comment";
+                reporter?.(
+                    DiagnosticKind.LeftParenthesesOrLeftCurlyBracketOrLiteralOrNameRequired,
+                    currentTokenStart,
+                    currentTokenEnd
                 );
-                return token;
+                result = getCurrentTokenText();
         }
+        nextToken();
+        return result;
     }
     function parseParenthesisExpressionTail() {
+        nextToken();
         const value = parseExpression();
         skipToken(")", DiagnosticKind.RightParenthesisTokenExpected);
         return value;
     }
     function parseRecordTail() {
+        nextToken();
         const record: Record<string, Json> = {};
         do {
             if (trySkipToken("}")) return record;
@@ -373,25 +407,36 @@ export function createParser(
         return record;
     }
     function parseRecordKey() {
-        const token = currentToken;
+        let result;
         switch (currentTokenKind) {
             case "Name":
-                nextToken();
-                return token ?? error`internal error`;
+                result = getCurrentTokenText();
+                break;
             case "String":
-                nextToken();
-                return JSON.stringify(token) as string;
+                result = JSON.stringify(getCurrentTokenText()) as string;
+                break;
+            default:
+                reporter?.(
+                    DiagnosticKind.StringLiteralOrNameRequired,
+                    currentTokenStart,
+                    currentTokenEnd
+                );
+                result = recoveryToken;
+                break;
         }
-        reporter(DiagnosticKind.StringLiteralOrNameRequired);
         nextToken();
-        return recoveryToken;
+        return result;
     }
     return {
         parse() {
             nextToken();
             const value = parseExpression();
             if (currentTokenKind !== "EndOfSource")
-                reporter(DiagnosticKind.EndOfSourceOrAtNameExpected);
+                reporter?.(
+                    DiagnosticKind.EndOfSourceOrAtNameExpected,
+                    currentTokenStart,
+                    currentTokenEnd
+                );
             return value;
         },
     };

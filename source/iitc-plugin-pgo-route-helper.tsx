@@ -47,6 +47,8 @@ import {
 } from "./query";
 import { createQueryEditor } from "./query-editor";
 import { applyTemplate } from "./template";
+import { tokenDefinitions } from "./query/parser";
+import { getTokenCategory, mapTokenDefinitions } from "./query/service";
 
 function reportError(error: unknown) {
     console.error(error);
@@ -828,7 +830,13 @@ async function asyncMain() {
             return action();
         } catch (error) {
             progress({ type: "query-evaluation-error", error });
-            queryEditor.addDiagnostic(String(error));
+            queryEditor.addDiagnostic({
+                message: String(error),
+                range: {
+                    start: 1,
+                    end: 1,
+                },
+            });
             return defaultValue();
         }
     }
@@ -1032,7 +1040,7 @@ async function asyncMain() {
                 if (0 !== diagnostics.length) {
                     progress({
                         type: "query-parse-error-occurred",
-                        messages: diagnostics,
+                        messages: diagnostics.map((d) => d.message),
                     });
                 } else {
                     progress({
@@ -1050,13 +1058,15 @@ async function asyncMain() {
     }
     const queryEditor = createQueryEditor({
         classNames: {
-            inputField: classNames["query-input-field"],
             autoCompleteList: classNames["auto-complete-list"],
             autoCompleteListItem: classNames["auto-complete-list-item"],
-            invalid: classNames["invalid"],
         },
         initialText: config.routeQueries?.at(-1),
         placeholder: "🔍ルート検索",
+        tokenDefinitions: mapTokenDefinitions(
+            tokenDefinitions,
+            getTokenCategory
+        ),
         getCompletions() {
             return config.routeQueries?.reverse()?.map((queryText) => {
                 return {
@@ -1065,10 +1075,12 @@ async function asyncMain() {
                 };
             });
         },
-        onInput(e) {
+        onValueChange(e) {
             setQueryExpressionDelayed(500, e.value);
         },
     });
+    addStyle(queryEditor.cssText);
+
     const selectedRouteButtonContainer = (
         <span>
             {addRouteElement}

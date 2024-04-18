@@ -83,17 +83,11 @@ input.editable-text {
     box-sizing: border-box;
     width: 100%;
     resize: vertical;
-
-    font-family: Arial, Helvetica, sans-serif;
 }
 .properties-editor input.title {
     width: auto;
 }
 
-.properties-editor textarea.query-input-field {
-    font-family: 'fira code', Consolas, Menlo, Monaco, 'Courier New', Courier, monospace;
-    height: 1.5em;
-}
 .properties-editor textarea.invalid {
     border: solid 1px red;
     background-color: lightgoldenrodyellow;

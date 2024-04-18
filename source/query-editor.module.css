@@ -1,0 +1,73 @@
+
+.highlighting.invalid {
+    background-color: lightgoldenrodyellow;
+}
+.input-container {
+    position: relative;
+}
+.input {
+    color: transparent;
+    background-color: transparent;
+    caret-color: gray;
+}
+.highlighting {
+    background: white;
+    color: rgb(54, 54, 54)
+}
+.input, .highlighting {
+    margin: 0;
+    padding: 1px;
+    border: 0;
+    width: calc(100% - 32px);
+    height: 150px;
+    resize: both;
+}
+.input, .highlighting * {
+    font-size: 9pt;
+    font-family: 'fira code', Consolas, Menlo, Monaco, 'Courier New', Courier, monospace;
+    line-height: 1.5;
+    tab-size: 2;
+}
+.input {
+    position: relative;
+    overflow: auto;
+}
+.highlighting {
+    position: absolute;
+    top: 0;
+    left: 0;
+    overflow: hidden;
+}
+.input, .highlighting {
+    white-space: pre;
+}
+.input {
+    z-index: 1;
+}
+.highlighting {
+    z-index: 0;
+}
+
+.token {
+    border-radius: 1em;
+}
+.token[class~=space] {
+    border-radius: 0;
+    background: radial-gradient(circle farthest-side, lightgray, lightgray 1px, transparent 1px, transparent);
+    background-size: 4px 100%;
+}
+.token[class~=comment] {
+    background-color: hsl(120, 31%, 90%);
+}
+.token[class~=string] {
+    background-color: hsl(0, 31%, 90%);
+}
+.token[class~=number] {
+    background-color: hsl(182, 31%, 90%);
+}
+.token[class~=operator] {
+    background-color: hsl(43, 31%, 90%);
+}
+.token.invalid {
+    text-decoration: underline wavy red;
+}
