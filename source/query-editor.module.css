@@ -4,6 +4,8 @@
 }
 .input-container {
     position: relative;
+    width: auto;
+    height: auto;
 }
 .input {
     color: transparent;
@@ -15,17 +17,18 @@
     color: rgb(54, 54, 54)
 }
 .input, .highlighting {
+    --input-line-height-ratio: 1.5;
+
     margin: 0;
     padding: 1px;
     border: 0;
     width: calc(100% - 32px);
-    height: 150px;
-    resize: both;
+    height: calc(1em * var(--input-line-height-ratio) + 1px);
 }
 .input, .highlighting * {
     font-size: 9pt;
     font-family: 'fira code', Consolas, Menlo, Monaco, 'Courier New', Courier, monospace;
-    line-height: 1.5;
+    line-height: var(--input-line-height-ratio);
     tab-size: 2;
 }
 .input {
@@ -40,6 +43,9 @@
 }
 .input, .highlighting {
     white-space: pre;
+    text-wrap: wrap;
+    word-break: break-all;
+    hyphens: none;
 }
 .input {
     z-index: 1;
@@ -50,23 +56,27 @@
 
 .token {
     border-radius: 1em;
+    background: hsl(var(--token-hue), 29%, 90%);
 }
 .token[class~=space] {
     border-radius: 0;
     background: radial-gradient(circle farthest-side, lightgray, lightgray 1px, transparent 1px, transparent);
     background-size: 4px 100%;
 }
+.token[class~=undefined-type], .token[class~=keyword] {
+    background: none;
+}
 .token[class~=comment] {
-    background-color: hsl(120, 31%, 90%);
+    --token-hue: 120;
 }
 .token[class~=string] {
-    background-color: hsl(0, 31%, 90%);
+    --token-hue: 0;
 }
 .token[class~=number] {
-    background-color: hsl(182, 31%, 90%);
+    --token-hue: 182;
 }
 .token[class~=operator] {
-    background-color: hsl(43, 31%, 90%);
+    --token-hue: 43;
 }
 .token.invalid {
     text-decoration: underline wavy red;

@@ -16,7 +16,11 @@ function getMonospaceWidth(text: string) {
     // TODO:
     return text.length;
 }
-
+function addClassName(element: HTMLElement, className: string | undefined) {
+    if (className != null) {
+        element.classList.add(className);
+    }
+}
 export function createQueryEditor(
     options?: Readonly<{
         initialText?: string;
@@ -43,16 +47,18 @@ export function createQueryEditor(
         >;
     }>
 ) {
-    const invalidClassName = options?.classNames?.invalid ?? classNames.invalid;
+    const invalidClassNames = [
+        classNames.invalid,
+        options?.classNames?.invalid,
+    ].filter((x): x is string => x != null);
+
     const highlightingContent = <code></code>;
     const highlightingContainer = (
-        <pre
-            aria-hidden="true"
-            class={options?.classNames?.highlighting ?? classNames.highlighting}
-        >
+        <pre aria-hidden="true" class={classNames.highlighting}>
             {highlightingContent}
         </pre>
     ) as HTMLPreElement;
+    addClassName(highlightingContainer, options?.classNames?.highlighting);
 
     const startSymbol = Symbol("start");
     const endSymbol = Symbol("end");
@@ -79,6 +85,7 @@ export function createQueryEditor(
         return;
     }
 
+    const tokenClassName = options?.classNames?.token;
     function createSpan(
         source: string,
         start: number,
@@ -87,7 +94,8 @@ export function createQueryEditor(
         tokenModifier: SemanticTokenModifiers | undefined
     ) {
         const span = (<span>{source.slice(start, end)}</span>) as TokenElement;
-        span.classList.add(options?.classNames?.token ?? classNames.token);
+        span.classList.add(classNames.token);
+        addClassName(span, tokenClassName);
         span.classList.add(tokenType ?? "undefined-type");
         span.classList.add(tokenModifier ?? "undefined-modifier");
         span[startSymbol] = start;
@@ -188,14 +196,14 @@ export function createQueryEditor(
 
     const errorMessageKey = "errorMessage";
     function clearDiagnostics() {
-        highlightingContainer.classList.remove(invalidClassName);
+        highlightingContainer.classList.remove(...invalidClassNames);
         for (const t of tokens) {
-            t.classList.remove(invalidClassName);
+            t.classList.remove(...invalidClassNames);
             t.dataset[errorMessageKey] = undefined;
         }
     }
     function addDiagnostic(diagnostic: Diagnostic) {
-        highlightingContainer.classList.add(invalidClassName);
+        highlightingContainer.classList.add(...invalidClassNames);
 
         // diagnostic.message;
         const startIndex = getTokenElementIndex(diagnostic.range.start);
@@ -206,7 +214,7 @@ export function createQueryEditor(
                 const token = tokens[i];
                 if (!token) continue;
 
-                token.classList.add(invalidClassName);
+                token.classList.add(...invalidClassNames);
                 const dataset = token.dataset;
                 dataset[errorMessageKey] = diagnostic.message;
                 token.title = diagnostic.message;
@@ -218,7 +226,7 @@ export function createQueryEditor(
         (
             <textarea
                 spellcheck={false}
-                class={options?.classNames?.inputField ?? classNames.input}
+                class={classNames.input}
                 placeholder={options?.placeholder ?? ""}
             >
                 {options?.initialText ?? ""}
@@ -298,6 +306,8 @@ export function createQueryEditor(
             },
         }
     );
+    addClassName(inputField, options?.classNames?.inputField);
+
     new ResizeObserver((entries) => {
         for (const entry of entries) {
             if (entry.target !== inputField) continue;
@@ -307,6 +317,9 @@ export function createQueryEditor(
             highlightingContainer.style.height = contentRect.height + "px";
         }
     }).observe(inputField);
+
+    onValueChange(inputField);
+
     return {
         cssText,
         element: (
