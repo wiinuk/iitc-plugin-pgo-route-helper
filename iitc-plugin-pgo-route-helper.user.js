@@ -6,7 +6,7 @@
 // @downloadURL  https://github.com/wiinuk/iitc-plugin-pgo-route-helper/raw/master/iitc-plugin-pgo-route-helper.user.js
 // @updateURL    https://github.com/wiinuk/iitc-plugin-pgo-route-helper/raw/master/iitc-plugin-pgo-route-helper.user.js
 // @homepageURL  https://github.com/wiinuk/iitc-plugin-pgo-route-helper
-// @version      0.9.15
+// @version      0.9.16
 // @description  IITC plugin to assist in Pokémon GO route creation.
 // @author       Wiinuk
 // @include      https://*.ingress.com/intel*
@@ -781,28 +781,27 @@ function includesIn(bounds, route) {
 }
 
 ;// CONCATENATED MODULE: ./source/styles.module.css
-const cssText = ".import-text-input-87c4956e65871212ef8c87331df4adc3e10771cc {\r\n    position: fixed;\r\n    top: 0;\r\n    left: 0;\r\n    width: 100%;\r\n    height: 100%;\r\n    z-index: 10000;\r\n\r\n    display: flex;\r\n    justify-content: center;\r\n    align-items: center;\r\n}\r\n\r\n.hidden-6b8c67e5eb86810773e6848ec0904c54de09035d {\r\n    display: none;\r\n}\r\n.ellipsis-text-a568971192ce30c179713621f3347705d2af5ffb {\r\n    white-space: nowrap;\r\n    overflow: hidden;\r\n    text-overflow: ellipsis;\r\n}\r\n.ellipsis-text-a568971192ce30c179713621f3347705d2af5ffb br {\r\n    display: none;\r\n}\r\n\r\ninput.editable-text-c5cb8a9db661e21e3fa4365a5940871f64e6605e {\r\n    border: none;\r\n    background: none;\r\n    font-size: 16px;\r\n    color: black;\r\n}\r\n\r\n.spot-label-a3e1278eb18733f2999caa4f40d964ab47955906 {\r\n    color: #FFFFBB;\r\n    font-size: 11px;\r\n    line-height: 12px;\r\n    text-align: center;\r\n    padding: 2px;\r\n    overflow: hidden;\r\n    white-space: nowrap;\r\n    text-overflow: ellipsis;\r\n    text-shadow: 1px 1px #000, 1px -1px #000, -1px 1px #000, -1px -1px #000, 0 0 5px #000;\r\n    pointer-events: none;\r\n}\r\n.spot-handle-ae4dd363a53df54e11f3a3c88b9120b27ffdf879 {\r\n    --background-hue: 152deg;\r\n    --background-opacity: 40%;\r\n    --border-width: 2px;\r\n    --border-saturation: 0%;\r\n    --border-opacity: 80%;\r\n\r\n    transition: all 0.5s, transform 0s;\r\n    box-sizing: border-box;\r\n    background-color: hsla(var(--background-hue), 84%, 56%, var(--background-opacity));\r\n    border: solid var(--border-width) hsla(56, var(--border-saturation), 39%, var(--border-opacity));\r\n    border-radius: 100%;\r\n}\r\n.spot-handle-ae4dd363a53df54e11f3a3c88b9120b27ffdf879.draggable-8267b166caf8e5ac485a8ec677dc77cfd16630b9 {\r\n    --background-opacity: 100%;\r\n    --border-opacity: 100%;\r\n    border-radius: 0;\r\n}\r\n.spot-handle-ae4dd363a53df54e11f3a3c88b9120b27ffdf879.highlighted-c593388adcafd16933fde2f58f845caf996a4307 {\r\n    --border-width: 4px;\r\n    --border-saturation: 100%;\r\n}\r\n\r\n.properties-editor-5068ac4601181ac46ba78ea4d81875b2b80fc1a6 {\r\n    display: flex;\r\n    flex-direction: column;\r\n    resize: both;\r\n    overflow: auto;\r\n    max-width: 100%;\r\n    max-height: 100vh;\r\n}\r\n.route-list-container-a1a618f39db9af2f8ce81ea9a2d71a85f17d817f {\r\n    flex-grow: 1;\r\n    overflow: auto;\r\n}\r\n\r\n.properties-editor-5068ac4601181ac46ba78ea4d81875b2b80fc1a6 textarea,\r\n.properties-editor-5068ac4601181ac46ba78ea4d81875b2b80fc1a6 input {\r\n    box-sizing: border-box;\r\n    width: 100%;\r\n    resize: vertical;\r\n\r\n    font-family: Arial, Helvetica, sans-serif;\r\n}\r\n.properties-editor-5068ac4601181ac46ba78ea4d81875b2b80fc1a6 input.title-e3e849dd86b016f903b958d0dd92ae0d450423fb {\r\n    width: auto;\r\n}\r\n\r\n.properties-editor-5068ac4601181ac46ba78ea4d81875b2b80fc1a6 textarea.query-input-field-aea1881fb0dd459925d34097d57a197c8a274a2b {\r\n    font-family: 'fira code', Consolas, Menlo, Monaco, 'Courier New', Courier, monospace;\r\n    height: 1.5em;\r\n}\r\n.properties-editor-5068ac4601181ac46ba78ea4d81875b2b80fc1a6 textarea.invalid-10d20e7e49b5181c353bd150ade73e74bd742a76 {\r\n    border: solid 1px red;\r\n    background-color: lightgoldenrodyellow;\r\n}\r\n\r\n.route-list-92ddbe08d467e97729843cdd32ab3a7a6361e831 .selecting-66cb567f495ea2de11e92670f891b72832d5e7ed {\r\n    background: #FECA40;\r\n}\r\n\r\n.route-list-92ddbe08d467e97729843cdd32ab3a7a6361e831 .selected-8a088f2301284b7adaea141d44ed74efb3eabcd9 {\r\n    background: #F39814;\r\n    color: white;\r\n}\r\n\r\n.route-list-92ddbe08d467e97729843cdd32ab3a7a6361e831 {\r\n    list-style-type: none;\r\n    margin: 0;\r\n    padding: 0;\r\n}\r\n\r\n.route-list-92ddbe08d467e97729843cdd32ab3a7a6361e831 li {\r\n    margin: 3px;\r\n    padding: 0.4em;\r\n    height: 18px;\r\n    cursor: pointer;\r\n    user-select: none;\r\n}\r\n.route-list-92ddbe08d467e97729843cdd32ab3a7a6361e831 .note-2bf25f471effde16dedb6e3c8240d8232090b11d {\r\n    font-size: 75%;\r\n    padding-left: 0.5em;\r\n    color: #ffffffab;\r\n}\r\n\r\n.auto-complete-list-fbf691c5b54a10f5224607f1ff657f1bb5d2e4c2 {\r\n    position: absolute;\r\n    background-color: #f9f9f9;\r\n    min-width: 160px;\r\n    box-shadow: 0px 8px 16px 0px rgba(0, 0, 0, 0.2);\r\n    padding: 12px 16px;\r\n    z-index: 1;\r\n}\r\n\r\n.auto-complete-list-fbf691c5b54a10f5224607f1ff657f1bb5d2e4c2 .auto-complete-list-item-05369bbf368fb99e98bee234037331e6eeca6313 {\r\n    color: black;\r\n    padding: 12px 16px;\r\n    text-decoration: none;\r\n    display: block;\r\n}\r\n\r\n.auto-complete-list-fbf691c5b54a10f5224607f1ff657f1bb5d2e4c2 .auto-complete-list-item-05369bbf368fb99e98bee234037331e6eeca6313:hover {\r\n    background-color: #ddd;\r\n}\r\n\r\n\r\n/* アコーディオン */\r\n/* マーカー */\r\n.accordion-84899385d42b4ea158b933f71e5abcfee44879e3>summary::-webkit-details-marker {\r\n    display: none;\r\n}\r\n\r\n.accordion-84899385d42b4ea158b933f71e5abcfee44879e3>summary::before {\r\n    content: \"\";\r\n    position: absolute;\r\n    width: 6px;\r\n    height: 6px;\r\n    border-top: 2px solid #fff;\r\n    border-right: 2px solid #fff;\r\n\r\n    transform: rotate(225deg);\r\n    top: calc(50% - 3px);\r\n    right: 1em;\r\n}\r\n\r\n/* 閉じているとき */\r\n.accordion-84899385d42b4ea158b933f71e5abcfee44879e3>summary {\r\n    cursor: grab;\r\n    display: block;\r\n    height: auto;\r\n    padding: 3px;\r\n    width: auto;\r\n    height: auto;\r\n\r\n    background: #019bc656;\r\n    border: solid 1px #00000000\r\n}\r\n\r\n.accordion-84899385d42b4ea158b933f71e5abcfee44879e3>* {\r\n    backface-visibility: hidden;\r\n    transform: translateZ(0);\r\n    transition: all 0.3s;\r\n}\r\n\r\n.accordion-84899385d42b4ea158b933f71e5abcfee44879e3> :not(summary) {\r\n    margin-bottom: 6px;\r\n    padding: 0 3px;\r\n    border: solid 1px #00000000;\r\n}\r\n\r\n/* 開いたとき */\r\n.accordion-84899385d42b4ea158b933f71e5abcfee44879e3[open]>summary {\r\n    background: #c6880156;\r\n}\r\n\r\n.accordion-84899385d42b4ea158b933f71e5abcfee44879e3[open]>summary::before {\r\n    transform: rotate(135deg);\r\n}\r\n\r\n.accordion-84899385d42b4ea158b933f71e5abcfee44879e3[open]> :not(summary) {\r\n    padding: 3px;\r\n    transition: all 0.3s;\r\n\r\n    border: solid 1px #c6880156;\r\n}\r\n";
+const cssText = ".import-text-input-80dcd0ec8d5f103f1fb547564b3ac3893c9cad5a {\r\n    position: fixed;\r\n    top: 0;\r\n    left: 0;\r\n    width: 100%;\r\n    height: 100%;\r\n    z-index: 10000;\r\n\r\n    display: flex;\r\n    justify-content: center;\r\n    align-items: center;\r\n}\r\n\r\n.hidden-ea226c5fdd77079deb708727ea638440f95ae2da {\r\n    display: none;\r\n}\r\n.ellipsis-text-2f4f64de9c3255391f92a52efe554018a3e03f60 {\r\n    white-space: nowrap;\r\n    overflow: hidden;\r\n    text-overflow: ellipsis;\r\n}\r\n.ellipsis-text-2f4f64de9c3255391f92a52efe554018a3e03f60 br {\r\n    display: none;\r\n}\r\n\r\ninput.editable-text-cea1a630beb7978792fd2bbf0fa872747ca606be {\r\n    border: none;\r\n    background: none;\r\n    font-size: 16px;\r\n    color: black;\r\n}\r\n\r\n.spot-label-7aa21d3576345db028bb94f7975c999b951873fc {\r\n    color: #FFFFBB;\r\n    font-size: 11px;\r\n    line-height: 12px;\r\n    text-align: center;\r\n    padding: 2px;\r\n    overflow: hidden;\r\n    white-space: nowrap;\r\n    text-overflow: ellipsis;\r\n    text-shadow: 1px 1px #000, 1px -1px #000, -1px 1px #000, -1px -1px #000, 0 0 5px #000;\r\n    pointer-events: none;\r\n}\r\n.spot-handle-f0a54eabd01c1d20cb8b4db896c8cd94563bf0df {\r\n    --background-hue: 152deg;\r\n    --background-opacity: 40%;\r\n    --border-width: 2px;\r\n    --border-saturation: 0%;\r\n    --border-opacity: 80%;\r\n\r\n    transition: all 0.5s, transform 0s;\r\n    box-sizing: border-box;\r\n    background-color: hsla(var(--background-hue), 84%, 56%, var(--background-opacity));\r\n    border: solid var(--border-width) hsla(56, var(--border-saturation), 39%, var(--border-opacity));\r\n    border-radius: 100%;\r\n}\r\n.spot-handle-f0a54eabd01c1d20cb8b4db896c8cd94563bf0df.draggable-d93d096ec2013bac7afdc1229d780ed7b62743f8 {\r\n    --background-opacity: 100%;\r\n    --border-opacity: 100%;\r\n    border-radius: 0;\r\n}\r\n.spot-handle-f0a54eabd01c1d20cb8b4db896c8cd94563bf0df.highlighted-55a4c2fa8df66d9179b90719b71010f209fa4cb0 {\r\n    --border-width: 4px;\r\n    --border-saturation: 100%;\r\n}\r\n\r\n.properties-editor-c0c9eaae06e7f6961b0b6f3c2f0eb1a4e4816f21 {\r\n    display: flex;\r\n    flex-direction: column;\r\n    resize: both;\r\n    overflow: auto;\r\n    max-width: 100%;\r\n    max-height: 100vh;\r\n}\r\n.route-list-container-45a09106aec68be05d87d3edcb241b41efd8240e {\r\n    flex-grow: 1;\r\n    overflow: auto;\r\n}\r\n\r\n.properties-editor-c0c9eaae06e7f6961b0b6f3c2f0eb1a4e4816f21 textarea,\r\n.properties-editor-c0c9eaae06e7f6961b0b6f3c2f0eb1a4e4816f21 input {\r\n    box-sizing: border-box;\r\n    width: 100%;\r\n    resize: vertical;\r\n}\r\n.properties-editor-c0c9eaae06e7f6961b0b6f3c2f0eb1a4e4816f21 input.title-0ddcfbb4237c299aa18c23f36c64957f8325e230 {\r\n    width: auto;\r\n}\r\n\r\n.properties-editor-c0c9eaae06e7f6961b0b6f3c2f0eb1a4e4816f21 textarea.invalid-ac13274873e31e53d9824808a13465f80aa96d3a {\r\n    border: solid 1px red;\r\n    background-color: lightgoldenrodyellow;\r\n}\r\n\r\n.route-list-648a2e1f76419ed7d0e74b39413362f28cf9ca0a .selecting-da6c3d54d66e5cf02f32d195f56fae7014947ce4 {\r\n    background: #FECA40;\r\n}\r\n\r\n.route-list-648a2e1f76419ed7d0e74b39413362f28cf9ca0a .selected-e0f95b3298a8740bfb2fb3a59b80a8da5f95a37c {\r\n    background: #F39814;\r\n    color: white;\r\n}\r\n\r\n.route-list-648a2e1f76419ed7d0e74b39413362f28cf9ca0a {\r\n    list-style-type: none;\r\n    margin: 0;\r\n    padding: 0;\r\n}\r\n\r\n.route-list-648a2e1f76419ed7d0e74b39413362f28cf9ca0a li {\r\n    margin: 3px;\r\n    padding: 0.4em;\r\n    height: 18px;\r\n    cursor: pointer;\r\n    user-select: none;\r\n}\r\n.route-list-648a2e1f76419ed7d0e74b39413362f28cf9ca0a .note-a7a6c71df25a43094e9fcba73458e3c6e103d0eb {\r\n    font-size: 75%;\r\n    padding-left: 0.5em;\r\n    color: #ffffffab;\r\n}\r\n\r\n.auto-complete-list-c8ef735cee24398a5c518994abc2e6590561e426 {\r\n    position: absolute;\r\n    background-color: #f9f9f9;\r\n    min-width: 160px;\r\n    box-shadow: 0px 8px 16px 0px rgba(0, 0, 0, 0.2);\r\n    padding: 12px 16px;\r\n    z-index: 1;\r\n}\r\n\r\n.auto-complete-list-c8ef735cee24398a5c518994abc2e6590561e426 .auto-complete-list-item-0bb8911ec63976f45b7f513a4525c6d36690e640 {\r\n    color: black;\r\n    padding: 12px 16px;\r\n    text-decoration: none;\r\n    display: block;\r\n}\r\n\r\n.auto-complete-list-c8ef735cee24398a5c518994abc2e6590561e426 .auto-complete-list-item-0bb8911ec63976f45b7f513a4525c6d36690e640:hover {\r\n    background-color: #ddd;\r\n}\r\n\r\n\r\n/* アコーディオン */\r\n/* マーカー */\r\n.accordion-60cbfc070b8997dd25905eaadb3b7dffef7ebcac>summary::-webkit-details-marker {\r\n    display: none;\r\n}\r\n\r\n.accordion-60cbfc070b8997dd25905eaadb3b7dffef7ebcac>summary::before {\r\n    content: \"\";\r\n    position: absolute;\r\n    width: 6px;\r\n    height: 6px;\r\n    border-top: 2px solid #fff;\r\n    border-right: 2px solid #fff;\r\n\r\n    transform: rotate(225deg);\r\n    top: calc(50% - 3px);\r\n    right: 1em;\r\n}\r\n\r\n/* 閉じているとき */\r\n.accordion-60cbfc070b8997dd25905eaadb3b7dffef7ebcac>summary {\r\n    cursor: grab;\r\n    display: block;\r\n    height: auto;\r\n    padding: 3px;\r\n    width: auto;\r\n    height: auto;\r\n\r\n    background: #019bc656;\r\n    border: solid 1px #00000000\r\n}\r\n\r\n.accordion-60cbfc070b8997dd25905eaadb3b7dffef7ebcac>* {\r\n    backface-visibility: hidden;\r\n    transform: translateZ(0);\r\n    transition: all 0.3s;\r\n}\r\n\r\n.accordion-60cbfc070b8997dd25905eaadb3b7dffef7ebcac> :not(summary) {\r\n    margin-bottom: 6px;\r\n    padding: 0 3px;\r\n    border: solid 1px #00000000;\r\n}\r\n\r\n/* 開いたとき */\r\n.accordion-60cbfc070b8997dd25905eaadb3b7dffef7ebcac[open]>summary {\r\n    background: #c6880156;\r\n}\r\n\r\n.accordion-60cbfc070b8997dd25905eaadb3b7dffef7ebcac[open]>summary::before {\r\n    transform: rotate(135deg);\r\n}\r\n\r\n.accordion-60cbfc070b8997dd25905eaadb3b7dffef7ebcac[open]> :not(summary) {\r\n    padding: 3px;\r\n    transition: all 0.3s;\r\n\r\n    border: solid 1px #c6880156;\r\n}\r\n";
 /* harmony default export */ const styles_module = ({
-    "import-text-input": "import-text-input-87c4956e65871212ef8c87331df4adc3e10771cc",
-    hidden: "hidden-6b8c67e5eb86810773e6848ec0904c54de09035d",
-    "ellipsis-text": "ellipsis-text-a568971192ce30c179713621f3347705d2af5ffb",
-    "editable-text": "editable-text-c5cb8a9db661e21e3fa4365a5940871f64e6605e",
-    "spot-label": "spot-label-a3e1278eb18733f2999caa4f40d964ab47955906",
-    "spot-handle": "spot-handle-ae4dd363a53df54e11f3a3c88b9120b27ffdf879",
-    draggable: "draggable-8267b166caf8e5ac485a8ec677dc77cfd16630b9",
-    highlighted: "highlighted-c593388adcafd16933fde2f58f845caf996a4307",
-    "properties-editor": "properties-editor-5068ac4601181ac46ba78ea4d81875b2b80fc1a6",
-    "route-list-container": "route-list-container-a1a618f39db9af2f8ce81ea9a2d71a85f17d817f",
-    title: "title-e3e849dd86b016f903b958d0dd92ae0d450423fb",
-    "query-input-field": "query-input-field-aea1881fb0dd459925d34097d57a197c8a274a2b",
-    invalid: "invalid-10d20e7e49b5181c353bd150ade73e74bd742a76",
-    "route-list": "route-list-92ddbe08d467e97729843cdd32ab3a7a6361e831",
-    selecting: "selecting-66cb567f495ea2de11e92670f891b72832d5e7ed",
-    selected: "selected-8a088f2301284b7adaea141d44ed74efb3eabcd9",
-    note: "note-2bf25f471effde16dedb6e3c8240d8232090b11d",
-    "auto-complete-list": "auto-complete-list-fbf691c5b54a10f5224607f1ff657f1bb5d2e4c2",
-    "auto-complete-list-item": "auto-complete-list-item-05369bbf368fb99e98bee234037331e6eeca6313",
-    accordion: "accordion-84899385d42b4ea158b933f71e5abcfee44879e3",
+    "import-text-input": "import-text-input-80dcd0ec8d5f103f1fb547564b3ac3893c9cad5a",
+    hidden: "hidden-ea226c5fdd77079deb708727ea638440f95ae2da",
+    "ellipsis-text": "ellipsis-text-2f4f64de9c3255391f92a52efe554018a3e03f60",
+    "editable-text": "editable-text-cea1a630beb7978792fd2bbf0fa872747ca606be",
+    "spot-label": "spot-label-7aa21d3576345db028bb94f7975c999b951873fc",
+    "spot-handle": "spot-handle-f0a54eabd01c1d20cb8b4db896c8cd94563bf0df",
+    draggable: "draggable-d93d096ec2013bac7afdc1229d780ed7b62743f8",
+    highlighted: "highlighted-55a4c2fa8df66d9179b90719b71010f209fa4cb0",
+    "properties-editor": "properties-editor-c0c9eaae06e7f6961b0b6f3c2f0eb1a4e4816f21",
+    "route-list-container": "route-list-container-45a09106aec68be05d87d3edcb241b41efd8240e",
+    title: "title-0ddcfbb4237c299aa18c23f36c64957f8325e230",
+    invalid: "invalid-ac13274873e31e53d9824808a13465f80aa96d3a",
+    "route-list": "route-list-648a2e1f76419ed7d0e74b39413362f28cf9ca0a",
+    selecting: "selecting-da6c3d54d66e5cf02f32d195f56fae7014947ce4",
+    selected: "selected-e0f95b3298a8740bfb2fb3a59b80a8da5f95a37c",
+    note: "note-a7a6c71df25a43094e9fcba73458e3c6e103d0eb",
+    "auto-complete-list": "auto-complete-list-c8ef735cee24398a5c518994abc2e6590561e426",
+    "auto-complete-list-item": "auto-complete-list-item-0bb8911ec63976f45b7f513a4525c6d36690e640",
+    accordion: "accordion-60cbfc070b8997dd25905eaadb3b7dffef7ebcac",
 });
 
 ;// CONCATENATED MODULE: ../gas-drivetunnel/source/schemas.ts
@@ -1924,40 +1923,65 @@ function isUnicodeWhiteSpace(codePoint) {
     }
     return false;
 }
-function createTokenizer(source, definitions) {
+function createTokenizer(source, { tokens, getEos, getDefault, getTokenKind }) {
+    const sourceLength = source.length;
     let remainingSource = source;
+    let lastSource = source;
+    let lastMatchLength = 0;
+    function getText() {
+        return lastSource.slice(0, lastMatchLength);
+    }
+    function getPosition() {
+        return sourceLength - remainingSource.length;
+    }
+    function advance(text) {
+        lastSource = remainingSource;
+        lastMatchLength = text.length;
+        remainingSource = remainingSource.slice(lastMatchLength);
+        return text;
+    }
     function next() {
         if (remainingSource.length <= 0)
-            return;
-        for (const [pattern, action] of definitions) {
+            return getEos();
+        for (const pattern of tokens) {
             const match = pattern.exec(remainingSource);
             if (match && match.index === 0) {
-                const token = action
-                    ? action(match)
-                    : match[0];
-                remainingSource = remainingSource.slice(match[0].length);
-                return token;
+                const text = match[0];
+                advance(text);
+                return getTokenKind(text);
             }
         }
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        advance(remainingSource[0]);
+        return getDefault();
     }
-    return { next };
+    return { next, getText, getPosition };
 }
-const tokenDefinitions = [
-    // 行コメント // comment
-    [/\/\/.*?(\n|$)/],
-    // 複数行コメント /* comment */
-    [/\/\*[\s\S]*?\*\//],
-    // キーワードや記号
-    [/true|false|null|[[\](){},:@$]/],
-    // 識別子形式の文字列 { key: 0 }
-    [/[^\s/[\](){}@,:"\\\d][^\s/[\](){}@$,:"\\]*/],
-    // 空白
-    [/\s+/],
-    // 数値リテラル
-    [/-?\d+(\.\d+)?([eE]\d+)?/],
-    // 文字列リテラル
-    [/"([^"]|\\")*"/],
-];
+const tokenDefinitions = {
+    tokens: [
+        // 行コメント // comment
+        /\/\/.*?(\n|$)/,
+        // 複数行コメント /* comment */
+        /\/\*[\s\S]*?\*\//,
+        // 記号
+        /[[\](){},:@$]/,
+        // 識別子形式の文字列 { key: 0 }
+        /[^\s/[\](){},:@$"\\\d][^\s/[\](){},:@$"\\]*/,
+        // 空白
+        /\s+/,
+        // 数値リテラル
+        /-?\d+(\.\d+)?([eE]\d+)?/,
+        // 文字列リテラル
+        /"([^"]|\\")*"/,
+    ],
+    getEos() {
+        return "EndOfSource";
+    },
+    getDefault() {
+        return "Unknown";
+    },
+    getTokenKind,
+};
 var DiagnosticKind;
 (function (DiagnosticKind) {
     DiagnosticKind["AnyTokenRequired"] = "AnyTokenRequired";
@@ -1971,8 +1995,6 @@ var DiagnosticKind;
 function getTokenKind(token) {
     var _a;
     switch (token) {
-        case undefined:
-            return "EndOfSource";
         case "(":
         case ")":
         case "{":
@@ -1994,25 +2016,27 @@ function getTokenKind(token) {
         return "WhiteSpace";
     return "Name";
 }
-function createParser({ next }, reporter) {
-    let currentToken;
+function createParser({ next, getText: getCurrentTokenText, getPosition }, reporter) {
     let currentTokenKind = "Unknown";
+    let currentTokenStart = -1;
+    let currentTokenEnd = -1;
     function nextToken() {
         do {
-            currentToken = next();
-            currentTokenKind = getTokenKind(currentToken);
+            currentTokenStart = getPosition();
+            currentTokenKind = next();
         } while (currentTokenKind === "WhiteSpace" ||
             currentTokenKind === "Comment");
+        currentTokenEnd = getPosition();
     }
     function skipToken(expectedToken, diagnosticKind) {
-        if (currentToken !== expectedToken) {
-            reporter(diagnosticKind);
+        if (currentTokenKind !== expectedToken) {
+            reporter === null || reporter === void 0 ? void 0 : reporter(diagnosticKind, currentTokenStart, currentTokenEnd);
             return;
         }
         nextToken();
     }
-    function trySkipToken(expectedToken) {
-        return currentToken === expectedToken && (nextToken(), true);
+    function trySkipToken(expectedTokenKind) {
+        return currentTokenKind === expectedTokenKind && (nextToken(), true);
     }
     const recoveryToken = "<recover>";
     function parseExpression() {
@@ -2025,22 +2049,22 @@ function createParser({ next }, reporter) {
     function isInfixOperatorHead() {
         return currentTokenKind === "@";
     }
-    function parseInfixOperatorTail(baseName) {
-        nextToken();
-        return `_${baseName}_`;
-    }
     function parseInfixOperator() {
         // skip "@"
         nextToken();
-        if (currentToken != null) {
-            switch (currentTokenKind) {
-                case "Name":
-                    return parseInfixOperatorTail(currentToken);
-                case "String":
-                    return parseInfixOperatorTail(JSON.parse(currentToken));
-            }
+        let value;
+        switch (currentTokenKind) {
+            case "Name":
+                value = getCurrentTokenText();
+                break;
+            case "String":
+                value = JSON.parse(getCurrentTokenText());
+                break;
+            default:
+                return parsePrimaryExpression();
         }
-        return parsePrimaryExpression();
+        nextToken();
+        return `_${value}_`;
     }
     // operator-expression-or-higher := concatenation-expression (infix-operator concatenation-expression)*
     function parseOperatorExpressionOrHigher() {
@@ -2087,37 +2111,29 @@ function createParser({ next }, reporter) {
                 return false;
         }
     }
-    function recoveryVariable() {
-        reporter(DiagnosticKind.StringLiteralOrNameRequired);
-        return recoveryToken;
-    }
     function parseVariableTail() {
-        if (currentToken == null) {
-            return recoveryVariable();
-        }
+        nextToken();
         let variable;
         switch (currentTokenKind) {
             case "Name":
-                variable = currentToken;
+                variable = getCurrentTokenText();
                 break;
             case "String":
-                variable = JSON.parse(currentToken);
+                variable = JSON.parse(getCurrentTokenText());
                 break;
             default:
-                return recoveryVariable();
+                reporter === null || reporter === void 0 ? void 0 : reporter(DiagnosticKind.StringLiteralOrNameRequired, currentTokenStart, currentTokenEnd);
+                return recoveryToken;
         }
         nextToken();
         return variable;
     }
     function parsePrimaryExpression() {
-        const token = currentToken;
-        const tokenKind = currentTokenKind;
-        if (token === undefined) {
-            reporter(DiagnosticKind.AnyTokenRequired);
-            return recoveryToken;
-        }
-        nextToken();
-        switch (tokenKind) {
+        let result;
+        switch (currentTokenKind) {
+            case "EndOfSource":
+                reporter === null || reporter === void 0 ? void 0 : reporter(DiagnosticKind.AnyTokenRequired, currentTokenStart, currentTokenEnd);
+                return recoveryToken;
             // リスト
             case "(":
                 return parseParenthesisExpressionTail();
@@ -2126,29 +2142,36 @@ function createParser({ next }, reporter) {
                 return parseRecordTail();
             // 文字列リテラル: "abc" => ["abc"]
             case "String":
-                return [JSON.parse(token)];
+                result = [JSON.parse(getCurrentTokenText())];
+                break;
             // 数値リテラル
             case "Number":
-                return JSON.parse(token);
+                result = JSON.parse(getCurrentTokenText());
+                break;
             // 名前: xyz => "xyz"
             case "Name":
-                return [token];
+                result = [getCurrentTokenText()];
+                break;
             // 変数: $abc => abc
             // $"abc" => abc
             case "$":
                 return parseVariableTail();
             default:
-                tokenKind;
-                reporter(DiagnosticKind.LeftParenthesesOrLeftCurlyBracketOrLiteralOrNameRequired);
-                return token;
+                currentTokenKind;
+                reporter === null || reporter === void 0 ? void 0 : reporter(DiagnosticKind.LeftParenthesesOrLeftCurlyBracketOrLiteralOrNameRequired, currentTokenStart, currentTokenEnd);
+                result = getCurrentTokenText();
         }
+        nextToken();
+        return result;
     }
     function parseParenthesisExpressionTail() {
+        nextToken();
         const value = parseExpression();
         skipToken(")", DiagnosticKind.RightParenthesisTokenExpected);
         return value;
     }
     function parseRecordTail() {
+        nextToken();
         const record = {};
         do {
             if (trySkipToken("}"))
@@ -2161,25 +2184,28 @@ function createParser({ next }, reporter) {
         return record;
     }
     function parseRecordKey() {
-        const token = currentToken;
+        let result;
         switch (currentTokenKind) {
             case "Name":
-                nextToken();
-                return token !== null && token !== void 0 ? token : standard_extensions_error `internal error`;
+                result = getCurrentTokenText();
+                break;
             case "String":
-                nextToken();
-                return JSON.stringify(token);
+                result = JSON.stringify(getCurrentTokenText());
+                break;
+            default:
+                reporter === null || reporter === void 0 ? void 0 : reporter(DiagnosticKind.StringLiteralOrNameRequired, currentTokenStart, currentTokenEnd);
+                result = recoveryToken;
+                break;
         }
-        reporter(DiagnosticKind.StringLiteralOrNameRequired);
         nextToken();
-        return recoveryToken;
+        return result;
     }
     return {
         parse() {
             nextToken();
             const value = parseExpression();
             if (currentTokenKind !== "EndOfSource")
-                reporter(DiagnosticKind.EndOfSourceOrAtNameExpected);
+                reporter === null || reporter === void 0 ? void 0 : reporter(DiagnosticKind.EndOfSourceOrAtNameExpected, currentTokenStart, currentTokenEnd);
             return value;
         },
     };
@@ -2336,7 +2362,9 @@ function reachableWith(options) {
 }
 const reachable = reachableWith();
 function queryAsFactory(query) {
-    return typeof query === "string" ? includes([query]) : query;
+    return typeof query === "string" || typeof query === "number"
+        ? includes([String(query)])
+        : query;
 }
 function orderByKey(query, getKey, isAscendent) {
     return {
@@ -2513,7 +2541,10 @@ function evaluateWithLibrary(expression) {
 function createQuery(expression) {
     const diagnostics = [];
     const tokenizer = createTokenizer(expression, tokenDefinitions);
-    const parser = createParser(tokenizer, (d) => diagnostics.push(d));
+    const parser = createParser(tokenizer, (d, start, end) => diagnostics.push({
+        message: d,
+        range: { start, end },
+    }));
     const json = parser.parse();
     return {
         getQuery: () => {
@@ -2524,41 +2555,244 @@ function createQuery(expression) {
     };
 }
 
+;// CONCATENATED MODULE: ./source/query-editor.module.css
+const query_editor_module_cssText = "\r\n.highlighting-eb1bdb9ef1ff8ad9f5382501d53fd07c69b329a0.invalid-a9b8c142de1ecbf0628f905169f747e43e9fa09a {\r\n    background-color: lightgoldenrodyellow;\r\n}\r\n.input-container-a055e2bbdf088977f2cd7bd39b0f9af72f444075 {\r\n    position: relative;\r\n    width: auto;\r\n    height: auto;\r\n}\r\n.input-7a4263bdf0d43219e5cebd4956b85f64e1b1020e {\r\n    color: transparent;\r\n    background-color: transparent;\r\n    caret-color: gray;\r\n}\r\n.highlighting-eb1bdb9ef1ff8ad9f5382501d53fd07c69b329a0 {\r\n    background: white;\r\n    color: rgb(54, 54, 54)\r\n}\r\n.input-7a4263bdf0d43219e5cebd4956b85f64e1b1020e, .highlighting-eb1bdb9ef1ff8ad9f5382501d53fd07c69b329a0 {\r\n    --input-line-height-ratio: 1.5;\r\n\r\n    margin: 0;\r\n    padding: 1px;\r\n    border: 0;\r\n    width: calc(100% - 32px);\r\n    height: calc(1em * var(--input-line-height-ratio) + 1px);\r\n}\r\n.input-7a4263bdf0d43219e5cebd4956b85f64e1b1020e, .highlighting-eb1bdb9ef1ff8ad9f5382501d53fd07c69b329a0 * {\r\n    font-size: 9pt;\r\n    font-family: 'fira code', Consolas, Menlo, Monaco, 'Courier New', Courier, monospace;\r\n    line-height: var(--input-line-height-ratio);\r\n    tab-size: 2;\r\n}\r\n.input-7a4263bdf0d43219e5cebd4956b85f64e1b1020e {\r\n    position: relative;\r\n    overflow: auto;\r\n}\r\n.highlighting-eb1bdb9ef1ff8ad9f5382501d53fd07c69b329a0 {\r\n    position: absolute;\r\n    top: 0;\r\n    left: 0;\r\n    overflow: hidden;\r\n}\r\n.input-7a4263bdf0d43219e5cebd4956b85f64e1b1020e, .highlighting-eb1bdb9ef1ff8ad9f5382501d53fd07c69b329a0 {\r\n    white-space: pre;\r\n    text-wrap: wrap;\r\n    word-break: break-all;\r\n    hyphens: none;\r\n}\r\n.input-7a4263bdf0d43219e5cebd4956b85f64e1b1020e {\r\n    z-index: 1;\r\n}\r\n.highlighting-eb1bdb9ef1ff8ad9f5382501d53fd07c69b329a0 {\r\n    z-index: 0;\r\n}\r\n\r\n.token-5298f0aed99f259a64648db7e712ad470f49185a {\r\n    border-radius: 1em;\r\n    background: hsl(var(--token-hue), 29%, 90%);\r\n}\r\n.token-5298f0aed99f259a64648db7e712ad470f49185a[class~=space] {\r\n    border-radius: 0;\r\n    background: radial-gradient(circle farthest-side, lightgray, lightgray 1px, transparent 1px, transparent);\r\n    background-size: 4px 100%;\r\n}\r\n.token-5298f0aed99f259a64648db7e712ad470f49185a[class~=undefined-type], .token-5298f0aed99f259a64648db7e712ad470f49185a[class~=keyword] {\r\n    background: none;\r\n}\r\n.token-5298f0aed99f259a64648db7e712ad470f49185a[class~=comment] {\r\n    --token-hue: 120;\r\n}\r\n.token-5298f0aed99f259a64648db7e712ad470f49185a[class~=string] {\r\n    --token-hue: 0;\r\n}\r\n.token-5298f0aed99f259a64648db7e712ad470f49185a[class~=number] {\r\n    --token-hue: 182;\r\n}\r\n.token-5298f0aed99f259a64648db7e712ad470f49185a[class~=operator] {\r\n    --token-hue: 43;\r\n}\r\n.token-5298f0aed99f259a64648db7e712ad470f49185a.invalid-a9b8c142de1ecbf0628f905169f747e43e9fa09a {\r\n    text-decoration: underline wavy red;\r\n}\r\n";
+/* harmony default export */ const query_editor_module = ({
+    highlighting: "highlighting-eb1bdb9ef1ff8ad9f5382501d53fd07c69b329a0",
+    invalid: "invalid-a9b8c142de1ecbf0628f905169f747e43e9fa09a",
+    "input-container": "input-container-a055e2bbdf088977f2cd7bd39b0f9af72f444075",
+    input: "input-7a4263bdf0d43219e5cebd4956b85f64e1b1020e",
+    token: "token-5298f0aed99f259a64648db7e712ad470f49185a",
+});
+
 ;// CONCATENATED MODULE: ./source/query-editor.tsx
 
 
+
+
+function getMonospaceWidth(text) {
+    // TODO:
+    return text.length;
+}
+function addClassName(element, className) {
+    if (className != null) {
+        element.classList.add(className);
+    }
+}
 function createQueryEditor(options) {
-    var _a, _b, _c, _d, _e, _f, _g, _h;
-    const invalidClassName = (_b = (_a = options === null || options === void 0 ? void 0 : options.classNames) === null || _a === void 0 ? void 0 : _a.invalid) !== null && _b !== void 0 ? _b : "";
-    // TODO: 入力補完
-    const completionsContainer = (jsx("div", { class: (_d = (_c = options === null || options === void 0 ? void 0 : options.classNames) === null || _c === void 0 ? void 0 : _c.autoCompleteList) !== null && _d !== void 0 ? _d : "" }));
-    const inputField = addListeners((jsx("textarea", { class: (_f = (_e = options === null || options === void 0 ? void 0 : options.classNames) === null || _e === void 0 ? void 0 : _e.inputField) !== null && _f !== void 0 ? _f : "", placeholder: (_g = options === null || options === void 0 ? void 0 : options.placeholder) !== null && _g !== void 0 ? _g : "", children: (_h = options === null || options === void 0 ? void 0 : options.initialText) !== null && _h !== void 0 ? _h : "" })), {
+    var _a, _b, _c, _d, _e, _f;
+    const invalidClassNames = [
+        query_editor_module.invalid,
+        (_a = options === null || options === void 0 ? void 0 : options.classNames) === null || _a === void 0 ? void 0 : _a.invalid,
+    ].filter((x) => x != null);
+    const highlightingContent = jsx("code", {});
+    const highlightingContainer = (jsx("pre", { "aria-hidden": "true", class: query_editor_module.highlighting, children: highlightingContent }));
+    addClassName(highlightingContainer, (_b = options === null || options === void 0 ? void 0 : options.classNames) === null || _b === void 0 ? void 0 : _b.highlighting);
+    const startSymbol = Symbol("start");
+    const endSymbol = Symbol("end");
+    const tokens = [];
+    function getTokenElementIndex(position) {
+        let low = 0;
+        let high = tokens.length - 1;
+        while (low <= high) {
+            const mid = Math.floor((low + high) / 2);
+            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+            const tokenElement = tokens[mid];
+            if (position < tokenElement[startSymbol]) {
+                high = mid - 1;
+            }
+            else if (position > tokenElement[endSymbol]) {
+                low = mid + 1;
+            }
+            else {
+                return mid;
+            }
+        }
+        return;
+    }
+    const tokenClassName = (_c = options === null || options === void 0 ? void 0 : options.classNames) === null || _c === void 0 ? void 0 : _c.token;
+    function createSpan(source, start, end, tokenType, tokenModifier) {
+        const span = (jsx("span", { children: source.slice(start, end) }));
+        span.classList.add(query_editor_module.token);
+        addClassName(span, tokenClassName);
+        span.classList.add(tokenType !== null && tokenType !== void 0 ? tokenType : "undefined-type");
+        span.classList.add(tokenModifier !== null && tokenModifier !== void 0 ? tokenModifier : "undefined-modifier");
+        span[startSymbol] = start;
+        span[endSymbol] = end;
+        return span;
+    }
+    function updateScroll(input) {
+        highlightingContainer.scrollTop = input.scrollTop;
+        highlightingContainer.scrollLeft = input.scrollLeft;
+    }
+    const tokenDefinitions = options === null || options === void 0 ? void 0 : options.tokenDefinitions;
+    function updateHighlightedElement(source) {
+        if (tokenDefinitions == null) {
+            tokens.length = 0;
+            highlightingContent.innerText = source;
+            return;
+        }
+        tokens.length = 0;
+        highlightingContent.innerHTML = "";
+        const tokenizer = createTokenizer(source, tokenDefinitions);
+        const fragment = document.createDocumentFragment();
+        let next = 0;
+        // eslint-disable-next-line no-constant-condition
+        while (true) {
+            const tokenStart = tokenizer.getPosition();
+            const token = tokenizer.next();
+            if (token === undefined)
+                break;
+            const tokenEnd = tokenizer.getPosition();
+            if (next < tokenStart) {
+                const span = createSpan(source, next, tokenStart, undefined, undefined);
+                tokens.push(span);
+                fragment.append(span);
+            }
+            const span = createSpan(source, tokenStart, tokenEnd, token === null || token === void 0 ? void 0 : token[0], token === null || token === void 0 ? void 0 : token[1]);
+            tokens.push(span);
+            fragment.append(span);
+            next = tokenEnd;
+        }
+        if (next < source.length) {
+            fragment.append(source.slice(next));
+        }
+        highlightingContent.append(fragment);
+    }
+    function onValueChange(element) {
+        var _a;
+        (_a = options === null || options === void 0 ? void 0 : options.onValueChange) === null || _a === void 0 ? void 0 : _a.call(options, element);
+        updateHighlightedElement(element.value);
+    }
+    function insertText(element, createText) {
+        const code = element.value;
+        const beforeSelection = code.slice(0, element.selectionStart);
+        const afterSelection = code.slice(element.selectionEnd, code.length);
+        const text = createText(beforeSelection, afterSelection);
+        const nextCursorPosition = element.selectionEnd + text.length;
+        element.value = beforeSelection + text + afterSelection;
+        element.selectionStart = nextCursorPosition;
+        element.selectionEnd = nextCursorPosition;
+    }
+    function detectIndent(text) {
+        var _a, _b;
+        let minIndent;
+        for (const [, headSpaces] of text.matchAll(/(?:^|\n)( +)/g)) {
+            if (((_a = headSpaces === null || headSpaces === void 0 ? void 0 : headSpaces.length) !== null && _a !== void 0 ? _a : Infinity) <
+                ((_b = minIndent === null || minIndent === void 0 ? void 0 : minIndent.length) !== null && _b !== void 0 ? _b : Infinity)) {
+                minIndent = headSpaces;
+            }
+        }
+        return minIndent;
+    }
+    function getNextWidth(lineWidth, indentSize) {
+        return (Math.floor(lineWidth / indentSize) + 1) * indentSize;
+    }
+    function getPreviousWidth(lineWidth, indentSize) {
+        return (Math.ceil(lineWidth / indentSize) - 1) * indentSize;
+    }
+    const errorMessageKey = "errorMessage";
+    function clearDiagnostics() {
+        highlightingContainer.classList.remove(...invalidClassNames);
+        for (const t of tokens) {
+            t.classList.remove(...invalidClassNames);
+            t.dataset[errorMessageKey] = undefined;
+        }
+    }
+    function addDiagnostic(diagnostic) {
+        var _a;
+        highlightingContainer.classList.add(...invalidClassNames);
+        // diagnostic.message;
+        const startIndex = getTokenElementIndex(diagnostic.range.start);
+        if (startIndex) {
+            const endIndex = (_a = getTokenElementIndex(diagnostic.range.end)) !== null && _a !== void 0 ? _a : startIndex;
+            for (let i = startIndex; i < endIndex + 1; i++) {
+                const token = tokens[i];
+                if (!token)
+                    continue;
+                token.classList.add(...invalidClassNames);
+                const dataset = token.dataset;
+                dataset[errorMessageKey] = diagnostic.message;
+                token.title = diagnostic.message;
+            }
+        }
+    }
+    const defaultIndent = "  ";
+    const inputField = addListeners((jsx("textarea", { spellcheck: false, class: query_editor_module.input, placeholder: (_d = options === null || options === void 0 ? void 0 : options.placeholder) !== null && _d !== void 0 ? _d : "", children: (_e = options === null || options === void 0 ? void 0 : options.initialText) !== null && _e !== void 0 ? _e : "" })), {
         input() {
-            var _a, _b, _c, _d, _e;
-            (_a = options === null || options === void 0 ? void 0 : options.onInput) === null || _a === void 0 ? void 0 : _a.call(options, this);
-            const { value, selectionStart: cursorPosition } = this;
-            completionsContainer.innerHTML = "";
-            const customCompletions = (_c = (_b = options === null || options === void 0 ? void 0 : options.getCompletions) === null || _b === void 0 ? void 0 : _b.call(options, value, cursorPosition)) !== null && _c !== void 0 ? _c : [];
-            for (const completion of customCompletions) {
-                const item = addListeners(jsx("div", { class: (_e = (_d = options === null || options === void 0 ? void 0 : options.classNames) === null || _d === void 0 ? void 0 : _d.autoCompleteListItem) !== null && _e !== void 0 ? _e : "", children: completion.displayText }), {
-                    click() {
-                        inputField.value = completion.complete();
-                        inputField.focus();
-                        completionsContainer.innerHTML = "";
-                    },
+            onValueChange(this);
+            updateScroll(this);
+        },
+        scroll() {
+            updateScroll(this);
+        },
+        keydown(e) {
+            var _a, _b, _c, _d;
+            if (e.key === "Tab") {
+                e.preventDefault();
+                insertText(this, (beforeSelection) => {
+                    var _a, _b, _c;
+                    const indent = (_a = detectIndent(this.value)) !== null && _a !== void 0 ? _a : defaultIndent;
+                    const line = (_c = (_b = /(?:^|\n)(.*)$/.exec(beforeSelection)) === null || _b === void 0 ? void 0 : _b[1]) !== null && _c !== void 0 ? _c : "";
+                    const lineWidth = getMonospaceWidth(line);
+                    const insertionSpaceCount = getNextWidth(lineWidth, indent.length) - lineWidth;
+                    return " ".repeat(insertionSpaceCount);
                 });
-                completionsContainer.appendChild(item);
+                onValueChange(this);
+            }
+            if (e.key === "Enter") {
+                e.preventDefault();
+                insertText(this, (beforeSelection) => {
+                    var _a, _b;
+                    const indent = (_b = (_a = /([\t ]*).*$/.exec(beforeSelection)) === null || _a === void 0 ? void 0 : _a[1]) !== null && _b !== void 0 ? _b : "";
+                    return "\n" + indent;
+                });
+                onValueChange(this);
+            }
+            if (e.key === "Backspace") {
+                // eslint-disable-next-line @typescript-eslint/no-this-alias
+                const element = this;
+                if (element.selectionStart === element.selectionEnd) {
+                    const code = element.value;
+                    const beforeSelection = code.slice(0, element.selectionStart);
+                    const afterSelection = code.slice(element.selectionEnd, code.length);
+                    const m = /(?:^|\n)( +)$/.exec(beforeSelection);
+                    if (m) {
+                        e.preventDefault();
+                        const lineWidth = (_b = (_a = m[1]) === null || _a === void 0 ? void 0 : _a.length) !== null && _b !== void 0 ? _b : 0;
+                        const indentWidth = (_d = (_c = detectIndent(this.value)) === null || _c === void 0 ? void 0 : _c.length) !== null && _d !== void 0 ? _d : defaultIndent.length;
+                        const deleteCount = lineWidth -
+                            getPreviousWidth(lineWidth, indentWidth);
+                        const nextCursorPosition = element.selectionStart - deleteCount;
+                        element.value =
+                            beforeSelection.slice(0, beforeSelection.length - deleteCount) + afterSelection;
+                        element.selectionStart = nextCursorPosition;
+                        element.selectionEnd = nextCursorPosition;
+                        onValueChange(this);
+                    }
+                }
             }
         },
     });
+    addClassName(inputField, (_f = options === null || options === void 0 ? void 0 : options.classNames) === null || _f === void 0 ? void 0 : _f.inputField);
+    new ResizeObserver((entries) => {
+        for (const entry of entries) {
+            if (entry.target !== inputField)
+                continue;
+            const { contentRect } = entry;
+            highlightingContainer.style.width = contentRect.width + "px";
+            highlightingContainer.style.height = contentRect.height + "px";
+        }
+    }).observe(inputField);
+    onValueChange(inputField);
     return {
-        element: jsx("div", { children: inputField }),
-        clearDiagnostics() {
-            inputField.classList.remove(invalidClassName);
+        cssText: query_editor_module_cssText,
+        element: (jsxs("div", { class: query_editor_module["input-container"], children: [inputField, highlightingContainer] })),
+        setValue(value) {
+            inputField.value = value;
         },
-        addDiagnostic(_message) {
-            inputField.classList.add(invalidClassName);
-        },
+        clearDiagnostics,
+        addDiagnostic,
     };
 }
 
@@ -2606,6 +2840,77 @@ function applyTemplate(template, resolve) {
     });
 }
 
+;// CONCATENATED MODULE: ./source/query/service.ts
+
+var SemanticTokenTypes;
+(function (SemanticTokenTypes) {
+    SemanticTokenTypes["variable"] = "variable";
+    SemanticTokenTypes["keyword"] = "keyword";
+    SemanticTokenTypes["number"] = "number";
+    SemanticTokenTypes["string"] = "string";
+    SemanticTokenTypes["comment"] = "comment";
+    SemanticTokenTypes["operator"] = "operator";
+    SemanticTokenTypes["space"] = "space";
+})(SemanticTokenTypes || (SemanticTokenTypes = {}));
+var SemanticTokenModifiers;
+(function (SemanticTokenModifiers) {
+    SemanticTokenModifiers["declaration"] = "declaration";
+    SemanticTokenModifiers["static"] = "static";
+    SemanticTokenModifiers["definition"] = "definition";
+    SemanticTokenModifiers["defaultLibrary"] = "defaultLibrary";
+})(SemanticTokenModifiers || (SemanticTokenModifiers = {}));
+function getTokenCategory(tokenKind) {
+    switch (tokenKind) {
+        case "Unknown":
+            return null;
+        case "$":
+        case "@":
+        case "(":
+        case ")":
+        case "{":
+        case "}":
+        case ",":
+        case ":":
+            return [SemanticTokenTypes.keyword, SemanticTokenModifiers.static];
+        case "Number":
+            return [
+                SemanticTokenTypes.number,
+                SemanticTokenModifiers.definition,
+            ];
+        case "Name":
+        case "String":
+            return [
+                SemanticTokenTypes.string,
+                SemanticTokenModifiers.defaultLibrary,
+            ];
+        case "Comment":
+            return [SemanticTokenTypes.comment, SemanticTokenModifiers.static];
+        case "WhiteSpace":
+            return [
+                SemanticTokenTypes.space,
+                SemanticTokenModifiers.defaultLibrary,
+            ];
+        case "EndOfSource":
+            return;
+        default:
+            return standard_extensions_error `Invalid token kind: "${tokenKind}"`;
+    }
+}
+function mapTokenDefinitions({ tokens, getEos, getDefault, getTokenKind }, mapping) {
+    return {
+        tokens,
+        getEos() {
+            return mapping(getEos());
+        },
+        getDefault() {
+            return mapping(getDefault());
+        },
+        getTokenKind(token) {
+            return mapping(getTokenKind(token));
+        },
+    };
+}
+
 ;// CONCATENATED MODULE: ./source/iitc-plugin-pgo-route-helper.tsx
 var iitc_plugin_pgo_route_helper_awaiter = (undefined && undefined.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
@@ -2618,6 +2923,8 @@ var iitc_plugin_pgo_route_helper_awaiter = (undefined && undefined.__awaiter) ||
 };
 
 // spell-checker: ignore layeradd drivetunnel latlngschanged lngs latlng buttonset
+
+
 
 
 
@@ -3197,7 +3504,13 @@ function asyncMain() {
             }
             catch (error) {
                 progress({ type: "query-evaluation-error", error });
-                queryEditor.addDiagnostic(String(error));
+                queryEditor.addDiagnostic({
+                    message: String(error),
+                    range: {
+                        start: 1,
+                        end: 1,
+                    },
+                });
                 return defaultValue();
             }
         }
@@ -3346,7 +3659,7 @@ function asyncMain() {
                     if (0 !== diagnostics.length) {
                         progress({
                             type: "query-parse-error-occurred",
-                            messages: diagnostics,
+                            messages: diagnostics.map((d) => d.message),
                         });
                     }
                     else {
@@ -3365,13 +3678,12 @@ function asyncMain() {
         }
         const queryEditor = createQueryEditor({
             classNames: {
-                inputField: styles_module["query-input-field"],
                 autoCompleteList: styles_module["auto-complete-list"],
                 autoCompleteListItem: styles_module["auto-complete-list-item"],
-                invalid: styles_module["invalid"],
             },
             initialText: (_a = config.routeQueries) === null || _a === void 0 ? void 0 : _a.at(-1),
             placeholder: "🔍ルート検索",
+            tokenDefinitions: mapTokenDefinitions(tokenDefinitions, getTokenCategory),
             getCompletions() {
                 var _a, _b;
                 return (_b = (_a = config.routeQueries) === null || _a === void 0 ? void 0 : _a.reverse()) === null || _b === void 0 ? void 0 : _b.map((queryText) => {
@@ -3381,10 +3693,11 @@ function asyncMain() {
                     };
                 });
             },
-            onInput(e) {
+            onValueChange(e) {
                 setQueryExpressionDelayed(500, e.value);
             },
         });
+        addStyle(queryEditor.cssText);
         const selectedRouteButtonContainer = (jsxs("span", { children: [addRouteElement, addSpotElement, deleteSelectedRouteElement, moveToRouteElement, setAsTemplateElement] }));
         const selectedRouteEditorContainer = (jsxs("details", { open: true, class: styles_module.accordion, children: [jsx("summary", { children: titleElement }), jsxs("div", { children: [jsx("div", { children: descriptionElement }), jsx("div", { children: notesElement }), jsx("div", { children: coordinatesElement }), jsx("div", { children: lengthElement }), jsx("div", { children: addListeners(jsx("input", { class: styles_module["editable-text"], type: "text", placeholder: "\u30E6\u30FC\u30B6\u30FC\u540D", value: config.userId }), {
                                 change() {
