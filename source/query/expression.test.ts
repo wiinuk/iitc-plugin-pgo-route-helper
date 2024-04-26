@@ -11,7 +11,8 @@ import * as Assoc from "../assoc";
 
 function parse(source: string) {
     const diagnostics: DiagnosticKind[] = [];
-    const tokenizer = createTokenizer(source, tokenDefinitions);
+    const tokenizer = createTokenizer(tokenDefinitions);
+    tokenizer.initialize(source);
     const parser = createParser(tokenizer, (d) => diagnostics.push(d));
     return { syntax: parser.parse(), diagnostics };
 }

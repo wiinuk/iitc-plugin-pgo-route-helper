@@ -109,16 +109,19 @@ export function createQueryEditor(
     }
 
     const tokenDefinitions = options?.tokenDefinitions;
+    const tokenizer = tokenDefinitions
+        ? createTokenizer(tokenDefinitions)
+        : null;
     function updateHighlightedElement(source: string) {
-        if (tokenDefinitions == null) {
+        if (tokenizer == null) {
             tokens.length = 0;
             highlightingContent.innerText = source;
             return;
         }
+        tokenizer.initialize(source);
         tokens.length = 0;
         highlightingContent.innerHTML = "";
 
-        const tokenizer = createTokenizer(source, tokenDefinitions);
         const fragment = document.createDocumentFragment();
 
         let next = 0;

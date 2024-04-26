@@ -405,21 +405,28 @@ export interface QueryEnvironment {
     getUserCoordinate(): Coordinate | undefined;
     distance(c1: Coordinate, c2: Coordinate): number;
 }
+
+const diagnosticsCache: Diagnostic[] = [];
+const tokenizer = createTokenizer(tokenDefinitions);
+const parser = createParser(tokenizer, (d, start, end) =>
+    diagnosticsCache.push({
+        message: d,
+        range: { start, end },
+    })
+);
 export function createQuery(expression: string): QueryCreateResult {
-    const diagnostics: Diagnostic[] = [];
-    const tokenizer = createTokenizer(expression, tokenDefinitions);
-    const parser = createParser(tokenizer, (d, start, end) =>
-        diagnostics.push({
-            message: d,
-            range: { start, end },
-        })
-    );
-    const json = parser.parse();
-    return {
-        getQuery: () => {
-            // TODO: 静的チェックする
-            return queryAsFactory(evaluateWithLibrary(json) as RouteQuery);
-        },
-        diagnostics,
-    };
+    diagnosticsCache.length = 0;
+    try {
+        tokenizer.initialize(expression);
+        const json = parser.parse();
+        return {
+            getQuery: () => {
+                // TODO: 静的チェックする
+                return queryAsFactory(evaluateWithLibrary(json) as RouteQuery);
+            },
+            diagnostics: diagnosticsCache.slice(),
+        };
+    } finally {
+        diagnosticsCache.length = 0;
+    }
 }

@@ -2,10 +2,16 @@ import { error, type Json } from "../standard-extensions";
 const enum CharacterCodes {
     ['"'] = 34,
     $ = 36,
+    ["("] = 40,
+    [")"] = 41,
+    [","] = 44,
     ["/"] = 47,
     C0 = 48,
     C9 = 57,
+    [":"] = 58,
     ["@"] = 64,
+    ["{"] = 123,
+    ["}"] = 125,
 }
 // spaces
 const enum CharacterCodes {
@@ -92,67 +98,80 @@ function isUnicodeWhiteSpace(codePoint: number) {
 export type TokenDefinitions<T> = {
     getEos(): T;
     getDefault(): T;
-    getTokenKind(text: string): T;
+    getTokenKind(source: string, start: number, end: number): T;
     tokens: readonly RegExp[];
 };
 
 interface Tokenizer<T> {
+    initialize(source: string): void;
     next(): T;
     getText(): string;
     getPosition(): number;
 }
-export function createTokenizer<T>(
-    source: string,
-    { tokens, getEos, getDefault, getTokenKind }: TokenDefinitions<T>
-) {
-    const sourceLength = source.length;
-    let remainingSource = source;
-    let lastSource = source;
-    let lastMatchLength = 0;
+export function createTokenizer<T>({
+    tokens,
+    getEos,
+    getDefault,
+    getTokenKind,
+}: TokenDefinitions<T>) {
+    const tokenPatterns = tokens.map((t) =>
+        t.sticky ? t : new RegExp(t.source, t.flags + "y")
+    );
+    let source = "";
+    let sourceLength = 0;
+    let position = 0;
+    let lastMatchStart = 0;
+    let lastMatchEnd = 0;
+    function initialize(sourceText: string) {
+        source = sourceText;
+        sourceLength = sourceText.length;
+        position = 0;
+        lastMatchStart = 0;
+        lastMatchEnd = 0;
+    }
     function getText() {
-        return lastSource.slice(0, lastMatchLength);
+        return source.slice(lastMatchStart, lastMatchEnd);
     }
     function getPosition() {
-        return sourceLength - remainingSource.length;
+        return position;
     }
-    function advance(text: string) {
-        lastSource = remainingSource;
-        lastMatchLength = text.length;
-        remainingSource = remainingSource.slice(lastMatchLength);
-        return text;
-    }
-    function next() {
-        if (remainingSource.length <= 0) return getEos();
-        for (const pattern of tokens) {
-            const match = pattern.exec(remainingSource);
-            if (match && match.index === 0) {
-                const text = match[0];
-                advance(text);
-                return getTokenKind(text);
-            }
-        }
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        advance(remainingSource[0]!);
+    function noMatch() {
+        lastMatchStart = position;
+        lastMatchEnd = position + 1;
+        position = lastMatchEnd;
         return getDefault();
     }
-    return { next, getText, getPosition };
+    function next() {
+        if (sourceLength <= position) return getEos();
+        for (const pattern of tokenPatterns) {
+            pattern.lastIndex = position;
+            if (pattern.test(source)) {
+                lastMatchStart = position;
+                lastMatchEnd = pattern.lastIndex;
+                position = lastMatchEnd;
+                return getTokenKind(source, lastMatchStart, lastMatchEnd);
+            }
+        }
+        return noMatch();
+    }
+    return { initialize, next, getText, getPosition };
 }
 export const tokenDefinitions: TokenDefinitions<TokenKind> = {
     tokens: [
         // 行コメント // comment
-        /\/\/.*?(\n|$)/,
+        /\/\/.*?(\n|$)/y,
         // 複数行コメント /* comment */
-        /\/\*[\s\S]*?\*\//,
+        /\/\*[\s\S]*?\*\//y,
         // 記号
-        /[[\](){},:@$]/,
+        /[[\](){},:@$]/y,
         // 識別子形式の文字列 { key: 0 }
-        /[^\s/[\](){},:@$"\\\d][^\s/[\](){},:@$"\\]*/,
+        /[^\s/[\](){},:@$"\\\d][^\s/[\](){},:@$"\\]*/y,
         // 空白
-        /\s+/,
+        /\s+/y,
         // 数値リテラル
-        /-?\d+(\.\d+)?([eE]\d+)?/,
+        /-?\d+(\.\d+)?([eE]\d+)?/y,
         // 文字列リテラル
-        /"([^"]|\\")*"/,
+        /"([^"]|\\")*"/y,
     ],
     getEos() {
         return "EndOfSource";
@@ -189,19 +208,26 @@ export type TokenKind =
     | "Comment"
     | "EndOfSource";
 
-function getTokenKind(token: string): TokenKind {
-    switch (token) {
-        case "(":
-        case ")":
-        case "{":
-        case "}":
-        case ",":
-        case ":":
-        case "@":
-        case "$":
-            return token;
+function getTokenKind(source: string, start: number, _end: number): TokenKind {
+    switch (source.codePointAt(start)) {
+        case CharacterCodes["("]:
+            return "(";
+        case CharacterCodes[")"]:
+            return ")";
+        case CharacterCodes["{"]:
+            return "{";
+        case CharacterCodes["}"]:
+            return "}";
+        case CharacterCodes[","]:
+            return ",";
+        case CharacterCodes[":"]:
+            return ":";
+        case CharacterCodes["@"]:
+            return "@";
+        case CharacterCodes["$"]:
+            return "$";
     }
-    const code0 = token.codePointAt(0) ?? error`internal error`;
+    const code0 = source.codePointAt(start) ?? error`internal error`;
     if (code0 === CharacterCodes["/"]) return "Comment";
     if (code0 === CharacterCodes['"']) return "String";
     if (isAsciiDigit(code0)) return "Number";
@@ -244,6 +270,21 @@ export function createParser(
     function parseExpression() {
         return parseOperatorExpressionOrHigher();
     }
+    function tryParseNameOrString() {
+        let value;
+        switch (currentTokenKind) {
+            case "Name":
+                value = getCurrentTokenText();
+                break;
+            case "String":
+                value = JSON.parse(getCurrentTokenText()) as string;
+                break;
+            default:
+                return undefined;
+        }
+        nextToken();
+        return value;
+    }
     // infix-operator :=
     //     | "@" name
     //     | "@" string-literal
@@ -255,18 +296,8 @@ export function createParser(
         // skip "@"
         nextToken();
 
-        let value;
-        switch (currentTokenKind) {
-            case "Name":
-                value = getCurrentTokenText();
-                break;
-            case "String":
-                value = JSON.parse(getCurrentTokenText()) as string;
-                break;
-            default:
-                return parsePrimaryExpression();
-        }
-        nextToken();
+        const value = tryParseNameOrString();
+        if (value === undefined) return parsePrimaryExpression();
         return `_${value}_`;
     }
     // operator-expression-or-higher := concatenation-expression (infix-operator concatenation-expression)*
@@ -316,23 +347,15 @@ export function createParser(
     }
     function parseVariableTail() {
         nextToken();
-        let variable;
-        switch (currentTokenKind) {
-            case "Name":
-                variable = getCurrentTokenText();
-                break;
-            case "String":
-                variable = JSON.parse(getCurrentTokenText()) as string;
-                break;
-            default:
-                reporter?.(
-                    DiagnosticKind.StringLiteralOrNameRequired,
-                    currentTokenStart,
-                    currentTokenEnd
-                );
-                return recoveryToken;
+        const variable = tryParseNameOrString();
+        if (variable === undefined) {
+            reporter?.(
+                DiagnosticKind.StringLiteralOrNameRequired,
+                currentTokenStart,
+                currentTokenEnd
+            );
+            return recoveryToken;
         }
-        nextToken();
         return variable;
     }
     function parsePrimaryExpression(): Json {
@@ -407,25 +430,16 @@ export function createParser(
         return record;
     }
     function parseRecordKey() {
-        let result;
-        switch (currentTokenKind) {
-            case "Name":
-                result = getCurrentTokenText();
-                break;
-            case "String":
-                result = JSON.stringify(getCurrentTokenText()) as string;
-                break;
-            default:
-                reporter?.(
-                    DiagnosticKind.StringLiteralOrNameRequired,
-                    currentTokenStart,
-                    currentTokenEnd
-                );
-                result = recoveryToken;
-                break;
+        const key = tryParseNameOrString();
+        if (key === undefined) {
+            reporter?.(
+                DiagnosticKind.StringLiteralOrNameRequired,
+                currentTokenStart,
+                currentTokenEnd
+            );
+            return recoveryToken;
         }
-        nextToken();
-        return result;
+        return key;
     }
     return {
         parse() {

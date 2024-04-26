@@ -4,11 +4,13 @@ import {
     createParser,
     createTokenizer,
     tokenDefinitions,
+    type TokenKind,
 } from "./parser";
 
 function parse(source: string) {
     const diagnostics: DiagnosticKind[] = [];
-    const tokenizer = createTokenizer(source, tokenDefinitions);
+    const tokenizer = createTokenizer(tokenDefinitions);
+    tokenizer.initialize(source);
     const parser = createParser(tokenizer, (d) => diagnostics.push(d));
     return { syntax: parser.parse(), diagnostics };
 }
@@ -19,6 +21,26 @@ function parseOk(source: string) {
     }
     return syntax;
 }
+describe("tokenization", () => {
+    function tokenize(source: string) {
+        const tokenizer = createTokenizer(tokenDefinitions);
+        tokenizer.initialize(source);
+        let tokenKind: TokenKind = "EndOfSource";
+        const tokens = [];
+        while ((tokenKind = tokenizer.next()) !== "EndOfSource") {
+            tokens.push({
+                kind: tokenKind,
+                text: tokenizer.getText(),
+                position: tokenizer.getPosition(),
+            });
+        }
+        return tokens;
+    }
+    it("tokenizer", () => {
+        expect(tokenize("abc")).toMatchObject([{ text: "abc" }]);
+    });
+});
+
 const recoveryToken = "<recover>";
 it("name", () => {
     expect(parseOk("abc")).toStrictEqual(["abc"]);
