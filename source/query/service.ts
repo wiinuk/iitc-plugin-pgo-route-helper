@@ -76,8 +76,8 @@ export function mapTokenDefinitions<T, U>(
         getDefault() {
             return mapping(getDefault());
         },
-        getTokenKind(token) {
-            return mapping(getTokenKind(token));
+        getTokenKind(token, start, end) {
+            return mapping(getTokenKind(token, start, end));
         },
     };
 }
