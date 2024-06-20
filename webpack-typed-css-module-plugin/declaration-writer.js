@@ -38,7 +38,7 @@ exports.writeDeclarationAndMapFile = async function (
     const declarationMapPath = declarationPath + ".map";
 
     // TODO: 置き換え後の css はいらないので、生成しないようにしたい
-    const { newCssText, classNameToSymbol } = modularize(cssContents);
+    const { newCssText, nameToSymbol } = modularize(cssContents);
 
     const declarationMap = new SourceMapGenerator({
         file: declarationPath,
@@ -60,18 +60,22 @@ exports.writeDeclarationAndMapFile = async function (
     });
     const d = declarationFile;
     d.writeLine(`export const cssText: string;`);
-    d.write(`declare const styles:`);
 
-    if (classNameToSymbol.size === 0) {
-        d.write(` {}`);
-    } else {
-        for (const [className, { declarations }] of classNameToSymbol) {
+    /**
+     * @param {modularize.NameKind} declarationNameKind
+     */
+    const writeNamesType = (declarationNameKind) => {
+        let declarationCount = 0;
+        for (const [symbolName, { nameKind, declarations }] of nameToSymbol) {
+            if (nameKind !== declarationNameKind) continue;
+
             for (const declaration of declarations) {
+                declarationCount++;
                 // *.d.ts ファイルにマッピングオブジェクトの型定義を書き込む
                 d.writeLine().write(`    & { readonly `);
                 const startLine = d.line;
                 const startColumn = d.column;
-                d.write(renderFieldName(className));
+                d.write(renderFieldName(symbolName));
                 const endLine = d.line;
                 const endColumn = d.column;
                 d.write(`: string; }`);
@@ -89,7 +93,7 @@ exports.writeDeclarationAndMapFile = async function (
                         line: cssStart.line + 1,
                         column: cssStart.character,
                     },
-                    name: className,
+                    name: symbolName,
                 });
                 declarationMap.addMapping({
                     generated: {
@@ -101,13 +105,23 @@ exports.writeDeclarationAndMapFile = async function (
                         line: cssEnd.line + 1,
                         column: cssEnd.character,
                     },
-                    name: className,
+                    name: symbolName,
                 });
             }
         }
-    }
+        if (declarationCount === 0) {
+            d.write(` Record<string, never>`);
+        }
+    };
+
+    d.write(`export const variables:`);
+    writeNamesType("variable");
     d.writeLine(";");
-    d.writeLine("export = styles;");
+
+    d.write(`declare const styles:`);
+    writeNamesType("class");
+    d.writeLine(";");
+    d.writeLine("export default styles;");
 
     // file watcher を反応させないため、既にあるファイルと書き込もうとするファイルの内容が同じなら書き込まないようにする。
     await Promise.all([

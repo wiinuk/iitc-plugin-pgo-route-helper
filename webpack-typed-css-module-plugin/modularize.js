@@ -16,8 +16,11 @@ const {
  * @property {LineAndCharacter} start
  * @property {LineAndCharacter} end
  *
- * @typedef {Object} ClassNameSymbol
+ * @typedef {"class" | "variable"} NameKind
+ *
+ * @typedef {Object} NameSymbol
  * @property {string} uniqueId
+ * @property {NameKind} nameKind
  * @property {TokenLocation[]} declarations
  */
 
@@ -31,29 +34,32 @@ const hash = (source) => {
 };
 
 /**
- * @param {Map<string, ClassNameSymbol>} classNameToSymbol
- * @param {string} className
+ * @param {Map<string, NameSymbol>} nameToSymbol
+ * @param {NameKind} nameKind
+ * @param {string} name
  * @param {TokenLocation} declaration
  * @param {string} cssTextHash
  */
 const addDeclaration = (
-    classNameToSymbol,
-    className,
+    nameToSymbol,
+    nameKind,
+    name,
     declaration,
     cssTextHash
 ) => {
-    let symbol = classNameToSymbol.get(className);
+    let symbol = nameToSymbol.get(name);
     if (symbol == null) {
-        /** @type {ClassNameSymbol["declarations"]} */
+        /** @type {NameSymbol["declarations"]} */
         const declarations = [];
         if (declaration != null) {
             declarations.push(declaration);
         }
         symbol = {
-            uniqueId: `${className}-${hash(`${cssTextHash}-${className}`)}`,
+            uniqueId: `${name}-${hash(`${cssTextHash}-${name}`)}`,
+            nameKind,
             declarations,
         };
-        classNameToSymbol.set(className, symbol);
+        nameToSymbol.set(name, symbol);
     } else {
         if (declaration != null) {
             symbol.declarations.push(declaration);
@@ -62,6 +68,9 @@ const addDeclaration = (
     return symbol;
 };
 
+const CharacterCodes = Object.freeze({
+    "-": "-".charCodeAt(0),
+});
 const TokenType = Object.freeze({
     Symbol: 1,
     Word: 4,
@@ -70,7 +79,7 @@ const TokenType = Object.freeze({
 /**
  * @typedef {Object} CssReplaceResult
  * @property {string} newCssText
- * @property {Map<string, ClassNameSymbol>} classNameToSymbol
+ * @property {Map<string, NameSymbol>} nameToSymbol
  */
 
 /**
@@ -90,13 +99,36 @@ const modularize = (source) => {
             position
         );
 
-    /** @type {Map<string, ClassNameSymbol>} */
-    const classNameToSymbol = new Map();
+    /** @type {Map<string, NameSymbol>} */
+    const nameToSymbol = new Map();
     let newCssText = "";
     let sliceStart = 0;
     let sliceEnd = 0;
+
     /**
-     *
+     * @param {tokenizer.CSSToken | null} prevToken
+     * @param {tokenizer.CSSToken} token
+     */
+    const getNameKind = (prevToken, token) => {
+        // class: '.' IDENT
+        if (
+            prevToken?.type === TokenType.Symbol &&
+            prevToken?.data === "." &&
+            token.type === TokenType.Word
+        ) {
+            return "class";
+        }
+        // dashed-ident: `--*`
+        if (
+            token.type === TokenType.Word &&
+            token.data.codePointAt(0) === CharacterCodes["-"] &&
+            token.data.codePointAt(1) === CharacterCodes["-"]
+        ) {
+            return "variable";
+        }
+        return;
+    };
+    /**
      * @param {tokenizer.CSSToken | null} prevToken
      * @param {tokenizer.CSSToken} token
      * @param {tokenizer.CSSToken | null} nextToken
@@ -104,18 +136,16 @@ const modularize = (source) => {
     const copyToken = (prevToken, token, nextToken) => {
         const tokenStart = token.tick;
         const tokenEnd = nextToken?.tick ?? source.length;
-        if (
-            prevToken?.type === TokenType.Symbol &&
-            prevToken?.data === "." &&
-            token.type === TokenType.Word
-        ) {
-            // class: '.' IDENT
+
+        const nameKind = getNameKind(prevToken, token);
+        if (nameKind === "class" || nameKind === "variable") {
             const declaration = {
                 start: positionToLineAndCharacter(tokenStart),
                 end: positionToLineAndCharacter(tokenEnd),
             };
             const symbol = addDeclaration(
-                classNameToSymbol,
+                nameToSymbol,
+                nameKind,
                 token.data,
                 declaration,
                 cssTextHash
@@ -146,7 +176,7 @@ const modularize = (source) => {
     }
     return {
         newCssText,
-        classNameToSymbol,
+        nameToSymbol,
     };
 };
 
