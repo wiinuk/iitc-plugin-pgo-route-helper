@@ -31,7 +31,10 @@ import {
     pipe,
     ignore,
 } from "./standard-extensions";
-import classNames, { cssText } from "./styles.module.css";
+import classNames, {
+    cssText,
+    variables as cssVariables,
+} from "./styles.module.css";
 import * as remote from "./remote";
 import { isIITCMobile } from "./environment";
 import { createPolylineEditorPlugin } from "./polyline-editor";
@@ -49,6 +52,7 @@ import { createQueryEditor } from "./query-editor";
 import { applyTemplate } from "./template";
 import { tokenDefinitions } from "./query/parser";
 import { getTokenCategory, mapTokenDefinitions } from "./query/service";
+import { createVirtualList } from "./virtual-list";
 
 function reportError(error: unknown) {
     console.error(error);
@@ -198,7 +202,7 @@ async function asyncMain() {
     console.debug(`'${config.userId}' としてログインしています。`);
 
     type RouteListItemView = {
-        readonly listItem: HTMLLIElement;
+        readonly listItem: HTMLDivElement;
         readonly titleElement: HTMLElement;
         readonly noteElement: HTMLElement;
         visible: boolean;
@@ -915,16 +919,25 @@ async function asyncMain() {
             };
         }
         const restoreScrollPosition = createScrollPositionRestorer(
-            routeListElement.parentElement
+            routeListElement.element
         );
-        routeListElement.innerHTML = "";
         for (const { listView, route } of views) {
             if (scheduler.yieldRequested()) {
                 await scheduler.yield({ signal });
             }
             updateRouteListView(route, listView);
-            routeListElement.appendChild(listView.listItem);
         }
+        const visibleViews = views.filter((v) => v.listView.visible);
+        routeListElement.setItems({
+            itemHeight:
+                routeListItemMargin * 2 +
+                routeListItemPadding * 2 +
+                routeListItemHeight,
+            count: visibleViews.length,
+            get(i) {
+                return visibleViews[i]?.listView.listItem;
+            },
+        });
         restoreScrollPosition?.();
 
         if (!isQueryUndefined) {
@@ -957,16 +970,17 @@ async function asyncMain() {
         const noteElement = <span class={classNames.note}>{route.note}</span>;
         const listItem = addListeners(
             (
-                <li
+                <div
                     classList={[
                         "ui-widget-content",
+                        classNames["route-list-item"],
                         classNames["ellipsis-text"],
                     ]}
                 >
                     {titleElement}
                     {noteElement}
-                </li>
-            ) as HTMLLIElement,
+                </div>
+            ) as HTMLDivElement,
             {
                 click() {
                     onListItemClicked(this);
@@ -1006,9 +1020,19 @@ async function asyncMain() {
         }
     }
 
-    const routeListElement = (
-        <ol class={classNames["route-list"]}></ol>
-    ) as HTMLOListElement;
+    const routeListItemPadding = 5;
+    const routeListItemMargin = 3;
+    const routeListItemHeight = 18;
+    const routeListElement = createVirtualList();
+    routeListElement.element.style.setProperty(
+        cssVariables["--route-list-item-padding"],
+        routeListItemPadding + "px"
+    );
+    routeListElement.element.style.setProperty(
+        cssVariables["--route-list-item-margin"],
+        routeListItemMargin + "px"
+    );
+    routeListElement.element.classList.add(classNames["route-list"]);
 
     const setQueryExpressionCancelScope =
         createAsyncCancelScope(handleAsyncError);
@@ -1127,9 +1151,7 @@ async function asyncMain() {
         >
             {selectedRouteEditorContainer}
             {queryEditor.element}
-            <div class={classNames["route-list-container"]}>
-                {routeListElement}
-            </div>
+            {routeListElement.element}
             {reportElement}
         </div>
     );
@@ -1300,7 +1322,6 @@ async function asyncMain() {
         }
         const listView = createRouteListView(route);
 
-        routeListElement.appendChild(listView.listItem);
         routeMap.set(routeId, {
             route,
             coordinatesEditor: view,
@@ -1394,6 +1415,7 @@ async function asyncMain() {
         }
         const afterTime = performance.now();
         state.routes = routeMap;
+        updateRoutesListElement();
         progress({
             type: "routes-added",
             count: state.routes.size,
