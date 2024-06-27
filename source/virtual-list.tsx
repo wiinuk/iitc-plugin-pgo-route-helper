@@ -37,10 +37,11 @@ export function createVirtualList() {
         const { itemHeight, count: itemCount } = items;
 
         const start = Math.floor(scrollTop / itemHeight);
-        const count = Math.min(
-            itemCount,
-            Math.floor((scrollTop + windowHeight) / itemHeight) - start
-        );
+        const count =
+            Math.min(
+                itemCount,
+                Math.ceil((scrollTop + windowHeight) / itemHeight)
+            ) - start;
 
         redrawRequested =
             redrawRequested || lastStart !== start || lastCount !== count;
