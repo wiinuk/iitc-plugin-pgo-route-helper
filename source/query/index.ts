@@ -405,7 +405,7 @@ const library = {
     ["_orderBy_"](query: RouteQuery, kind: OrderByKinds) {
         return orderBy(kind, query);
     },
-    *potentialStops(count: number): Effective<RouteQuery> {
+    *potentialStops(count: number | string): Effective<RouteQuery> {
         return countByGyms("potentialStops", count);
     },
     *cell(

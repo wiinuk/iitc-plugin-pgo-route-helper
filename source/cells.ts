@@ -1,3 +1,5 @@
+/* eslint-disable require-yield */
+import { awaitPromise, getSignal, type Effective } from "./effective";
 import { getRouteKind, type Route } from "./route";
 import { error } from "./standard-extensions";
 
@@ -28,12 +30,13 @@ interface S2CellWith<L extends number> extends S2Cell {
 type Cell17 = Readonly<{
     s2Cell: S2CellWith<17>;
     routes: Route[];
-    portals: IITCPortalLocationsPluginPortal[];
+    portals: unknown[];
 }>;
-export type Cell14 = Readonly<{
-    s2Cell: S2CellWith<14>;
-    cell17s: Map<CellId17, Cell17>;
-}>;
+export type Cell14 = {
+    readonly s2Cell: S2CellWith<14>;
+    readonly cell17s: Map<CellId17, Cell17>;
+    fullFetchDate: number | "no-fetched" | "unknown";
+};
 export type Cell14s = Map<CellId14, Cell14>;
 export function getSpotLatLng(route: Route) {
     if (getRouteKind(route) !== "spot") return;
@@ -95,41 +98,110 @@ export function getCell17(cells: Cell14s, coordinate: S2LatLng) {
     const id17 = getS2Cell(coordinate, 17).toString();
     return cell14.cell17s.get(id17);
 }
-function createCell17(cells: Cell14s, coordinate: S2LatLng) {
+function getOrCreateCell14(cells: Cell14s, coordinate: S2LatLng) {
     const s2Cell14 = getS2Cell(coordinate, 14);
-    const s2Cell17 = getS2Cell(coordinate, 17);
-
     const id14 = s2Cell14.toString();
+    return getOrCreate(cells, id14, () => {
+        return {
+            s2Cell: s2Cell14,
+            cell17s: new Map(),
+            fullFetchDate: "unknown",
+        } as const;
+    });
+}
+function getOrCreateCell17(cells: Cell14s, coordinate: S2LatLng) {
+    const { cell17s } = getOrCreateCell14(cells, coordinate);
+    const s2Cell17 = getS2Cell(coordinate, 17);
     const id17 = s2Cell17.toString();
-    const { cell17s } = getOrCreate(cells, id14, () => ({
-        s2Cell: s2Cell14,
-        cell17s: new Map<never, never>(),
-    }));
     return getOrCreate(cell17s, id17, () => ({
         s2Cell: s2Cell17,
         routes: [],
         portals: [],
     }));
 }
+function getCell14sIncludesSpots(routes: readonly Route[]) {
+    const cell14s = new Map<CellId14, S2CellWith<14>>();
+    for (const route of routes) {
+        const coordinate = getSpotLatLng(route);
+        if (!coordinate) continue;
 
-export function buildCells(routes: readonly Route[]) {
-    const {
-        portalLocations: { cache } = error`plugin portalLocations not defined`,
-    } = plugin;
+        const cell = getS2Cell(coordinate, 14);
+        cell14s.set(cell.toString(), cell);
+    }
+    return cell14s.values();
+}
+function addSpotsToCell14s(routes: readonly Route[], cells: Cell14s) {
+    for (const route of routes) {
+        const coordinate = getSpotLatLng(route);
+        if (coordinate == null) continue;
 
+        getOrCreateCell17(cells, coordinate).routes.push(route);
+    }
+}
+
+function buildCellsOfPortalLocations(
+    routes: readonly Route[],
+    cache: IITCPortalLocationsPlugin["cache"]
+) {
     const cells: Cell14s = new Map();
 
     for (const cacheKey in cache) {
         const portal = cache[cacheKey as IITCPortalLocationsPluginCacheKey];
         if (portal == null || portal.sponsored) continue;
 
-        createCell17(cells, portal.latLng).portals.push(portal);
+        getOrCreateCell17(cells, portal.latLng).portals.push(portal);
     }
-    for (const route of routes) {
-        const coordinate = getSpotLatLng(route);
-        if (coordinate == null) continue;
 
-        createCell17(cells, coordinate).routes.push(route);
-    }
+    addSpotsToCell14s(routes, cells);
     return cells;
+}
+type PortalRecords = Awaited<
+    NonNullable<
+        typeof window.portal_records_cef3ad7e_0804_420c_8c44_ef4e08dbcdc2
+    >
+>;
+
+function* buildCellsOfPortalRecords(
+    routes: readonly Route[],
+    records: PortalRecords
+) {
+    const signal = yield* getSignal();
+    const cells: Cell14s = new Map();
+
+    // スポットが存在するセル14内の記録を取得
+    for (const s2Cell of getCell14sIncludesSpots(routes)) {
+        const coordinate = s2Cell.getLatLng();
+        const cellRecord = yield* awaitPromise(
+            records.getS2Cell14(coordinate.lat, coordinate.lng, {
+                signal,
+            })
+        );
+
+        // 記録からセル14の情報を取得
+        getOrCreateCell14(cells, coordinate).fullFetchDate =
+            cellRecord.cell?.lastFetchDate ?? "no-fetched";
+
+        // 記録からセル14内のポータルを取得
+        for (const portal of cellRecord.portals.values()) {
+            const cell17 = getOrCreateCell17(cells, portal);
+            cell17.portals.push(portal);
+        }
+    }
+
+    addSpotsToCell14s(routes, cells);
+    return cells;
+}
+export function* buildCells(routes: readonly Route[]): Effective<Cell14s> {
+    const portalRecords = portal_records_cef3ad7e_0804_420c_8c44_ef4e08dbcdc2;
+    if (portalRecords != null) {
+        return yield* buildCellsOfPortalRecords(
+            routes,
+            yield* awaitPromise(portalRecords)
+        );
+    }
+    const cache = plugin.portalLocations?.cache;
+    if (cache != null) {
+        return buildCellsOfPortalLocations(routes, cache);
+    }
+    return error`plugin portalLocations or portalRecords not defined`;
 }

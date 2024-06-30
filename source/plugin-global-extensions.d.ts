@@ -125,3 +125,9 @@ var portals: Record<string, IITCPortalInfo>;
 interface WindowForContentScope {
     "_iitc-plugin-pgo-route-helper-3798db47-5fe8-4307-a1e0-8092c04133b1"?: typeof import("./iitc-plugin-pgo-route-helper");
 }
+/** portal-records */
+var portal_records_cef3ad7e_0804_420c_8c44_ef4e08dbcdc2:
+    | Promise<
+          import("../../iitc-plugin-portal-records/source/public-api").PublicApi
+      >
+    | undefined;

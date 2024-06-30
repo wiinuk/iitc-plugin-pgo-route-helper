@@ -55,12 +55,13 @@ function getCell14Statistics<T>(
     cell14ToStatistics.set(cell14, statistics);
     return statistics;
 }
+type DataSourceSymbol = "?" | `${number}@${string}`;
 interface Cell14Gyms {
-    potentialGyms: number;
-    currentPokestops: number;
-    currentGyms: number;
-    expectedGyms: number;
-    potentialPokestopsForNextGym: number;
+    potentialGyms: number | DataSourceSymbol;
+    currentPokestops: number | DataSourceSymbol;
+    currentGyms: number | DataSourceSymbol;
+    expectedGyms: number | DataSourceSymbol;
+    potentialPokestopsForNextGym: number | DataSourceSymbol;
 }
 export function getPotentialPokestopCountForNextGym(
     pokestops: number,
@@ -77,10 +78,13 @@ export function getPotentialPokestopCountForNextGym(
     }
     return minPokestopsForNextGym - pokestops;
 }
-function getCell14Gyms(cell14: Cell14) {
+function daysToMilliseconds(days: number) {
+    return days * 24 * 60 * 60 * 1000;
+}
+function getCell14Gyms({ cell17s, fullFetchDate }: Cell14) {
     let currentPokestops = 0;
     let potentialPokestops = 0;
-    for (const [, { portals, routes }] of cell14.cell17s) {
+    for (const [, { portals, routes }] of cell17s) {
         if (0 < portals.length) {
             currentPokestops++;
         } else if (0 < routes.length) {
@@ -95,12 +99,28 @@ function getCell14Gyms(cell14: Cell14) {
         potentialPokestops
     );
 
+    const isNotLoaded = fullFetchDate === "no-fetched";
+    const obsoleteDate =
+        typeof fullFetchDate === "number" &&
+        fullFetchDate + daysToMilliseconds(7) < Date.now()
+            ? new Date(fullFetchDate).toLocaleDateString()
+            : undefined;
+
+    function stateSymbolOr(value: number): number | DataSourceSymbol {
+        return isNotLoaded
+            ? "?"
+            : obsoleteDate
+            ? `${value}@${obsoleteDate}`
+            : value;
+    }
     return {
-        currentPokestops,
-        expectedGyms,
-        currentGyms,
-        potentialGyms,
-        potentialPokestopsForNextGym,
+        currentPokestops: stateSymbolOr(currentPokestops),
+        expectedGyms: stateSymbolOr(expectedGyms),
+        currentGyms: stateSymbolOr(currentGyms),
+        potentialGyms: stateSymbolOr(potentialGyms),
+        potentialPokestopsForNextGym: stateSymbolOr(
+            potentialPokestopsForNextGym
+        ),
     } satisfies Cell14Gyms;
 }
 
@@ -196,7 +216,10 @@ export function* orderByGyms(
         },
     };
 }
-export function countByGyms(kind: GymsSortKind, value: number): RouteQuery {
+export function countByGyms(
+    kind: GymsSortKind,
+    searchValue: number | string
+): RouteQuery {
     return {
         *initialize(e) {
             const resolve = yield* initializeRouteStatisticsResolver(e);
@@ -221,7 +244,12 @@ export function countByGyms(kind: GymsSortKind, value: number): RouteQuery {
             }
             return {
                 *predicate(r) {
-                    return resolve(r)?.[selector] === value;
+                    const value = resolve(r)?.[selector];
+                    return (
+                        value === searchValue ||
+                        (typeof value === "string" &&
+                            value.startsWith(String(searchValue)))
+                    );
                 },
             } satisfies UnitQuery;
         },
