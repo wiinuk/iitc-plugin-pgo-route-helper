@@ -1,4 +1,5 @@
-// spell-checker: ignore layeradd drivetunnel latlngschanged lngs latlng buttonset
+/* eslint-disable require-yield */
+// spell-checker: ignore layeradd drivetunnel latlngschanged lngs latlng buttonset moveend zoomend
 import { z } from "../../gas-drivetunnel/source/json-schema";
 import {
     addListeners,
@@ -53,6 +54,7 @@ import { applyTemplate } from "./template";
 import { tokenDefinitions } from "./query/parser";
 import { getTokenCategory, mapTokenDefinitions } from "./query/service";
 import { createVirtualList } from "./virtual-list";
+import { handleAwaitOrError, type EffectiveFunction } from "./effective";
 
 function reportError(error: unknown) {
     console.error(error);
@@ -227,7 +229,7 @@ async function asyncMain() {
         routes: "routes-unloaded" | Map<string, RouteWithView>;
         routeListQuery: Readonly<{
             queryText: string;
-            query: (() => UnitQueryFactory) | undefined;
+            query: EffectiveFunction<[], UnitQueryFactory> | undefined;
         }>;
     } = {
         selectedRouteId: null,
@@ -826,12 +828,13 @@ async function asyncMain() {
         },
     };
 
-    function protectedCallQueryFunction<R>(
-        action: () => R,
-        defaultValue: () => R
+    async function protectedCallQueryFunction<R>(
+        action: EffectiveFunction<[], R>,
+        defaultValue: EffectiveFunction<[], R>,
+        signal: AbortSignal
     ) {
         try {
-            return action();
+            return await handleAwaitOrError(action(), signal);
         } catch (error) {
             progress({ type: "query-evaluation-error", error });
             queryEditor.addDiagnostic({
@@ -841,7 +844,7 @@ async function asyncMain() {
                     end: 1,
                 },
             });
-            return defaultValue();
+            return await handleAwaitOrError(defaultValue(), signal);
         }
     }
 
@@ -854,17 +857,29 @@ async function asyncMain() {
         const views = [...state.routes.values()];
         const routes = views.map((r) => r.route);
         const isQueryUndefined = query === undefined;
-        const getQuery = query ?? (() => anyQuery);
+        const getQuery =
+            query ??
+            function* () {
+                return anyQuery;
+            };
 
         const environment = { ...defaultEnvironment, routes };
         const { predicate, getTitle, getNote, getSorter } =
-            protectedCallQueryFunction(
-                () => getQuery().initialize(environment),
-                () => anyQuery.initialize(environment)
+            await protectedCallQueryFunction(
+                function* () {
+                    return yield* (yield* getQuery()).initialize(environment);
+                },
+                () => anyQuery.initialize(environment),
+                signal
             );
-        const sorter = protectedCallQueryFunction(
-            () => getSorter?.() ?? null,
-            () => null
+        const sorter = await protectedCallQueryFunction(
+            function* () {
+                return getSorter ? yield* getSorter() : null;
+            },
+            function* () {
+                return null;
+            },
+            signal
         );
 
         // 検索クエリを実行し結果を得る
@@ -877,25 +892,43 @@ async function asyncMain() {
 
             const { route, listView, coordinatesEditor } = view;
             if (sorter != null) {
-                view.sortKey = protectedCallQueryFunction(
-                    () => sorter.getKey(route),
-                    () => null
+                view.sortKey = await protectedCallQueryFunction(
+                    function () {
+                        return sorter.getKey(route);
+                    },
+                    function* () {
+                        return null;
+                    },
+                    signal
                 );
             } else {
                 view.sortKey = null;
             }
 
-            listView.visible = protectedCallQueryFunction(
+            listView.visible = await protectedCallQueryFunction(
                 () => predicate(route),
-                () => false
+                function* () {
+                    return false;
+                },
+                signal
             );
-            listView.title = protectedCallQueryFunction(
-                () => getTitle?.(route) ?? null,
-                () => null
+            listView.title = await protectedCallQueryFunction(
+                function* () {
+                    return getTitle ? yield* getTitle(route) : null;
+                },
+                function* () {
+                    return null;
+                },
+                signal
             );
-            listView.note = protectedCallQueryFunction(
-                () => getNote?.(route) ?? null,
-                () => null
+            listView.note = await protectedCallQueryFunction(
+                function* () {
+                    return getNote ? yield* getNote(route) : null;
+                },
+                function* () {
+                    return null;
+                },
+                signal
             );
             if (listView.visible) visibleListItemCount++;
 

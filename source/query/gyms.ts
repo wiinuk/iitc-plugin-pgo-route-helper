@@ -1,9 +1,11 @@
+/* eslint-disable require-yield */
 // spell-checker: ignore pokestop pokestops
 import {
     queryAsFactory,
     type QueryEnvironment,
     type QuerySorter,
     type RouteQuery,
+    type UnitQuery,
 } from ".";
 import {
     buildCells,
@@ -13,6 +15,7 @@ import {
     type Cell14s,
 } from "../cells";
 import type { Route } from "../route";
+import type { Effective } from "../effective";
 
 function getGymCount(pokestopCount: number) {
     if (20 <= pokestopCount) return 3;
@@ -101,8 +104,8 @@ function getCell14Gyms(cell14: Cell14) {
     } satisfies Cell14Gyms;
 }
 
-function initializeRouteStatisticsResolver(e: QueryEnvironment) {
-    const cells = buildCells(e.routes);
+function* initializeRouteStatisticsResolver(e: QueryEnvironment) {
+    const cells = yield* buildCells(e.routes);
     const gymCounts = new WeakMap<Cell14, Cell14Gyms>();
     return (r: Route) =>
         getCell14Statistics(cells, gymCounts, getCell14Gyms, r);
@@ -117,11 +120,14 @@ export function getGymsOrderKinds() {
     ] as const;
 }
 export type GymsSortKind = ReturnType<typeof getGymsOrderKinds>[number];
-export function orderByGyms(kind: GymsSortKind, query: RouteQuery): RouteQuery {
+export function* orderByGyms(
+    kind: GymsSortKind,
+    query: RouteQuery
+): Effective<RouteQuery> {
     return {
-        initialize(e) {
-            const unit = queryAsFactory(query).initialize(e);
-            const resolve = initializeRouteStatisticsResolver(e);
+        *initialize(e) {
+            const unit = yield* queryAsFactory(query).initialize(e);
+            const resolve = yield* initializeRouteStatisticsResolver(e);
             function createGetter<T>(
                 scope: (s: Cell14Gyms | undefined, r: Route) => T
             ) {
@@ -133,36 +139,41 @@ export function orderByGyms(kind: GymsSortKind, query: RouteQuery): RouteQuery {
             let isAscendent: QuerySorter["isAscendent"];
             switch (kind) {
                 case "potentialStops":
-                    getNote = createGetter(
-                        (s, r) =>
-                            `PS${s?.potentialPokestopsForNextGym ?? Infinity},${
-                                r.note
-                            }`
-                    );
-                    getKey = createGetter(
-                        (s) => s?.potentialPokestopsForNextGym ?? Infinity
-                    );
+                    getNote = createGetter(function* (s, r) {
+                        return `PS${
+                            s?.potentialPokestopsForNextGym ?? Infinity
+                        },${r.note}`;
+                    });
+                    getKey = createGetter(function* (s) {
+                        return s?.potentialPokestopsForNextGym ?? Infinity;
+                    });
                     isAscendent = true;
                     break;
                 case "potentialGyms":
-                    getNote = createGetter(
-                        (s, r) => `PG${s?.potentialGyms ?? 0},${r.note}`
-                    );
-                    getKey = createGetter((s) => s?.potentialGyms ?? 0);
+                    getNote = createGetter(function* (s, r) {
+                        return `PG${s?.potentialGyms ?? 0},${r.note}`;
+                    });
+                    getKey = createGetter(function* (s) {
+                        return s?.potentialGyms ?? 0;
+                    });
                     isAscendent = false;
                     break;
                 case "currentStops":
-                    getNote = createGetter(
-                        (s, r) => `S${s?.currentPokestops ?? 0},${r.note}`
-                    );
-                    getKey = createGetter((s) => s?.currentPokestops ?? 0);
+                    getNote = createGetter(function* (s, r) {
+                        return `S${s?.currentPokestops ?? 0},${r.note}`;
+                    });
+                    getKey = createGetter(function* (s) {
+                        return s?.currentPokestops ?? 0;
+                    });
                     isAscendent = true;
                     break;
                 case "currentGyms":
-                    getNote = createGetter(
-                        (s, r) => `G${s?.currentGyms ?? 0},${r.note}`
-                    );
-                    getKey = createGetter((s) => s?.currentGyms ?? 0);
+                    getNote = createGetter(function* (s, r) {
+                        return `G${s?.currentGyms ?? 0},${r.note}`;
+                    });
+                    getKey = createGetter(function* (s) {
+                        return s?.currentGyms ?? 0;
+                    });
                     isAscendent = false;
                     break;
                 default:
@@ -175,20 +186,20 @@ export function orderByGyms(kind: GymsSortKind, query: RouteQuery): RouteQuery {
             return {
                 ...unit,
                 getNote,
-                getSorter() {
+                *getSorter() {
                     return {
                         getKey,
                         isAscendent,
                     };
                 },
-            };
+            } satisfies UnitQuery;
         },
     };
 }
 export function countByGyms(kind: GymsSortKind, value: number): RouteQuery {
     return {
-        initialize(e) {
-            const resolve = initializeRouteStatisticsResolver(e);
+        *initialize(e) {
+            const resolve = yield* initializeRouteStatisticsResolver(e);
             let selector: keyof Cell14Gyms;
             switch (kind) {
                 case "potentialStops":
@@ -209,10 +220,10 @@ export function countByGyms(kind: GymsSortKind, value: number): RouteQuery {
                     );
             }
             return {
-                predicate(r) {
+                *predicate(r) {
                     return resolve(r)?.[selector] === value;
                 },
-            };
+            } satisfies UnitQuery;
         },
     };
 }

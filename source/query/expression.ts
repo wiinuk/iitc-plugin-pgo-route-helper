@@ -1,5 +1,7 @@
+/* eslint-disable require-yield */
 import { error, isArray, type Json } from "../standard-extensions";
 import * as Assoc from "../assoc";
+import type { Effective } from "../effective";
 
 export type Expression = Json;
 function throwFunctionExpressionError() {
@@ -15,22 +17,23 @@ function throwAsFormError() {
     return error`_#as_ 形式には要素1と2が必要です。例: ["_#as_", ["headTask"], ["result", "result"]]`;
 }
 
+export type QueryValue = unknown;
 const hasOwnProperty = Object.prototype.hasOwnProperty;
 function evaluateVariable(
     expression: string,
-    variables: Assoc.Assoc<string, unknown>,
-    getUnresolved: (name: string) => unknown
+    variables: Assoc.Assoc<string, QueryValue>,
+    getUnresolved: (name: string) => QueryValue
 ) {
     const kv = Assoc.get(expression, variables);
     if (kv) return kv[1];
     return getUnresolved(expression);
 }
 
-export function evaluateExpression(
+export function* evaluateExpression(
     expression: Expression,
-    variables: Assoc.Assoc<string, unknown>,
-    getUnresolved: (name: string) => unknown
-): unknown {
+    variables: Assoc.Assoc<string, QueryValue>,
+    getUnresolved: (name: string) => QueryValue
+): Effective<QueryValue> {
     switch (typeof expression) {
         case "boolean":
         case "number":
@@ -39,10 +42,10 @@ export function evaluateExpression(
             return evaluateVariable(expression, variables, getUnresolved);
     }
     if (!isArray(expression)) {
-        const result = Object.create(null);
+        const result: Record<string, QueryValue> = Object.create(null);
         for (const key in expression) {
             if (hasOwnProperty.call(expression, key)) {
-                result[key] = evaluateExpression(
+                result[key] = yield* evaluateExpression(
                     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
                     expression[key]!,
                     variables,
@@ -61,7 +64,7 @@ export function evaluateExpression(
             const list = [];
             for (let i = 1; i < expression.length; i++) {
                 list.push(
-                    evaluateExpression(
+                    yield* evaluateExpression(
                         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
                         expression[i]!,
                         variables,
@@ -79,7 +82,7 @@ export function evaluateExpression(
                 list.push(
                     typeof c === "string"
                         ? c
-                        : evaluateExpression(c, variables, getUnresolved)
+                        : yield* evaluateExpression(c, variables, getUnresolved)
                 );
             }
             return list;
@@ -93,8 +96,8 @@ export function evaluateExpression(
             ) {
                 return error`#if 形式には要素1から3が必要です。例: ["#if", "isEven", ["#", "this is even"], ["#", "this is odd"]]`;
             }
-            return evaluateExpression(
-                evaluateExpression(condition, variables, getUnresolved)
+            return yield* evaluateExpression(
+                (yield* evaluateExpression(condition, variables, getUnresolved))
                     ? ifNotFalsy
                     : ifFalsy,
                 variables,
@@ -121,13 +124,13 @@ export function evaluateExpression(
                 }
             }
             const ps = parameters as readonly string[];
-            return (...args: unknown[]) => {
+            return function* (...args: QueryValue[]) {
                 let vs = variables;
                 for (let i = 0; i < parameterOrParameters.length; i++) {
                     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
                     vs = Assoc.add(ps[i]!, args[i]!, vs);
                 }
-                return evaluateExpression(body, vs, getUnresolved);
+                return yield* evaluateExpression(body, vs, getUnresolved);
             };
         }
         case "#let": {
@@ -143,10 +146,14 @@ export function evaluateExpression(
                 if (typeof variable !== "string" || value === undefined) {
                     return throwLetExpressionError();
                 }
-                const v = evaluateExpression(value, variables, getUnresolved);
+                const v = yield* evaluateExpression(
+                    value,
+                    variables,
+                    getUnresolved
+                );
                 variables = Assoc.add(variable, v, variables);
             }
-            return evaluateExpression(scope, variables, getUnresolved);
+            return yield* evaluateExpression(scope, variables, getUnresolved);
         }
         case "_#where_": {
             const [, scope, binding] = expression;
@@ -157,8 +164,12 @@ export function evaluateExpression(
             if (typeof variable !== "string" || value === undefined) {
                 return throwWhereFormError();
             }
-            const v = evaluateExpression(value, variables, getUnresolved);
-            return evaluateExpression(
+            const v = yield* evaluateExpression(
+                value,
+                variables,
+                getUnresolved
+            );
+            return yield* evaluateExpression(
                 scope,
                 Assoc.add(variable, v, variables),
                 getUnresolved
@@ -173,8 +184,12 @@ export function evaluateExpression(
             if (typeof variable !== "string" || scope === undefined) {
                 return throwAsFormError();
             }
-            const v = evaluateExpression(value, variables, getUnresolved);
-            return evaluateExpression(
+            const v = yield* evaluateExpression(
+                value,
+                variables,
+                getUnresolved
+            );
+            return yield* evaluateExpression(
                 scope,
                 Assoc.add(variable, v, variables),
                 getUnresolved
@@ -190,7 +205,7 @@ export function evaluateExpression(
             }
             const items = [];
             for (let i = 0; i < expression.length; i++) {
-                const p = evaluateExpression(
+                const p = yield* evaluateExpression(
                     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
                     expression[i]!,
                     variables,
@@ -208,7 +223,7 @@ export function evaluateExpression(
             if (typeof listProcessor !== "function") {
                 return error`変数 ${listProcessorName} は関数ではありません。`;
             }
-            return listProcessor(items);
+            return yield* listProcessor(items);
         }
     }
 }

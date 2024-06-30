@@ -1,6 +1,11 @@
-// spell-checker: ignore drivetunnel
+/* eslint-disable require-yield */
+// spell-checker: ignore drivetunnel lisq
 import type { Json as MutableJson } from "../../../gas-drivetunnel/source/json-schema-core";
-import { evaluateExpression, type Expression } from "./expression";
+import {
+    evaluateExpression,
+    type Expression,
+    type QueryValue,
+} from "./expression";
 import {
     coordinateToLatLng,
     getRouteKind,
@@ -12,6 +17,7 @@ import { exhaustive, isArray } from "../standard-extensions";
 import { countByGyms, getGymsOrderKinds, orderByGyms } from "./gyms";
 import { createParser, createTokenizer, tokenDefinitions } from "./parser";
 import type { Diagnostic } from "./service";
+import type { EffectiveFunction, Effective } from "../effective";
 
 function eachJsonStrings(
     json: MutableJson,
@@ -112,37 +118,40 @@ export function compareQueryKey(key1: QueryKey, key2: QueryKey): number {
 }
 
 export interface QuerySorter {
-    getKey(route: Route): QueryKey;
-    isAscendent: boolean;
+    readonly getKey: EffectiveFunction<[route: Route], QueryKey>;
+    readonly isAscendent: boolean;
 }
-interface UnitQuery {
-    predicate(route: Route): boolean;
-    getTitle?(route: Route): string;
-    getNote?(route: Route): string;
-    getSorter?(): Readonly<QuerySorter>;
+export interface UnitQuery {
+    readonly predicate: EffectiveFunction<[route: Route], boolean>;
+    readonly getTitle?: EffectiveFunction<[route: Route], string>;
+    readonly getNote?: EffectiveFunction<[route: Route], string>;
+    readonly getSorter?: EffectiveFunction<[], Readonly<QuerySorter>>;
 }
 export type RouteQuery = string | number | UnitQueryFactory;
 export interface UnitQueryFactory {
-    initialize(environment: QueryEnvironment): UnitQuery;
+    readonly initialize: EffectiveFunction<
+        [environment: QueryEnvironment],
+        UnitQuery
+    >;
 }
 const emptyUnit: UnitQuery = {
-    predicate() {
+    *predicate() {
         return true;
     },
 };
 export const anyQuery: UnitQueryFactory = {
-    initialize() {
+    *initialize() {
         return emptyUnit;
     },
 };
 export type QueryCreateResult = {
-    getQuery: () => UnitQueryFactory;
+    getQuery: EffectiveFunction<[], UnitQueryFactory>;
     diagnostics: Diagnostic[];
 };
 function includes(words: readonly string[]): UnitQueryFactory {
     const unit: UnitQuery = {
         ...emptyUnit,
-        predicate(route) {
+        *predicate(route) {
             for (const word of words) {
                 if (!includesAmbiguousTextInRoute(route, word)) {
                     return false;
@@ -152,25 +161,25 @@ function includes(words: readonly string[]): UnitQueryFactory {
         },
     };
     return {
-        initialize() {
+        *initialize() {
             return unit;
         },
     };
 }
 
-function reachableWith(options?: {
+function reachableWithRaw(options?: {
     radius?: number;
     center?: Coordinate;
 }): RouteQuery {
     return {
-        initialize({ getUserCoordinate, distance }) {
+        *initialize({ getUserCoordinate, distance }) {
             const center = options?.center || getUserCoordinate();
             if (center == null) return emptyUnit;
             const radius = options?.radius ?? 9800;
 
             return {
                 ...emptyUnit,
-                predicate(route) {
+                *predicate(route) {
                     return (
                         getRouteKind(route) === "spot" &&
                         distance(center, route.coordinates[0]) < radius
@@ -180,30 +189,30 @@ function reachableWith(options?: {
         },
     };
 }
-const reachable = reachableWith();
+const reachable = reachableWithRaw();
 
 export function queryAsFactory(query: RouteQuery) {
     return typeof query === "string" || typeof query === "number"
         ? includes([String(query)])
         : query;
 }
-function orderByKey(
+function* orderByKey(
     query: RouteQuery,
-    getKey: (route: Route) => QueryKey,
+    getKey: EffectiveFunction<[route: Route], QueryKey>,
     isAscendent: boolean
-) {
+): Effective<RouteQuery> {
     return {
-        initialize(e) {
-            const unit = queryAsFactory(query).initialize(e);
+        *initialize(e) {
+            const unit = yield* queryAsFactory(query).initialize(e);
             return {
                 ...unit,
-                getSorter() {
+                *getSorter() {
                     return {
                         getKey,
                         isAscendent,
-                    };
+                    } satisfies QuerySorter;
                 },
-            };
+            } satisfies UnitQuery;
         },
     } satisfies RouteQuery;
 }
@@ -212,19 +221,40 @@ export function getOrderByKinds() {
     return ["id", "latitude", "longitude", ...getGymsOrderKinds()] as const;
 }
 type OrderByKinds = ReturnType<typeof getOrderByKinds>[number];
-export function orderBy(kind: OrderByKinds, query: RouteQuery): RouteQuery {
+export function* orderBy(
+    kind: OrderByKinds,
+    query: RouteQuery
+): Effective<RouteQuery> {
     switch (kind) {
         case "id":
-            return orderByKey(query, (r) => r.routeId, false);
+            return yield* orderByKey(
+                query,
+                function* (r) {
+                    return r.routeId;
+                },
+                false
+            );
         case "latitude":
-            return orderByKey(query, (r) => r.coordinates[0][0], false);
+            return yield* orderByKey(
+                query,
+                function* (r) {
+                    return r.coordinates[0][0];
+                },
+                false
+            );
         case "longitude":
-            return orderByKey(query, (r) => r.coordinates[0][1], true);
+            return yield* orderByKey(
+                query,
+                function* (r) {
+                    return r.coordinates[0][1];
+                },
+                true
+            );
         case "potentialGyms":
         case "potentialStops":
         case "currentStops":
         case "currentGyms":
-            return orderByGyms(kind, query);
+            return yield* orderByGyms(kind, query);
         default:
             throw new Error(
                 `Invalid order kind: ${
@@ -233,46 +263,76 @@ export function orderBy(kind: OrderByKinds, query: RouteQuery): RouteQuery {
             );
     }
 }
-function and(...queries: RouteQuery[]): RouteQuery {
+function* mapGenerator<TItem, TYield, TReturn, TNext>(
+    array: readonly TItem[],
+    mapping: (
+        value: TItem,
+        index: number,
+        array: readonly TItem[]
+    ) => Generator<TYield, TReturn, TNext>
+) {
+    const result: TReturn[] = [];
+    let index = 0;
+    for (const item of array) {
+        result.push(yield* mapping(item, index++, array));
+    }
+    return result;
+}
+
+function* and(...queries: RouteQuery[]): Effective<RouteQuery> {
     return {
-        initialize(e) {
-            const units = queries.map((q) => queryAsFactory(q).initialize(e));
+        *initialize(e) {
+            const units = yield* mapGenerator(queries, (q) =>
+                queryAsFactory(q).initialize(e)
+            );
             return {
                 ...units.reduce(Object.assign, emptyUnit),
-                predicate(r) {
-                    return units.every((u) => u.predicate(r));
+                *predicate(r) {
+                    for (const u of units) {
+                        if (!(yield* u.predicate(r))) {
+                            return false;
+                        }
+                    }
+                    return true;
                 },
-            };
+            } satisfies UnitQuery;
         },
     };
 }
-function or(...queries: RouteQuery[]): RouteQuery {
+function* or(...queries: RouteQuery[]): Effective<RouteQuery> {
     return {
-        initialize(e) {
-            const units = queries.map((q) => queryAsFactory(q).initialize(e));
+        *initialize(e) {
+            const units = yield* mapGenerator(queries, (q) =>
+                queryAsFactory(q).initialize(e)
+            );
             return {
                 ...units.reduce(Object.assign, emptyUnit),
-                predicate(r) {
-                    return units.some((u) => u.predicate(r));
+                *predicate(r) {
+                    for (const u of units) {
+                        if (yield* u.predicate(r)) {
+                            return true;
+                        }
+                    }
+                    return false;
                 },
-            };
+            } satisfies UnitQuery;
         },
     };
 }
 const library = {
-    _lisq_(
+    *_lisq_(
         xs:
-            | [f: (...args: unknown[]) => unknown, xs: unknown[]]
+            | [f: EffectiveFunction<QueryValue[], QueryValue>, xs: QueryValue[]]
             | [q: RouteQuery, qs: RouteQuery[]]
     ) {
         const [head, ...tail] = xs;
         if (typeof head === "function") {
-            return head(...tail);
+            return yield* head(...(tail as QueryValue[]));
         } else {
-            return and(...(xs as RouteQuery[]));
+            return yield* and(...(xs as RouteQuery[]));
         }
     },
-    ["tag?"](route: Route, tagNames: readonly string[]) {
+    *["tag?"](route: Route, tagNames: readonly string[]) {
         const tags = getRouteTags(route);
         if (tags === undefined) return false;
         for (const name of tagNames) {
@@ -280,41 +340,45 @@ const library = {
         }
         return false;
     },
-    concat(strings: readonly string[]) {
+    *concat(strings: readonly string[]) {
         return strings.join("");
     },
-    getTitle(route: Route) {
+    *getTitle(route: Route) {
         return route.routeName;
     },
-    getDescription(route: Route) {
+    *getDescription(route: Route) {
         return route.description;
     },
-    includes(...words: string[]) {
+    *includes(...words: string[]) {
         return includes(words);
     },
     reachable,
-    reachableWith,
+    *reachableWith(...options: Parameters<typeof reachableWithRaw>) {
+        return reachableWithRaw(...options);
+    },
     and,
     ["_and_"]: and,
     or,
     ["_or_"]: or,
-    not(query: RouteQuery): RouteQuery {
+    *not(query: RouteQuery): Effective<RouteQuery> {
         return {
-            initialize(e) {
-                const { predicate } = queryAsFactory(query).initialize(e);
+            *initialize(e) {
+                const { predicate } = yield* queryAsFactory(query).initialize(
+                    e
+                );
                 return {
                     ...emptyUnit,
-                    predicate(r) {
-                        return !predicate(r);
+                    *predicate(r) {
+                        return !(yield* predicate(r));
                     },
-                };
+                } satisfies UnitQuery;
             },
         };
     },
-    withTitle(
-        getTitle: (route: Route) => string,
+    *withTitle(
+        getTitle: EffectiveFunction<[route: Route], string>,
         query: RouteQuery
-    ): RouteQuery {
+    ): Effective<RouteQuery> {
         return {
             initialize(e) {
                 return {
@@ -324,11 +388,14 @@ const library = {
             },
         };
     },
-    withNote(getNote: (route: Route) => string, query: RouteQuery): RouteQuery {
+    *withNote(
+        getNote: EffectiveFunction<[route: Route], string>,
+        query: RouteQuery
+    ): Effective<RouteQuery> {
         return {
-            initialize(e) {
+            *initialize(e) {
                 return {
-                    ...queryAsFactory(query).initialize(e),
+                    ...(yield* queryAsFactory(query).initialize(e)),
                     getNote,
                 };
             },
@@ -338,15 +405,15 @@ const library = {
     ["_orderBy_"](query: RouteQuery, kind: OrderByKinds) {
         return orderBy(kind, query);
     },
-    potentialStops(count: number): RouteQuery {
+    *potentialStops(count: number): Effective<RouteQuery> {
         return countByGyms("potentialStops", count);
     },
-    cell(
+    *cell(
         level: number,
         options?: { location?: readonly [number, number] }
-    ): RouteQuery {
+    ): Effective<RouteQuery> {
         return {
-            initialize(e) {
+            *initialize(e) {
                 const location = options?.location ?? e.getUserCoordinate();
                 if (location == null) return emptyUnit;
 
@@ -356,44 +423,44 @@ const library = {
                 );
                 const cellId = cell.toString();
                 return {
-                    predicate(r) {
+                    *predicate(r) {
                         const cell = S2.S2Cell.FromLatLng(
                             coordinateToLatLng(r.coordinates[0]),
                             level
                         );
                         return cellId === cell.toString();
                     },
-                };
+                } satisfies UnitQuery;
             },
         };
     },
     any: anyQuery,
-    ["_add_"](x: number, y: number) {
+    *["_add_"](x: number, y: number) {
         return x + y;
     },
-    ["_sub_"](x: number, y: number) {
+    *["_sub_"](x: number, y: number) {
         return x - y;
     },
-    ["_mul_"](x: number, y: number) {
+    *["_mul_"](x: number, y: number) {
         return x * y;
     },
-    ["_div_"](x: number, y: number) {
+    *["_div_"](x: number, y: number) {
         return x / y;
     },
-    ["_eq_"](x: number, y: number) {
+    *["_eq_"](x: number, y: number) {
         return x === y;
     },
-    ["_ne_"](x: number, y: number) {
+    *["_ne_"](x: number, y: number) {
         return x !== y;
     },
-    ["_neg"](x: number) {
+    *["_neg"](x: number) {
         return -x;
     },
 };
 function evaluateWithLibrary(expression: Expression) {
     const getUnresolved = (name: string) => {
         if (name in library) {
-            return (library as Record<string, unknown>)[name];
+            return (library as Record<string, QueryValue>)[name];
         }
         throw new Error(`Unresolved name "${name}"`);
     };
@@ -420,9 +487,11 @@ export function createQuery(expression: string): QueryCreateResult {
         tokenizer.initialize(expression);
         const json = parser.parse();
         return {
-            getQuery: () => {
+            *getQuery() {
                 // TODO: 静的チェックする
-                return queryAsFactory(evaluateWithLibrary(json) as RouteQuery);
+                return queryAsFactory(
+                    (yield* evaluateWithLibrary(json)) as RouteQuery
+                );
             },
             diagnostics: diagnosticsCache.slice(),
         };
