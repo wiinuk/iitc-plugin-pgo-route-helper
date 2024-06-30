@@ -6,7 +6,7 @@
 // @downloadURL  https://github.com/wiinuk/iitc-plugin-pgo-route-helper/raw/master/iitc-plugin-pgo-route-helper.user.js
 // @updateURL    https://github.com/wiinuk/iitc-plugin-pgo-route-helper/raw/master/iitc-plugin-pgo-route-helper.user.js
 // @homepageURL  https://github.com/wiinuk/iitc-plugin-pgo-route-helper
-// @version      0.10.2
+// @version      0.10.3
 // @description  IITC plugin to assist in Pokémon GO route creation.
 // @author       Wiinuk
 // @include      https://*.ingress.com/intel*
@@ -1444,6 +1444,7 @@ function map(kvs, mapping) {
 }
 
 ;// CONCATENATED MODULE: ./source/query/expression.ts
+/* eslint-disable require-yield */
 
 
 function throwFunctionExpressionError() {
@@ -1465,7 +1466,7 @@ function evaluateVariable(expression, variables, getUnresolved) {
         return kv[1];
     return getUnresolved(expression);
 }
-function evaluateExpression(expression, variables, getUnresolved) {
+function* evaluateExpression(expression, variables, getUnresolved) {
     switch (typeof expression) {
         case "boolean":
         case "number":
@@ -1477,7 +1478,7 @@ function evaluateExpression(expression, variables, getUnresolved) {
         const result = Object.create(null);
         for (const key in expression) {
             if (expression_hasOwnProperty.call(expression, key)) {
-                result[key] = evaluateExpression(
+                result[key] = yield* evaluateExpression(
                 // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
                 expression[key], variables, getUnresolved);
             }
@@ -1492,7 +1493,7 @@ function evaluateExpression(expression, variables, getUnresolved) {
         case "#list": {
             const list = [];
             for (let i = 1; i < expression.length; i++) {
-                list.push(evaluateExpression(
+                list.push(yield* evaluateExpression(
                 // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
                 expression[i], variables, getUnresolved));
             }
@@ -1505,7 +1506,7 @@ function evaluateExpression(expression, variables, getUnresolved) {
                 const c = expression[i];
                 list.push(typeof c === "string"
                     ? c
-                    : evaluateExpression(c, variables, getUnresolved));
+                    : yield* evaluateExpression(c, variables, getUnresolved));
             }
             return list;
         }
@@ -1516,7 +1517,7 @@ function evaluateExpression(expression, variables, getUnresolved) {
                 ifFalsy === undefined) {
                 return standard_extensions_error `#if 形式には要素1から3が必要です。例: ["#if", "isEven", ["#", "this is even"], ["#", "this is odd"]]`;
             }
-            return evaluateExpression(evaluateExpression(condition, variables, getUnresolved)
+            return yield* evaluateExpression((yield* evaluateExpression(condition, variables, getUnresolved))
                 ? ifNotFalsy
                 : ifFalsy, variables, getUnresolved);
         }
@@ -1537,13 +1538,13 @@ function evaluateExpression(expression, variables, getUnresolved) {
                 }
             }
             const ps = parameters;
-            return (...args) => {
+            return function* (...args) {
                 let vs = variables;
                 for (let i = 0; i < parameterOrParameters.length; i++) {
                     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
                     vs = add(ps[i], args[i], vs);
                 }
-                return evaluateExpression(body, vs, getUnresolved);
+                return yield* evaluateExpression(body, vs, getUnresolved);
             };
         }
         case "#let": {
@@ -1559,10 +1560,10 @@ function evaluateExpression(expression, variables, getUnresolved) {
                 if (typeof variable !== "string" || value === undefined) {
                     return throwLetExpressionError();
                 }
-                const v = evaluateExpression(value, variables, getUnresolved);
+                const v = yield* evaluateExpression(value, variables, getUnresolved);
                 variables = add(variable, v, variables);
             }
-            return evaluateExpression(scope, variables, getUnresolved);
+            return yield* evaluateExpression(scope, variables, getUnresolved);
         }
         case "_#where_": {
             const [, scope, binding] = expression;
@@ -1573,8 +1574,8 @@ function evaluateExpression(expression, variables, getUnresolved) {
             if (typeof variable !== "string" || value === undefined) {
                 return throwWhereFormError();
             }
-            const v = evaluateExpression(value, variables, getUnresolved);
-            return evaluateExpression(scope, add(variable, v, variables), getUnresolved);
+            const v = yield* evaluateExpression(value, variables, getUnresolved);
+            return yield* evaluateExpression(scope, add(variable, v, variables), getUnresolved);
         }
         case "_#as_": {
             const [, value, variableAndScope] = expression;
@@ -1585,8 +1586,8 @@ function evaluateExpression(expression, variables, getUnresolved) {
             if (typeof variable !== "string" || scope === undefined) {
                 return throwAsFormError();
             }
-            const v = evaluateExpression(value, variables, getUnresolved);
-            return evaluateExpression(scope, add(variable, v, variables), getUnresolved);
+            const v = yield* evaluateExpression(value, variables, getUnresolved);
+            return yield* evaluateExpression(scope, add(variable, v, variables), getUnresolved);
         }
         default: {
             const head = expression[0];
@@ -1598,7 +1599,7 @@ function evaluateExpression(expression, variables, getUnresolved) {
             }
             const items = [];
             for (let i = 0; i < expression.length; i++) {
-                const p = evaluateExpression(
+                const p = yield* evaluateExpression(
                 // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
                 expression[i], variables, getUnresolved);
                 items.push(p);
@@ -1608,12 +1609,68 @@ function evaluateExpression(expression, variables, getUnresolved) {
             if (typeof listProcessor !== "function") {
                 return standard_extensions_error `変数 ${listProcessorName} は関数ではありません。`;
             }
-            return listProcessor(items);
+            return yield* listProcessor(items);
         }
     }
 }
 
+;// CONCATENATED MODULE: ./source/effective.ts
+function getResultOrError(generator) {
+    const iterator = generator[Symbol.iterator]();
+    const result = iterator.next();
+    if (!result.done)
+        throw new Error(`unresolved effect: ${result.value}`);
+    return result.value;
+}
+const privateAwaitPromiseSymbol = Symbol("awaitPromise");
+function isAwait(value) {
+    return (value !== null &&
+        typeof value === "object" &&
+        "kind" in value &&
+        value.kind === privateAwaitPromiseSymbol);
+}
+const privateGetSignalSymbol = Symbol("getSignal");
+function isGetSignal(value) {
+    return value === privateGetSignalSymbol;
+}
+function* getSignal() {
+    return (yield privateGetSignalSymbol);
+}
+function* awaitPromise(promise) {
+    return (yield {
+        kind: privateAwaitPromiseSymbol,
+        promise,
+    });
+}
+function handleAwaitOrError(generator, signal) {
+    return new Promise((resolve, reject) => {
+        const iterator = generator[Symbol.iterator]();
+        function onNext(resolvedValue) {
+            let result;
+            try {
+                result = iterator.next(resolvedValue);
+            }
+            catch (e) {
+                return reject(e);
+            }
+            if (result.done) {
+                return resolve(result.value);
+            }
+            if (isAwait(result.value)) {
+                return void result.value.promise.then(onNext);
+            }
+            if (isGetSignal(result.value)) {
+                return onNext(signal);
+            }
+            return reject(new Error(`uncaught effect ${result.value}`));
+        }
+        onNext(undefined);
+    });
+}
+
 ;// CONCATENATED MODULE: ./source/cells.ts
+/* eslint-disable require-yield */
+
 
 
 function getOrCreate(map, key, createValue) {
@@ -1647,40 +1704,94 @@ function getCell17(cells, coordinate) {
     const id17 = getS2Cell(coordinate, 17).toString();
     return cell14.cell17s.get(id17);
 }
-function createCell17(cells, coordinate) {
+function getOrCreateCell14(cells, coordinate) {
     const s2Cell14 = getS2Cell(coordinate, 14);
-    const s2Cell17 = getS2Cell(coordinate, 17);
     const id14 = s2Cell14.toString();
+    return getOrCreate(cells, id14, () => {
+        return {
+            s2Cell: s2Cell14,
+            cell17s: new Map(),
+            fullFetchDate: "unknown",
+        };
+    });
+}
+function getOrCreateCell17(cells, coordinate) {
+    const { cell17s } = getOrCreateCell14(cells, coordinate);
+    const s2Cell17 = getS2Cell(coordinate, 17);
     const id17 = s2Cell17.toString();
-    const { cell17s } = getOrCreate(cells, id14, () => ({
-        s2Cell: s2Cell14,
-        cell17s: new Map(),
-    }));
     return getOrCreate(cell17s, id17, () => ({
         s2Cell: s2Cell17,
         routes: [],
         portals: [],
     }));
 }
-function buildCells(routes) {
-    const { portalLocations: { cache } = standard_extensions_error `plugin portalLocations not defined`, } = plugin;
+function getCell14sIncludesSpots(routes) {
+    const cell14s = new Map();
+    for (const route of routes) {
+        const coordinate = getSpotLatLng(route);
+        if (!coordinate)
+            continue;
+        const cell = getS2Cell(coordinate, 14);
+        cell14s.set(cell.toString(), cell);
+    }
+    return cell14s.values();
+}
+function addSpotsToCell14s(routes, cells) {
+    for (const route of routes) {
+        const coordinate = getSpotLatLng(route);
+        if (coordinate == null)
+            continue;
+        getOrCreateCell17(cells, coordinate).routes.push(route);
+    }
+}
+function buildCellsOfPortalLocations(routes, cache) {
     const cells = new Map();
     for (const cacheKey in cache) {
         const portal = cache[cacheKey];
         if (portal == null || portal.sponsored)
             continue;
-        createCell17(cells, portal.latLng).portals.push(portal);
+        getOrCreateCell17(cells, portal.latLng).portals.push(portal);
     }
-    for (const route of routes) {
-        const coordinate = getSpotLatLng(route);
-        if (coordinate == null)
-            continue;
-        createCell17(cells, coordinate).routes.push(route);
-    }
+    addSpotsToCell14s(routes, cells);
     return cells;
+}
+function* buildCellsOfPortalRecords(routes, records) {
+    var _a, _b;
+    const signal = yield* getSignal();
+    const cells = new Map();
+    // スポットが存在するセル14内の記録を取得
+    for (const s2Cell of getCell14sIncludesSpots(routes)) {
+        const coordinate = s2Cell.getLatLng();
+        const cellRecord = yield* awaitPromise(records.getS2Cell14(coordinate.lat, coordinate.lng, {
+            signal,
+        }));
+        // 記録からセル14の情報を取得
+        getOrCreateCell14(cells, coordinate).fullFetchDate =
+            (_b = (_a = cellRecord.cell) === null || _a === void 0 ? void 0 : _a.lastFetchDate) !== null && _b !== void 0 ? _b : "no-fetched";
+        // 記録からセル14内のポータルを取得
+        for (const portal of cellRecord.portals.values()) {
+            const cell17 = getOrCreateCell17(cells, portal);
+            cell17.portals.push(portal);
+        }
+    }
+    addSpotsToCell14s(routes, cells);
+    return cells;
+}
+function* buildCells(routes) {
+    var _a;
+    const portalRecords = portal_records_cef3ad7e_0804_420c_8c44_ef4e08dbcdc2;
+    if (portalRecords != null) {
+        return yield* buildCellsOfPortalRecords(routes, yield* awaitPromise(portalRecords));
+    }
+    const cache = (_a = plugin.portalLocations) === null || _a === void 0 ? void 0 : _a.cache;
+    if (cache != null) {
+        return buildCellsOfPortalLocations(routes, cache);
+    }
+    return standard_extensions_error `plugin portalLocations or portalRecords not defined`;
 }
 
 ;// CONCATENATED MODULE: ./source/query/gyms.ts
+/* eslint-disable require-yield */
 // spell-checker: ignore pokestop pokestops
 
 
@@ -1727,10 +1838,13 @@ function getPotentialPokestopCountForNextGym(pokestops, potentialPokestops) {
     }
     return minPokestopsForNextGym - pokestops;
 }
-function getCell14Gyms(cell14) {
+function daysToMilliseconds(days) {
+    return days * 24 * 60 * 60 * 1000;
+}
+function getCell14Gyms({ cell17s, fullFetchDate }) {
     let currentPokestops = 0;
     let potentialPokestops = 0;
-    for (const [, { portals, routes }] of cell14.cell17s) {
+    for (const [, { portals, routes }] of cell17s) {
         if (0 < portals.length) {
             currentPokestops++;
         }
@@ -1742,16 +1856,28 @@ function getCell14Gyms(cell14) {
     const currentGyms = getGymCount(currentPokestops);
     const potentialGyms = expectedGyms - currentGyms;
     const potentialPokestopsForNextGym = getPotentialPokestopCountForNextGym(currentPokestops, potentialPokestops);
+    const isNotLoaded = fullFetchDate === "no-fetched";
+    const obsoleteDate = typeof fullFetchDate === "number" &&
+        fullFetchDate + daysToMilliseconds(7) < Date.now()
+        ? new Date(fullFetchDate).toLocaleDateString()
+        : undefined;
+    function stateSymbolOr(value) {
+        return isNotLoaded
+            ? "?"
+            : obsoleteDate
+                ? `${value}@${obsoleteDate}`
+                : value;
+    }
     return {
-        currentPokestops,
-        expectedGyms,
-        currentGyms,
-        potentialGyms,
-        potentialPokestopsForNextGym,
+        currentPokestops: stateSymbolOr(currentPokestops),
+        expectedGyms: stateSymbolOr(expectedGyms),
+        currentGyms: stateSymbolOr(currentGyms),
+        potentialGyms: stateSymbolOr(potentialGyms),
+        potentialPokestopsForNextGym: stateSymbolOr(potentialPokestopsForNextGym),
     };
 }
-function initializeRouteStatisticsResolver(e) {
-    const cells = buildCells(e.routes);
+function* initializeRouteStatisticsResolver(e) {
+    const cells = yield* buildCells(e.routes);
     const gymCounts = new WeakMap();
     return (r) => getCell14Statistics(cells, gymCounts, getCell14Gyms, r);
 }
@@ -1763,11 +1889,11 @@ function getGymsOrderKinds() {
         "currentGyms",
     ];
 }
-function orderByGyms(kind, query) {
+function* orderByGyms(kind, query) {
     return {
-        initialize(e) {
-            const unit = queryAsFactory(query).initialize(e);
-            const resolve = initializeRouteStatisticsResolver(e);
+        *initialize(e) {
+            const unit = yield* queryAsFactory(query).initialize(e);
+            const resolve = yield* initializeRouteStatisticsResolver(e);
             function createGetter(scope) {
                 return (r) => scope(resolve(r), r);
             }
@@ -1776,33 +1902,54 @@ function orderByGyms(kind, query) {
             let isAscendent;
             switch (kind) {
                 case "potentialStops":
-                    getNote = createGetter((s, r) => {
+                    getNote = createGetter(function* (s, r) {
                         var _a;
                         return `PS${(_a = s === null || s === void 0 ? void 0 : s.potentialPokestopsForNextGym) !== null && _a !== void 0 ? _a : Infinity},${r.note}`;
                     });
-                    getKey = createGetter((s) => { var _a; return (_a = s === null || s === void 0 ? void 0 : s.potentialPokestopsForNextGym) !== null && _a !== void 0 ? _a : Infinity; });
+                    getKey = createGetter(function* (s) {
+                        var _a;
+                        return (_a = s === null || s === void 0 ? void 0 : s.potentialPokestopsForNextGym) !== null && _a !== void 0 ? _a : Infinity;
+                    });
                     isAscendent = true;
                     break;
                 case "potentialGyms":
-                    getNote = createGetter((s, r) => { var _a; return `PG${(_a = s === null || s === void 0 ? void 0 : s.potentialGyms) !== null && _a !== void 0 ? _a : 0},${r.note}`; });
-                    getKey = createGetter((s) => { var _a; return (_a = s === null || s === void 0 ? void 0 : s.potentialGyms) !== null && _a !== void 0 ? _a : 0; });
+                    getNote = createGetter(function* (s, r) {
+                        var _a;
+                        return `PG${(_a = s === null || s === void 0 ? void 0 : s.potentialGyms) !== null && _a !== void 0 ? _a : 0},${r.note}`;
+                    });
+                    getKey = createGetter(function* (s) {
+                        var _a;
+                        return (_a = s === null || s === void 0 ? void 0 : s.potentialGyms) !== null && _a !== void 0 ? _a : 0;
+                    });
                     isAscendent = false;
                     break;
                 case "currentStops":
-                    getNote = createGetter((s, r) => { var _a; return `S${(_a = s === null || s === void 0 ? void 0 : s.currentPokestops) !== null && _a !== void 0 ? _a : 0},${r.note}`; });
-                    getKey = createGetter((s) => { var _a; return (_a = s === null || s === void 0 ? void 0 : s.currentPokestops) !== null && _a !== void 0 ? _a : 0; });
+                    getNote = createGetter(function* (s, r) {
+                        var _a;
+                        return `S${(_a = s === null || s === void 0 ? void 0 : s.currentPokestops) !== null && _a !== void 0 ? _a : 0},${r.note}`;
+                    });
+                    getKey = createGetter(function* (s) {
+                        var _a;
+                        return (_a = s === null || s === void 0 ? void 0 : s.currentPokestops) !== null && _a !== void 0 ? _a : 0;
+                    });
                     isAscendent = true;
                     break;
                 case "currentGyms":
-                    getNote = createGetter((s, r) => { var _a; return `G${(_a = s === null || s === void 0 ? void 0 : s.currentGyms) !== null && _a !== void 0 ? _a : 0},${r.note}`; });
-                    getKey = createGetter((s) => { var _a; return (_a = s === null || s === void 0 ? void 0 : s.currentGyms) !== null && _a !== void 0 ? _a : 0; });
+                    getNote = createGetter(function* (s, r) {
+                        var _a;
+                        return `G${(_a = s === null || s === void 0 ? void 0 : s.currentGyms) !== null && _a !== void 0 ? _a : 0},${r.note}`;
+                    });
+                    getKey = createGetter(function* (s) {
+                        var _a;
+                        return (_a = s === null || s === void 0 ? void 0 : s.currentGyms) !== null && _a !== void 0 ? _a : 0;
+                    });
                     isAscendent = false;
                     break;
                 default:
                     throw new Error(`Invalid order kind: ${kind}. Expected ${getGymsOrderKinds().join(" or ")}.`);
             }
             return Object.assign(Object.assign({}, unit), { getNote,
-                getSorter() {
+                *getSorter() {
                     return {
                         getKey,
                         isAscendent,
@@ -1811,10 +1958,10 @@ function orderByGyms(kind, query) {
         },
     };
 }
-function countByGyms(kind, value) {
+function countByGyms(kind, searchValue) {
     return {
-        initialize(e) {
-            const resolve = initializeRouteStatisticsResolver(e);
+        *initialize(e) {
+            const resolve = yield* initializeRouteStatisticsResolver(e);
             let selector;
             switch (kind) {
                 case "potentialStops":
@@ -1831,9 +1978,12 @@ function countByGyms(kind, value) {
                     throw new Error(`Invalid kind: ${kind}. Expected ${getGymsOrderKinds().join(" or ")}.`);
             }
             return {
-                predicate(r) {
+                *predicate(r) {
                     var _a;
-                    return ((_a = resolve(r)) === null || _a === void 0 ? void 0 : _a[selector]) === value;
+                    const value = (_a = resolve(r)) === null || _a === void 0 ? void 0 : _a[selector];
+                    return (value === searchValue ||
+                        (typeof value === "string" &&
+                            value.startsWith(String(searchValue))));
                 },
             };
         },
@@ -2340,17 +2490,17 @@ function compareQueryKey(key1, key2) {
     return exhaustive(key1), exhaustive(key2);
 }
 const emptyUnit = {
-    predicate() {
+    *predicate() {
         return true;
     },
 };
 const anyQuery = {
-    initialize() {
+    *initialize() {
         return emptyUnit;
     },
 };
 function includes(words) {
-    const unit = Object.assign(Object.assign({}, emptyUnit), { predicate(route) {
+    const unit = Object.assign(Object.assign({}, emptyUnit), { *predicate(route) {
             for (const word of words) {
                 if (!includesAmbiguousTextInRoute(route, word)) {
                     return false;
@@ -2359,37 +2509,37 @@ function includes(words) {
             return true;
         } });
     return {
-        initialize() {
+        *initialize() {
             return unit;
         },
     };
 }
-function reachableWith(options) {
+function reachableWithRaw(options) {
     return {
-        initialize({ getUserCoordinate, distance }) {
+        *initialize({ getUserCoordinate, distance }) {
             var _a;
             const center = (options === null || options === void 0 ? void 0 : options.center) || getUserCoordinate();
             if (center == null)
                 return emptyUnit;
             const radius = (_a = options === null || options === void 0 ? void 0 : options.radius) !== null && _a !== void 0 ? _a : 9800;
-            return Object.assign(Object.assign({}, emptyUnit), { predicate(route) {
+            return Object.assign(Object.assign({}, emptyUnit), { *predicate(route) {
                     return (getRouteKind(route) === "spot" &&
                         distance(center, route.coordinates[0]) < radius);
                 } });
         },
     };
 }
-const reachable = reachableWith();
+const reachable = reachableWithRaw();
 function queryAsFactory(query) {
     return typeof query === "string" || typeof query === "number"
         ? includes([String(query)])
         : query;
 }
-function orderByKey(query, getKey, isAscendent) {
+function* orderByKey(query, getKey, isAscendent) {
     return {
-        initialize(e) {
-            const unit = queryAsFactory(query).initialize(e);
-            return Object.assign(Object.assign({}, unit), { getSorter() {
+        *initialize(e) {
+            const unit = yield* queryAsFactory(query).initialize(e);
+            return Object.assign(Object.assign({}, unit), { *getSorter() {
                     return {
                         getKey,
                         isAscendent,
@@ -2401,54 +2551,78 @@ function orderByKey(query, getKey, isAscendent) {
 function getOrderByKinds() {
     return ["id", "latitude", "longitude", ...getGymsOrderKinds()];
 }
-function orderBy(kind, query) {
+function* orderBy(kind, query) {
     switch (kind) {
         case "id":
-            return orderByKey(query, (r) => r.routeId, false);
+            return yield* orderByKey(query, function* (r) {
+                return r.routeId;
+            }, false);
         case "latitude":
-            return orderByKey(query, (r) => r.coordinates[0][0], false);
+            return yield* orderByKey(query, function* (r) {
+                return r.coordinates[0][0];
+            }, false);
         case "longitude":
-            return orderByKey(query, (r) => r.coordinates[0][1], true);
+            return yield* orderByKey(query, function* (r) {
+                return r.coordinates[0][1];
+            }, true);
         case "potentialGyms":
         case "potentialStops":
         case "currentStops":
         case "currentGyms":
-            return orderByGyms(kind, query);
+            return yield* orderByGyms(kind, query);
         default:
             throw new Error(`Invalid order kind: ${kind}. Expected ${getOrderByKinds().join(" or ")}.`);
     }
 }
-function and(...queries) {
+function* mapGenerator(array, mapping) {
+    const result = [];
+    let index = 0;
+    for (const item of array) {
+        result.push(yield* mapping(item, index++, array));
+    }
+    return result;
+}
+function* and(...queries) {
     return {
-        initialize(e) {
-            const units = queries.map((q) => queryAsFactory(q).initialize(e));
-            return Object.assign(Object.assign({}, units.reduce(Object.assign, emptyUnit)), { predicate(r) {
-                    return units.every((u) => u.predicate(r));
+        *initialize(e) {
+            const units = yield* mapGenerator(queries, (q) => queryAsFactory(q).initialize(e));
+            return Object.assign(Object.assign({}, units.reduce(Object.assign, emptyUnit)), { *predicate(r) {
+                    for (const u of units) {
+                        if (!(yield* u.predicate(r))) {
+                            return false;
+                        }
+                    }
+                    return true;
                 } });
         },
     };
 }
-function or(...queries) {
+function* or(...queries) {
     return {
-        initialize(e) {
-            const units = queries.map((q) => queryAsFactory(q).initialize(e));
-            return Object.assign(Object.assign({}, units.reduce(Object.assign, emptyUnit)), { predicate(r) {
-                    return units.some((u) => u.predicate(r));
+        *initialize(e) {
+            const units = yield* mapGenerator(queries, (q) => queryAsFactory(q).initialize(e));
+            return Object.assign(Object.assign({}, units.reduce(Object.assign, emptyUnit)), { *predicate(r) {
+                    for (const u of units) {
+                        if (yield* u.predicate(r)) {
+                            return true;
+                        }
+                    }
+                    return false;
                 } });
         },
     };
 }
 const library = {
-    _lisq_(xs) {
+    *_lisq_(xs) {
         const [head, ...tail] = xs;
         if (typeof head === "function") {
-            return head(...tail);
+            return yield* head(...tail);
         }
         else {
-            return and(...xs);
+            return yield* and(...xs);
         }
     },
-    ["tag?"](route, tagNames) {
+    *["tag?"](route, tagNames) {
         const tags = getRouteTags(route);
         if (tags === undefined)
             return false;
@@ -2458,45 +2632,47 @@ const library = {
         }
         return false;
     },
-    concat(strings) {
+    *concat(strings) {
         return strings.join("");
     },
-    getTitle(route) {
+    *getTitle(route) {
         return route.routeName;
     },
-    getDescription(route) {
+    *getDescription(route) {
         return route.description;
     },
-    includes(...words) {
+    *includes(...words) {
         return includes(words);
     },
     reachable,
-    reachableWith,
+    *reachableWith(...options) {
+        return reachableWithRaw(...options);
+    },
     and,
     ["_and_"]: and,
     or,
     ["_or_"]: or,
-    not(query) {
+    *not(query) {
         return {
-            initialize(e) {
-                const { predicate } = queryAsFactory(query).initialize(e);
-                return Object.assign(Object.assign({}, emptyUnit), { predicate(r) {
-                        return !predicate(r);
+            *initialize(e) {
+                const { predicate } = yield* queryAsFactory(query).initialize(e);
+                return Object.assign(Object.assign({}, emptyUnit), { *predicate(r) {
+                        return !(yield* predicate(r));
                     } });
             },
         };
     },
-    withTitle(getTitle, query) {
+    *withTitle(getTitle, query) {
         return {
             initialize(e) {
                 return Object.assign(Object.assign({}, queryAsFactory(query).initialize(e)), { getTitle });
             },
         };
     },
-    withNote(getNote, query) {
+    *withNote(getNote, query) {
         return {
-            initialize(e) {
-                return Object.assign(Object.assign({}, queryAsFactory(query).initialize(e)), { getNote });
+            *initialize(e) {
+                return Object.assign(Object.assign({}, (yield* queryAsFactory(query).initialize(e))), { getNote });
             },
         };
     },
@@ -2504,12 +2680,12 @@ const library = {
     ["_orderBy_"](query, kind) {
         return orderBy(kind, query);
     },
-    potentialStops(count) {
+    *potentialStops(count) {
         return countByGyms("potentialStops", count);
     },
-    cell(level, options) {
+    *cell(level, options) {
         return {
-            initialize(e) {
+            *initialize(e) {
                 var _a;
                 const location = (_a = options === null || options === void 0 ? void 0 : options.location) !== null && _a !== void 0 ? _a : e.getUserCoordinate();
                 if (location == null)
@@ -2517,7 +2693,7 @@ const library = {
                 const cell = S2.S2Cell.FromLatLng(coordinateToLatLng(location), level);
                 const cellId = cell.toString();
                 return {
-                    predicate(r) {
+                    *predicate(r) {
                         const cell = S2.S2Cell.FromLatLng(coordinateToLatLng(r.coordinates[0]), level);
                         return cellId === cell.toString();
                     },
@@ -2526,25 +2702,25 @@ const library = {
         };
     },
     any: anyQuery,
-    ["_add_"](x, y) {
+    *["_add_"](x, y) {
         return x + y;
     },
-    ["_sub_"](x, y) {
+    *["_sub_"](x, y) {
         return x - y;
     },
-    ["_mul_"](x, y) {
+    *["_mul_"](x, y) {
         return x * y;
     },
-    ["_div_"](x, y) {
+    *["_div_"](x, y) {
         return x / y;
     },
-    ["_eq_"](x, y) {
+    *["_eq_"](x, y) {
         return x === y;
     },
-    ["_ne_"](x, y) {
+    *["_ne_"](x, y) {
         return x !== y;
     },
-    ["_neg"](x) {
+    *["_neg"](x) {
         return -x;
     },
 };
@@ -2569,9 +2745,9 @@ function createQuery(expression) {
         tokenizer.initialize(expression);
         const json = parser.parse();
         return {
-            getQuery: () => {
+            *getQuery() {
                 // TODO: 静的チェックする
-                return queryAsFactory(evaluateWithLibrary(json));
+                return queryAsFactory((yield* evaluateWithLibrary(json)));
             },
             diagnostics: diagnosticsCache.slice(),
         };
@@ -2988,7 +3164,7 @@ function createVirtualList() {
         const { scrollTop, offsetHeight: windowHeight } = listWindow;
         const { itemHeight, count: itemCount } = items;
         const start = Math.floor(scrollTop / itemHeight);
-        const count = Math.min(itemCount, Math.floor((scrollTop + windowHeight) / itemHeight) - start);
+        const count = Math.min(itemCount, Math.ceil((scrollTop + windowHeight) / itemHeight)) - start;
         redrawRequested =
             redrawRequested || lastStart !== start || lastCount !== count;
         lastStart = start;
@@ -3031,7 +3207,9 @@ var iitc_plugin_pgo_route_helper_awaiter = (undefined && undefined.__awaiter) ||
     });
 };
 
-// spell-checker: ignore layeradd drivetunnel latlngschanged lngs latlng buttonset
+/* eslint-disable require-yield */
+// spell-checker: ignore layeradd drivetunnel latlngschanged lngs latlng buttonset moveend zoomend
+
 
 
 
@@ -3608,21 +3786,23 @@ function asyncMain() {
                 return latLngToCoordinate(center !== null && center !== void 0 ? center : map.getCenter());
             },
         };
-        function protectedCallQueryFunction(action, defaultValue) {
-            try {
-                return action();
-            }
-            catch (error) {
-                progress({ type: "query-evaluation-error", error });
-                queryEditor.addDiagnostic({
-                    message: String(error),
-                    range: {
-                        start: 1,
-                        end: 1,
-                    },
-                });
-                return defaultValue();
-            }
+        function protectedCallQueryFunction(action, defaultValue, signal) {
+            return iitc_plugin_pgo_route_helper_awaiter(this, void 0, void 0, function* () {
+                try {
+                    return yield handleAwaitOrError(action(), signal);
+                }
+                catch (error) {
+                    progress({ type: "query-evaluation-error", error });
+                    queryEditor.addDiagnostic({
+                        message: String(error),
+                        range: {
+                            start: 1,
+                            end: 1,
+                        },
+                    });
+                    return yield handleAwaitOrError(defaultValue(), signal);
+                }
+            });
         }
         const asyncUpdateRouteListElementScope = createAsyncCancelScope(handleAsyncError);
         function updateRouteListElementAsync(signal) {
@@ -3633,10 +3813,18 @@ function asyncMain() {
                 const views = [...state.routes.values()];
                 const routes = views.map((r) => r.route);
                 const isQueryUndefined = query === undefined;
-                const getQuery = query !== null && query !== void 0 ? query : (() => anyQuery);
+                const getQuery = query !== null && query !== void 0 ? query : function* () {
+                    return anyQuery;
+                };
                 const environment = Object.assign(Object.assign({}, defaultEnvironment), { routes });
-                const { predicate, getTitle, getNote, getSorter } = protectedCallQueryFunction(() => getQuery().initialize(environment), () => anyQuery.initialize(environment));
-                const sorter = protectedCallQueryFunction(() => { var _a; return (_a = getSorter === null || getSorter === void 0 ? void 0 : getSorter()) !== null && _a !== void 0 ? _a : null; }, () => null);
+                const { predicate, getTitle, getNote, getSorter } = yield protectedCallQueryFunction(function* () {
+                    return yield* (yield* getQuery()).initialize(environment);
+                }, () => anyQuery.initialize(environment), signal);
+                const sorter = yield protectedCallQueryFunction(function* () {
+                    return getSorter ? yield* getSorter() : null;
+                }, function* () {
+                    return null;
+                }, signal);
                 // 検索クエリを実行し結果を得る
                 // DOM要素へ反映はしない
                 let visibleListItemCount = 0;
@@ -3646,14 +3834,28 @@ function asyncMain() {
                     }
                     const { route, listView, coordinatesEditor } = view;
                     if (sorter != null) {
-                        view.sortKey = protectedCallQueryFunction(() => sorter.getKey(route), () => null);
+                        view.sortKey = yield protectedCallQueryFunction(function () {
+                            return sorter.getKey(route);
+                        }, function* () {
+                            return null;
+                        }, signal);
                     }
                     else {
                         view.sortKey = null;
                     }
-                    listView.visible = protectedCallQueryFunction(() => predicate(route), () => false);
-                    listView.title = protectedCallQueryFunction(() => { var _a; return (_a = getTitle === null || getTitle === void 0 ? void 0 : getTitle(route)) !== null && _a !== void 0 ? _a : null; }, () => null);
-                    listView.note = protectedCallQueryFunction(() => { var _a; return (_a = getNote === null || getNote === void 0 ? void 0 : getNote(route)) !== null && _a !== void 0 ? _a : null; }, () => null);
+                    listView.visible = yield protectedCallQueryFunction(() => predicate(route), function* () {
+                        return false;
+                    }, signal);
+                    listView.title = yield protectedCallQueryFunction(function* () {
+                        return getTitle ? yield* getTitle(route) : null;
+                    }, function* () {
+                        return null;
+                    }, signal);
+                    listView.note = yield protectedCallQueryFunction(function* () {
+                        return getNote ? yield* getNote(route) : null;
+                    }, function* () {
+                        return null;
+                    }, signal);
                     if (listView.visible)
                         visibleListItemCount++;
                     if (!isQueryUndefined)
