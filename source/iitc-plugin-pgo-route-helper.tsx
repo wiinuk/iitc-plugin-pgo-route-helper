@@ -241,6 +241,7 @@ async function asyncMain() {
 
     const progress = (
         message:
+            | { type: "waiting-until-routes-layer-loading" }
             | {
                   type: "upload-waiting";
                   routeName: string;
@@ -280,6 +281,10 @@ async function asyncMain() {
     ) => {
         const { type } = message;
         switch (type) {
+            case "waiting-until-routes-layer-loading": {
+                reportElement.innerText = `${routeLayerGroupName} レイヤーを有効にするとルート一覧が表示されます。`;
+                break;
+            }
             case "upload-waiting": {
                 const remainingMessage =
                     message.queueCount <= 1
@@ -1414,6 +1419,7 @@ async function asyncMain() {
     window.addLayerGroup(routeLayerGroupName, routeLayerGroup, true);
 
     // Routes レイヤーが表示されるまで読み込みを中止
+    progress({ type: "waiting-until-routes-layer-loading" });
     await waitLayerAdded(map, routeLayerGroup);
 
     if (state.routes === "routes-unloaded") {

@@ -55,13 +55,17 @@ function getCell14Statistics<T>(
     cell14ToStatistics.set(cell14, statistics);
     return statistics;
 }
-type DataSourceSymbol = "?" | `${number}@${string}`;
+interface WithSourceState<T> {
+    value: T;
+    isNotLoaded: boolean;
+    obsoleteDate?: number;
+}
 interface Cell14Gyms {
-    potentialGyms: number | DataSourceSymbol;
-    currentPokestops: number | DataSourceSymbol;
-    currentGyms: number | DataSourceSymbol;
-    expectedGyms: number | DataSourceSymbol;
-    potentialPokestopsForNextGym: number | DataSourceSymbol;
+    potentialGyms: WithSourceState<number>;
+    currentPokestops: WithSourceState<number>;
+    currentGyms: WithSourceState<number>;
+    expectedGyms: WithSourceState<number>;
+    potentialPokestopsForNextGym: WithSourceState<number>;
 }
 export function getPotentialPokestopCountForNextGym(
     pokestops: number,
@@ -103,22 +107,22 @@ function getCell14Gyms({ cell17s, fullFetchDate }: Cell14) {
     const obsoleteDate =
         typeof fullFetchDate === "number" &&
         fullFetchDate + daysToMilliseconds(7) < Date.now()
-            ? new Date(fullFetchDate).toLocaleDateString()
+            ? fullFetchDate
             : undefined;
 
-    function stateSymbolOr(value: number): number | DataSourceSymbol {
-        return isNotLoaded
-            ? "?"
-            : obsoleteDate
-            ? `${value}@${obsoleteDate}`
-            : value;
+    function stateSymbolAnd(value: number): WithSourceState<number> {
+        return {
+            value,
+            isNotLoaded,
+            obsoleteDate,
+        };
     }
     return {
-        currentPokestops: stateSymbolOr(currentPokestops),
-        expectedGyms: stateSymbolOr(expectedGyms),
-        currentGyms: stateSymbolOr(currentGyms),
-        potentialGyms: stateSymbolOr(potentialGyms),
-        potentialPokestopsForNextGym: stateSymbolOr(
+        currentPokestops: stateSymbolAnd(currentPokestops),
+        expectedGyms: stateSymbolAnd(expectedGyms),
+        currentGyms: stateSymbolAnd(currentGyms),
+        potentialGyms: stateSymbolAnd(potentialGyms),
+        potentialPokestopsForNextGym: stateSymbolAnd(
             potentialPokestopsForNextGym
         ),
     } satisfies Cell14Gyms;
@@ -139,6 +143,37 @@ export function getGymsOrderKinds() {
         "currentGyms",
     ] as const;
 }
+
+function timeToLocalISODateString(time: number) {
+    const date = new Date(time);
+    date.setTime(time);
+
+    const offset = date.getTimezoneOffset();
+    const absOffset = Math.abs(offset);
+    const offsetSign = offset > 0 ? "-" : "+";
+    const offsetHours = String(Math.floor(absOffset / 60)).padStart(2, "0");
+    const offsetMinutes = String(absOffset % 60).padStart(2, "0");
+
+    return (
+        date.getFullYear() +
+        "-" +
+        String(date.getMonth() + 1).padStart(2, "0") +
+        "-" +
+        String(date.getDate()).padStart(2, "0") +
+        offsetSign +
+        offsetHours +
+        ":" +
+        offsetMinutes
+    );
+}
+function printSourceState<T>(source: WithSourceState<T>) {
+    return `${source.isNotLoaded ? "?" : ""}${source.value}${
+        source.obsoleteDate === undefined
+            ? ""
+            : "@" + timeToLocalISODateString(source.obsoleteDate)
+    }`;
+}
+
 export type GymsSortKind = ReturnType<typeof getGymsOrderKinds>[number];
 export function* orderByGyms(
     kind: GymsSortKind,
@@ -161,38 +196,50 @@ export function* orderByGyms(
                 case "potentialStops":
                     getNote = createGetter(function* (s, r) {
                         return `PS${
-                            s?.potentialPokestopsForNextGym ?? Infinity
+                            s
+                                ? printSourceState(
+                                      s.potentialPokestopsForNextGym
+                                  )
+                                : Infinity
                         },${r.note}`;
                     });
                     getKey = createGetter(function* (s) {
-                        return s?.potentialPokestopsForNextGym ?? Infinity;
+                        return (
+                            s?.potentialPokestopsForNextGym?.value ?? Infinity
+                        );
                     });
                     isAscendent = true;
                     break;
                 case "potentialGyms":
                     getNote = createGetter(function* (s, r) {
-                        return `PG${s?.potentialGyms ?? 0},${r.note}`;
+                        return `PG${
+                            s ? printSourceState(s.potentialGyms) : 0
+                        },${r.note}`;
                     });
                     getKey = createGetter(function* (s) {
-                        return s?.potentialGyms ?? 0;
+                        return s?.potentialGyms?.value ?? 0;
                     });
                     isAscendent = false;
                     break;
                 case "currentStops":
                     getNote = createGetter(function* (s, r) {
-                        return `S${s?.currentPokestops ?? 0},${r.note}`;
+                        return `S${
+                            s ? printSourceState(s.currentPokestops) : 0
+                        },${r.note}`;
                     });
                     getKey = createGetter(function* (s) {
-                        return s?.currentPokestops ?? 0;
+                        return s?.currentPokestops?.value ?? 0;
                     });
                     isAscendent = true;
                     break;
                 case "currentGyms":
                     getNote = createGetter(function* (s, r) {
-                        return `G${s?.currentGyms ?? 0},${r.note}`;
+                        return `G${
+                            s ? printSourceState(s.currentGyms) : 0
+                        },${r.note}`;
                     });
                     getKey = createGetter(function* (s) {
-                        return s?.currentGyms ?? 0;
+                        return s?.currentGyms?.value ?? 0;
                     });
                     isAscendent = false;
                     break;
@@ -244,11 +291,11 @@ export function countByGyms(
             }
             return {
                 *predicate(r) {
-                    const value = resolve(r)?.[selector];
-                    return (
-                        value === searchValue ||
-                        (typeof value === "string" &&
-                            value.startsWith(String(searchValue)))
+                    const source = resolve(r)?.[selector];
+                    if (source === undefined) return false;
+                    if (source.value === searchValue) return true;
+                    return printSourceState(source).startsWith(
+                        String(searchValue)
                     );
                 },
             } satisfies UnitQuery;
