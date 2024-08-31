@@ -29,6 +29,7 @@
     "@types/jquery": "^2.0.60",
     "@types/jqueryui": "^1.11.32",
     "@types/leaflet": "^0.7.30",
+    "@types/leaflet.markercluster": "^1.5.4",
     "@types/tampermonkey": "^4.0.5",
     "@typescript-eslint/eslint-plugin": "^5.8.0",
     "@typescript-eslint/experimental-utils": "^5.9.0",
@@ -50,6 +51,7 @@
     "fsevents": "^2.3.2"
   },
   "dependencies": {
+    "leaflet.markercluster": "^0.5.0",
     "tslib": "^2.3.1"
   }
 }
