@@ -1,10 +1,9 @@
 /* eslint-disable require-yield */
 // spell-checker: ignore pokestop pokestops
 import {
-    queryAsFactory,
     type QueryEnvironment,
     type QuerySorter,
-    type RouteQuery,
+    type Query,
     type UnitQuery,
 } from ".";
 import {
@@ -128,8 +127,10 @@ function getCell14Gyms({ cell17s, fullFetchDate }: Cell14) {
     } satisfies Cell14Gyms;
 }
 
-function* initializeRouteStatisticsResolver(e: QueryEnvironment) {
-    const cells = yield* buildCells(e.routes);
+function* initializeRouteStatisticsResolver<T>({
+    routes,
+}: QueryEnvironment<T>) {
+    const cells = yield* buildCells(routes);
     const gymCounts = new WeakMap<Cell14, Cell14Gyms>();
     return (r: Route) =>
         getCell14Statistics(cells, gymCounts, getCell14Gyms, r);
@@ -177,11 +178,11 @@ function printSourceState<T>(source: WithSourceState<T>) {
 export type GymsSortKind = ReturnType<typeof getGymsOrderKinds>[number];
 export function* orderByGyms(
     kind: GymsSortKind,
-    query: RouteQuery
-): Effective<RouteQuery> {
+    query: Query<Route>
+): Effective<Query<Route>> {
     return {
         *initialize(e) {
-            const unit = yield* queryAsFactory(query).initialize(e);
+            const unit = yield* e.queryAsFactory(query).initialize(e);
             const resolve = yield* initializeRouteStatisticsResolver(e);
             function createGetter<T>(
                 scope: (s: Cell14Gyms | undefined, r: Route) => T
@@ -190,8 +191,8 @@ export function* orderByGyms(
             }
 
             let getNote;
-            let getKey: QuerySorter["getKey"];
-            let isAscendent: QuerySorter["isAscendent"];
+            let getKey: QuerySorter<Route>["getKey"];
+            let isAscendent: QuerySorter<Route>["isAscendent"];
             switch (kind) {
                 case "potentialStops":
                     getNote = createGetter(function* (s, r) {
@@ -259,14 +260,14 @@ export function* orderByGyms(
                         isAscendent,
                     };
                 },
-            } satisfies UnitQuery;
+            } satisfies UnitQuery<Route>;
         },
     };
 }
 export function countByGyms(
     kind: GymsSortKind,
     searchValue: number | string
-): RouteQuery {
+): Query<Route> {
     return {
         *initialize(e) {
             const resolve = yield* initializeRouteStatisticsResolver(e);
@@ -298,7 +299,7 @@ export function countByGyms(
                         String(searchValue)
                     );
                 },
-            } satisfies UnitQuery;
+            } satisfies UnitQuery<Route>;
         },
     };
 }

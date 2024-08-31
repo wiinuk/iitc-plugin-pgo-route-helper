@@ -48,6 +48,7 @@ import {
     type QueryKey,
     compareQueryKey,
     type UnitQueryFactory,
+    routeQueryAsFactory,
 } from "./query";
 import { createQueryEditor } from "./query-editor";
 import { applyTemplate } from "./template";
@@ -229,7 +230,7 @@ async function asyncMain() {
         routes: "routes-unloaded" | Map<string, RouteWithView>;
         routeListQuery: Readonly<{
             queryText: string;
-            query: EffectiveFunction<[], UnitQueryFactory> | undefined;
+            query: EffectiveFunction<[], UnitQueryFactory<Route>> | undefined;
         }>;
     } = {
         selectedRouteId: null,
@@ -810,7 +811,8 @@ async function asyncMain() {
 
     const tempLatLng1 = L.latLng(0, 0);
     const tempLatLng2 = L.latLng(0, 0);
-    const defaultEnvironment: QueryEnvironment = {
+    const defaultEnvironment: QueryEnvironment<Route> = {
+        queryAsFactory: routeQueryAsFactory,
         routes: [],
         distance(c1, c2) {
             tempLatLng1.lat = c1[0];
@@ -868,7 +870,10 @@ async function asyncMain() {
                 return anyQuery;
             };
 
-        const environment = { ...defaultEnvironment, routes };
+        const environment: QueryEnvironment<Route> = {
+            ...defaultEnvironment,
+            routes,
+        };
         const { predicate, getTitle, getNote, getSorter } =
             await protectedCallQueryFunction(
                 function* () {

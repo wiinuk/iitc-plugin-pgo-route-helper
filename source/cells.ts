@@ -43,7 +43,7 @@ export function getSpotLatLng(route: Route) {
     const [lat, lng] = route.coordinates[0];
     return { lat, lng } as const;
 }
-function getS2Cell<L extends number>(latLng: S2LatLng, level: L) {
+export function getS2Cell<L extends number>(latLng: S2LatLng, level: L) {
     if (typeof S2 === "undefined") throw new Error("S2 is undefined");
     return S2.S2Cell.FromLatLng(latLng, level) as S2CellWith<L>;
 }

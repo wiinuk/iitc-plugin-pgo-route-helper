@@ -18,6 +18,7 @@ import { countByGyms, getGymsOrderKinds, orderByGyms } from "./gyms";
 import { createParser, createTokenizer, tokenDefinitions } from "./parser";
 import type { Diagnostic } from "./service";
 import type { EffectiveFunction, Effective } from "../effective";
+import { buildCells, getCell14, getCell17, type Cell14 } from "../cells";
 
 function eachJsonStrings(
     json: MutableJson,
@@ -50,33 +51,24 @@ function eachRouteStrings(
     route: Route,
     action: (text: string) => "break" | undefined
 ) {
-    if (action(route.routeName) === "break") {
-        return "break";
-    }
-    if (action(route.description) === "break") {
-        return "break";
-    }
-    if (action(route.note) === "break") {
-        return "break";
-    }
+    if (action(route.routeName) === "break") return "break";
+    if (action(route.description) === "break") return "break";
+    if (action(route.note) === "break") return "break";
     const tags = getRouteTags(route);
-    if (tags == null) {
-        return;
-    }
+    if (tags == null) return;
     return eachJsonStrings(tags, action);
 }
 function normalize(text: string) {
     return text.normalize("NFKC").toLowerCase();
 }
-function includesAmbiguousTextInRoute(route: Route, word: string) {
-    let success = false;
-    eachRouteStrings(route, (text) => {
-        if (normalize(text).includes(normalize(word))) {
-            success = true;
-            return "break";
-        }
-    });
-    return success;
+
+function eachPortalStrings(
+    { image, title }: Readonly<IITCPortalData>,
+    action: (text: string) => "break" | undefined
+) {
+    if (image != null && action(image) === "break") return "break";
+    if (title != null && action(title) === "break") return "break";
+    return;
 }
 
 /** ラインタイムの規定ロケールで比較 */
@@ -117,52 +109,53 @@ export function compareQueryKey(key1: QueryKey, key2: QueryKey): number {
     return exhaustive(key1), exhaustive(key2);
 }
 
-export interface QuerySorter {
-    readonly getKey: EffectiveFunction<[route: Route], QueryKey>;
+export interface QuerySorter<T> {
+    readonly getKey: EffectiveFunction<[value: T], QueryKey>;
     readonly isAscendent: boolean;
 }
-export interface UnitQuery {
-    readonly predicate: EffectiveFunction<[route: Route], boolean>;
-    readonly getTitle?: EffectiveFunction<[route: Route], string>;
-    readonly getNote?: EffectiveFunction<[route: Route], string>;
-    readonly getSorter?: EffectiveFunction<[], Readonly<QuerySorter>>;
+export interface UnitQuery<T> {
+    readonly predicate: EffectiveFunction<[value: T], boolean>;
+    readonly getTitle?: EffectiveFunction<[value: T], string>;
+    readonly getNote?: EffectiveFunction<[value: T], string>;
+    readonly getSorter?: EffectiveFunction<[], Readonly<QuerySorter<T>>>;
 }
-export type RouteQuery = string | number | UnitQueryFactory;
-export interface UnitQueryFactory {
-    readonly initialize: EffectiveFunction<
-        [environment: QueryEnvironment],
-        UnitQuery
-    >;
+export type Query<T> = string | number | UnitQueryFactory<T>;
+export interface UnitQueryFactory<in T> {
+    initialize(environment: QueryEnvironment<T>): Effective<UnitQuery<T>>;
 }
-const emptyUnit: UnitQuery = {
+const emptyUnit: UnitQuery<unknown> = {
     *predicate() {
         return true;
     },
 };
-export const anyQuery: UnitQueryFactory = {
+export const anyQuery: UnitQueryFactory<unknown> = {
     *initialize() {
         return emptyUnit;
     },
 };
 export type QueryCreateResult = {
-    getQuery: EffectiveFunction<[], UnitQueryFactory>;
+    getQuery: EffectiveFunction<[], UnitQueryFactory<Route>>;
     diagnostics: Diagnostic[];
 };
-function includes(words: readonly string[]): UnitQueryFactory {
-    const unit: UnitQuery = {
-        ...emptyUnit,
-        *predicate(route) {
-            for (const word of words) {
-                if (!includesAmbiguousTextInRoute(route, word)) {
-                    return false;
-                }
-            }
-            return true;
-        },
-    };
+function includes(word: string): UnitQueryFactory<Route> {
     return {
         *initialize() {
-            return unit;
+            let tempHasWord = false;
+            word = normalize(word);
+            function finder(text: string) {
+                if (normalize(text).includes(word)) {
+                    tempHasWord = true;
+                    return "break";
+                }
+            }
+            return {
+                ...emptyUnit,
+                *predicate(route) {
+                    tempHasWord = false;
+                    eachRouteStrings(route, finder);
+                    return tempHasWord;
+                },
+            } satisfies UnitQuery<Route>;
         },
     };
 }
@@ -170,7 +163,7 @@ function includes(words: readonly string[]): UnitQueryFactory {
 function reachableWithRaw(options?: {
     radius?: number;
     center?: Coordinate;
-}): RouteQuery {
+}): Query<Route> {
     return {
         *initialize({ getUserCoordinate, distance }) {
             const center = options?.center || getUserCoordinate();
@@ -191,30 +184,25 @@ function reachableWithRaw(options?: {
 }
 const reachable = reachableWithRaw();
 
-export function queryAsFactory(query: RouteQuery) {
-    return typeof query === "string" || typeof query === "number"
-        ? includes([String(query)])
-        : query;
-}
 function* orderByKey(
-    query: RouteQuery,
+    query: Query<Route>,
     getKey: EffectiveFunction<[route: Route], QueryKey>,
     isAscendent: boolean
-): Effective<RouteQuery> {
+): Effective<Query<Route>> {
     return {
         *initialize(e) {
-            const unit = yield* queryAsFactory(query).initialize(e);
+            const unit = yield* e.queryAsFactory(query).initialize(e);
             return {
                 ...unit,
                 *getSorter() {
                     return {
                         getKey,
                         isAscendent,
-                    } satisfies QuerySorter;
+                    } satisfies QuerySorter<Route>;
                 },
-            } satisfies UnitQuery;
+            } satisfies UnitQuery<Route>;
         },
-    } satisfies RouteQuery;
+    } satisfies Query<Route>;
 }
 
 export function getOrderByKinds() {
@@ -223,8 +211,8 @@ export function getOrderByKinds() {
 type OrderByKinds = ReturnType<typeof getOrderByKinds>[number];
 export function* orderBy(
     kind: OrderByKinds,
-    query: RouteQuery
-): Effective<RouteQuery> {
+    query: Query<Route>
+): Effective<Query<Route>> {
     switch (kind) {
         case "id":
             return yield* orderByKey(
@@ -279,11 +267,11 @@ function* mapGenerator<TItem, TYield, TReturn, TNext>(
     return result;
 }
 
-function* and(...queries: RouteQuery[]): Effective<RouteQuery> {
+function* and<T>(...queries: Query<T>[]): Effective<Query<T>> {
     return {
         *initialize(e) {
             const units = yield* mapGenerator(queries, (q) =>
-                queryAsFactory(q).initialize(e)
+                e.queryAsFactory(q).initialize(e)
             );
             return {
                 ...units.reduce(Object.assign, emptyUnit),
@@ -295,15 +283,15 @@ function* and(...queries: RouteQuery[]): Effective<RouteQuery> {
                     }
                     return true;
                 },
-            } satisfies UnitQuery;
+            } satisfies UnitQuery<T>;
         },
     };
 }
-function* or(...queries: RouteQuery[]): Effective<RouteQuery> {
+function* or<T>(...queries: Query<T>[]): Effective<Query<T>> {
     return {
         *initialize(e) {
             const units = yield* mapGenerator(queries, (q) =>
-                queryAsFactory(q).initialize(e)
+                e.queryAsFactory(q).initialize(e)
             );
             return {
                 ...units.reduce(Object.assign, emptyUnit),
@@ -315,7 +303,7 @@ function* or(...queries: RouteQuery[]): Effective<RouteQuery> {
                     }
                     return false;
                 },
-            } satisfies UnitQuery;
+            } satisfies UnitQuery<T>;
         },
     };
 }
@@ -323,13 +311,13 @@ const library = {
     *_lisq_(
         xs:
             | [f: EffectiveFunction<QueryValue[], QueryValue>, xs: QueryValue[]]
-            | [q: RouteQuery, qs: RouteQuery[]]
+            | [q: Query<unknown>, qs: Query<unknown>[]]
     ) {
         const [head, ...tail] = xs;
         if (typeof head === "function") {
             return yield* head(...(tail as QueryValue[]));
         } else {
-            return yield* and(...(xs as RouteQuery[]));
+            return yield* and(...(xs as Query<unknown>[]));
         }
     },
     *["tag?"](route: Route, tagNames: readonly string[]) {
@@ -349,9 +337,6 @@ const library = {
     *getDescription(route: Route) {
         return route.description;
     },
-    *includes(...words: string[]) {
-        return includes(words);
-    },
     reachable,
     *reachableWith(...options: Parameters<typeof reachableWithRaw>) {
         return reachableWithRaw(...options);
@@ -360,77 +345,97 @@ const library = {
     ["_and_"]: and,
     or,
     ["_or_"]: or,
-    *not(query: RouteQuery): Effective<RouteQuery> {
+    *not<T>(query: Query<T>): Effective<Query<T>> {
         return {
             *initialize(e) {
-                const { predicate } = yield* queryAsFactory(query).initialize(
-                    e
-                );
+                const { predicate } = yield* e
+                    .queryAsFactory(query)
+                    .initialize(e);
                 return {
                     ...emptyUnit,
                     *predicate(r) {
                         return !(yield* predicate(r));
                     },
-                } satisfies UnitQuery;
+                } satisfies UnitQuery<T>;
             },
         };
     },
-    *withTitle(
-        getTitle: EffectiveFunction<[route: Route], string>,
-        query: RouteQuery
-    ): Effective<RouteQuery> {
+    *withTitle<T>(
+        getTitle: EffectiveFunction<[route: T], string>,
+        query: Query<T>
+    ): Effective<Query<T>> {
         return {
             initialize(e) {
                 return {
-                    ...queryAsFactory(query).initialize(e),
+                    ...e.queryAsFactory(query).initialize(e),
                     getTitle,
                 };
             },
         };
     },
-    *withNote(
-        getNote: EffectiveFunction<[route: Route], string>,
-        query: RouteQuery
-    ): Effective<RouteQuery> {
+    *withNote<T>(
+        getNote: EffectiveFunction<[route: T], string>,
+        query: Query<T>
+    ): Effective<Query<T>> {
         return {
             *initialize(e) {
                 return {
-                    ...(yield* queryAsFactory(query).initialize(e)),
+                    ...(yield* e.queryAsFactory(query).initialize(e)),
                     getNote,
                 };
             },
         };
     },
     orderBy,
-    ["_orderBy_"](query: RouteQuery, kind: OrderByKinds) {
+    ["_orderBy_"](query: Query<Route>, kind: OrderByKinds) {
         return orderBy(kind, query);
     },
-    *potentialStops(count: number | string): Effective<RouteQuery> {
+    *potentialStops(count: number | string): Effective<Query<Route>> {
         return countByGyms("potentialStops", count);
     },
-    *cell(
-        level: number,
-        options?: { location?: readonly [number, number] }
-    ): Effective<RouteQuery> {
+    *portalCountInCell14(count: number): Effective<Query<Route>> {
         return {
             *initialize(e) {
-                const location = options?.location ?? e.getUserCoordinate();
-                if (location == null) return emptyUnit;
+                const cells = yield* buildCells(e.routes);
+                const cache = new WeakMap<Cell14, number>();
+                function getCell14PortalCount(r: Route) {
+                    const cell14 = getCell14(
+                        cells,
+                        coordinateToLatLng(r.coordinates[0])
+                    );
+                    if (cell14 == null) return 0;
 
-                const cell = S2.S2Cell.FromLatLng(
-                    coordinateToLatLng(location),
-                    level
-                );
-                const cellId = cell.toString();
+                    let count = cache.get(cell14);
+                    if (count != null) return count;
+
+                    count = 0;
+                    for (const { portals } of cell14.cell17s.values()) {
+                        count += portals.length;
+                    }
+                    cache.set(cell14, count);
+                    return count;
+                }
                 return {
                     *predicate(r) {
-                        const cell = S2.S2Cell.FromLatLng(
-                            coordinateToLatLng(r.coordinates[0]),
-                            level
-                        );
-                        return cellId === cell.toString();
+                        return getCell14PortalCount(r) === count;
                     },
-                } satisfies UnitQuery;
+                };
+            },
+        };
+    },
+    *portalCountInCell17(count: number): Effective<Query<Route>> {
+        return {
+            *initialize(e) {
+                const cells = yield* buildCells(e.routes);
+                return {
+                    *predicate(r) {
+                        const cell17 = getCell17(
+                            cells,
+                            coordinateToLatLng(r.coordinates[0])
+                        );
+                        return (cell17?.portals.length ?? 0) === count;
+                    },
+                };
             },
         };
     },
@@ -467,10 +472,11 @@ function evaluateWithLibrary(expression: Expression) {
     return evaluateExpression(expression, null, getUnresolved);
 }
 
-export interface QueryEnvironment {
+export interface QueryEnvironment<out T> {
     readonly routes: readonly Route[];
     getUserCoordinate(): Coordinate | undefined;
     distance(c1: Coordinate, c2: Coordinate): number;
+    queryAsFactory(query: Query<T>): UnitQueryFactory<T>;
 }
 
 const diagnosticsCache: Diagnostic[] = [];
@@ -481,6 +487,18 @@ const parser = createParser(tokenizer, (d, start, end) =>
         range: { start, end },
     })
 );
+
+export function routeQueryAsFactory(
+    query: Query<Route>
+): UnitQueryFactory<Route> {
+    switch (typeof query) {
+        case "string":
+        case "number":
+            return includes(String(query));
+        default:
+            return query;
+    }
+}
 export function createQuery(expression: string): QueryCreateResult {
     diagnosticsCache.length = 0;
     try {
@@ -489,8 +507,8 @@ export function createQuery(expression: string): QueryCreateResult {
         return {
             *getQuery() {
                 // TODO: 静的チェックする
-                return queryAsFactory(
-                    (yield* evaluateWithLibrary(json)) as RouteQuery
+                return routeQueryAsFactory(
+                    (yield* evaluateWithLibrary(json)) as Query<Route>
                 );
             },
             diagnostics: diagnosticsCache.slice(),
