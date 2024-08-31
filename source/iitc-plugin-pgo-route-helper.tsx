@@ -5,6 +5,7 @@ import {
     addListeners,
     addStyle,
     escapeHtml,
+    loadPackageScript,
     sleepUntilNextAnimationFrame,
     waitElementLoaded,
 } from "./document-extensions";
@@ -676,7 +677,7 @@ async function asyncMain() {
                 view.listView.listItem.remove();
                 updateRoutesListElement();
                 map.removeLayer(view.coordinatesEditor.layer);
-                routeLayerGroup.removeLayer(view.coordinatesEditor.layer);
+                routeLayerGroup.removeLayers([view.coordinatesEditor.layer]);
                 queueRemoteCommandDelayed(1000, {
                     routeName: view.route.routeName,
                     routeId: deleteRouteId,
@@ -1390,6 +1391,7 @@ async function asyncMain() {
         }
 
         // 現在追加されているレイヤーが範囲外なら削除する
+        const removingLayers = [];
         for (const oldLayer of routeLayerGroup.getLayers()) {
             if (scheduler.yieldRequested()) await scheduler.yield({ signal });
 
@@ -1397,15 +1399,13 @@ async function asyncMain() {
             if (route != null) {
                 layerToRoutesRequiringAddition.delete(oldLayer);
             } else {
-                routeLayerGroup.removeLayer(oldLayer);
+                removingLayers.push(oldLayer);
             }
         }
+        routeLayerGroup.removeLayers(removingLayers);
 
         // 範囲内レイヤーのうち追加されていないものを追加する
-        for (const layer of layerToRoutesRequiringAddition.keys()) {
-            if (scheduler.yieldRequested()) await scheduler.yield({ signal });
-            routeLayerGroup.addLayer(layer);
-        }
+        routeLayerGroup.addLayers([...layerToRoutesRequiringAddition.keys()]);
     }
     const syncVisibleRoutesInMapScope =
         createAsyncCancelScope(handleAsyncError);
@@ -1415,12 +1415,27 @@ async function asyncMain() {
     }
     // routeLayerGroup.addLayer(view.layer);
 
-    const routeLayerGroup = L.layerGroup();
-    window.addLayerGroup(routeLayerGroupName, routeLayerGroup, true);
+    const routeLayerWrapperGroup = L.layerGroup();
+    window.addLayerGroup(routeLayerGroupName, routeLayerWrapperGroup, true);
 
     // Routes レイヤーが表示されるまで読み込みを中止
     progress({ type: "waiting-until-routes-layer-loading" });
-    await waitLayerAdded(map, routeLayerGroup);
+    await waitLayerAdded(map, routeLayerWrapperGroup);
+
+    await loadPackageScript(
+        "leaflet.markercluster",
+        "dist/leaflet.markercluster.min.js"
+    );
+
+    type MakerClusterGroup0_5_0 = Omit<
+        L.MarkerClusterGroup,
+        "getAllChildMarkers"
+    > &
+        L.ILayer & { getLayers(): L.ILayer[] };
+
+    const routeLayerGroup =
+        L.markerClusterGroup() as unknown as MakerClusterGroup0_5_0;
+    routeLayerWrapperGroup.addLayer(routeLayerGroup);
 
     if (state.routes === "routes-unloaded") {
         const routeMap = new Map();
