@@ -6,7 +6,7 @@
 // @downloadURL  https://github.com/wiinuk/iitc-plugin-pgo-route-helper/raw/master/iitc-plugin-pgo-route-helper.user.js
 // @updateURL    https://github.com/wiinuk/iitc-plugin-pgo-route-helper/raw/master/iitc-plugin-pgo-route-helper.user.js
 // @homepageURL  https://github.com/wiinuk/iitc-plugin-pgo-route-helper
-// @version      0.10.3
+// @version      0.10.4
 // @description  IITC plugin to assist in Pokémon GO route creation.
 // @author       Wiinuk
 // @include      https://*.ingress.com/intel*
@@ -1669,7 +1669,6 @@ function handleAwaitOrError(generator, signal) {
 }
 
 ;// CONCATENATED MODULE: ./source/cells.ts
-/* eslint-disable require-yield */
 
 
 
@@ -1725,7 +1724,8 @@ function getOrCreateCell17(cells, coordinate) {
         portals: [],
     }));
 }
-function getCell14sIncludesSpots(routes) {
+/** スポットがあるセルとその回りのセルを取得する */
+function getCell14sForSpots(routes) {
     const cell14s = new Map();
     for (const route of routes) {
         const coordinate = getSpotLatLng(route);
@@ -1733,6 +1733,12 @@ function getCell14sIncludesSpots(routes) {
             continue;
         const cell = getS2Cell(coordinate, 14);
         cell14s.set(cell.toString(), cell);
+        for (const neighborCell of cell.getNeighbors()) {
+            cell14s.set(cell.toString(), neighborCell);
+            for (const nearCell of neighborCell.getNeighbors()) {
+                cell14s.set(cell.toString(), nearCell);
+            }
+        }
     }
     return cell14s.values();
 }
@@ -1759,8 +1765,8 @@ function* buildCellsOfPortalRecords(routes, records) {
     var _a, _b;
     const signal = yield* getSignal();
     const cells = new Map();
-    // スポットが存在するセル14内の記録を取得
-    for (const s2Cell of getCell14sIncludesSpots(routes)) {
+    // スポットが存在するセル14とその回りのセル14の記録を取得
+    for (const s2Cell of getCell14sForSpots(routes)) {
         const coordinate = s2Cell.getLatLng();
         const cellRecord = yield* awaitPromise(records.getS2Cell14(coordinate.lat, coordinate.lng, {
             signal,
@@ -1788,6 +1794,24 @@ function* buildCells(routes) {
         return buildCellsOfPortalLocations(routes, cache);
     }
     return standard_extensions_error `plugin portalLocations or portalRecords not defined`;
+}
+/** 指定された領域に近いセルを返す */
+function getNearCellsForBounds(bounds, level) {
+    const result = [];
+    const seenCellIds = new Set();
+    const remainingCells = [getS2Cell(bounds.getCenter(), level)];
+    for (let cell; (cell = remainingCells.pop());) {
+        const id = cell.toString();
+        if (seenCellIds.has(id))
+            continue;
+        seenCellIds.add(id);
+        const corners = cell.getCornerLatLngs();
+        if (!bounds.intersects(L.latLngBounds(corners)))
+            continue;
+        result.push(cell);
+        remainingCells.push(...cell.getNeighbors());
+    }
+    return result;
 }
 
 ;// CONCATENATED MODULE: ./source/query/gyms.ts
@@ -1859,25 +1883,25 @@ function getCell14Gyms({ cell17s, fullFetchDate }) {
     const isNotLoaded = fullFetchDate === "no-fetched";
     const obsoleteDate = typeof fullFetchDate === "number" &&
         fullFetchDate + daysToMilliseconds(7) < Date.now()
-        ? new Date(fullFetchDate).toLocaleDateString()
+        ? fullFetchDate
         : undefined;
-    function stateSymbolOr(value) {
-        return isNotLoaded
-            ? "?"
-            : obsoleteDate
-                ? `${value}@${obsoleteDate}`
-                : value;
+    function stateSymbolAnd(value) {
+        return {
+            value,
+            isNotLoaded,
+            obsoleteDate,
+        };
     }
     return {
-        currentPokestops: stateSymbolOr(currentPokestops),
-        expectedGyms: stateSymbolOr(expectedGyms),
-        currentGyms: stateSymbolOr(currentGyms),
-        potentialGyms: stateSymbolOr(potentialGyms),
-        potentialPokestopsForNextGym: stateSymbolOr(potentialPokestopsForNextGym),
+        currentPokestops: stateSymbolAnd(currentPokestops),
+        expectedGyms: stateSymbolAnd(expectedGyms),
+        currentGyms: stateSymbolAnd(currentGyms),
+        potentialGyms: stateSymbolAnd(potentialGyms),
+        potentialPokestopsForNextGym: stateSymbolAnd(potentialPokestopsForNextGym),
     };
 }
-function* initializeRouteStatisticsResolver(e) {
-    const cells = yield* buildCells(e.routes);
+function* initializeRouteStatisticsResolver({ routes, }) {
+    const cells = yield* buildCells(routes);
     const gymCounts = new WeakMap();
     return (r) => getCell14Statistics(cells, gymCounts, getCell14Gyms, r);
 }
@@ -1889,10 +1913,33 @@ function getGymsOrderKinds() {
         "currentGyms",
     ];
 }
+function timeToLocalISODateString(time) {
+    const date = new Date(time);
+    date.setTime(time);
+    const offset = date.getTimezoneOffset();
+    const absOffset = Math.abs(offset);
+    const offsetSign = offset > 0 ? "-" : "+";
+    const offsetHours = String(Math.floor(absOffset / 60)).padStart(2, "0");
+    const offsetMinutes = String(absOffset % 60).padStart(2, "0");
+    return (date.getFullYear() +
+        "-" +
+        String(date.getMonth() + 1).padStart(2, "0") +
+        "-" +
+        String(date.getDate()).padStart(2, "0") +
+        offsetSign +
+        offsetHours +
+        ":" +
+        offsetMinutes);
+}
+function printSourceState(source) {
+    return `${source.isNotLoaded ? "?" : ""}${source.value}${source.obsoleteDate === undefined
+        ? ""
+        : "@" + timeToLocalISODateString(source.obsoleteDate)}`;
+}
 function* orderByGyms(kind, query) {
     return {
         *initialize(e) {
-            const unit = yield* queryAsFactory(query).initialize(e);
+            const unit = yield* e.queryAsFactory(query).initialize(e);
             const resolve = yield* initializeRouteStatisticsResolver(e);
             function createGetter(scope) {
                 return (r) => scope(resolve(r), r);
@@ -1903,45 +1950,43 @@ function* orderByGyms(kind, query) {
             switch (kind) {
                 case "potentialStops":
                     getNote = createGetter(function* (s, r) {
-                        var _a;
-                        return `PS${(_a = s === null || s === void 0 ? void 0 : s.potentialPokestopsForNextGym) !== null && _a !== void 0 ? _a : Infinity},${r.note}`;
+                        return `PS${s
+                            ? printSourceState(s.potentialPokestopsForNextGym)
+                            : Infinity},${r.note}`;
                     });
                     getKey = createGetter(function* (s) {
-                        var _a;
-                        return (_a = s === null || s === void 0 ? void 0 : s.potentialPokestopsForNextGym) !== null && _a !== void 0 ? _a : Infinity;
+                        var _a, _b;
+                        return ((_b = (_a = s === null || s === void 0 ? void 0 : s.potentialPokestopsForNextGym) === null || _a === void 0 ? void 0 : _a.value) !== null && _b !== void 0 ? _b : Infinity);
                     });
                     isAscendent = true;
                     break;
                 case "potentialGyms":
                     getNote = createGetter(function* (s, r) {
-                        var _a;
-                        return `PG${(_a = s === null || s === void 0 ? void 0 : s.potentialGyms) !== null && _a !== void 0 ? _a : 0},${r.note}`;
+                        return `PG${s ? printSourceState(s.potentialGyms) : 0},${r.note}`;
                     });
                     getKey = createGetter(function* (s) {
-                        var _a;
-                        return (_a = s === null || s === void 0 ? void 0 : s.potentialGyms) !== null && _a !== void 0 ? _a : 0;
+                        var _a, _b;
+                        return (_b = (_a = s === null || s === void 0 ? void 0 : s.potentialGyms) === null || _a === void 0 ? void 0 : _a.value) !== null && _b !== void 0 ? _b : 0;
                     });
                     isAscendent = false;
                     break;
                 case "currentStops":
                     getNote = createGetter(function* (s, r) {
-                        var _a;
-                        return `S${(_a = s === null || s === void 0 ? void 0 : s.currentPokestops) !== null && _a !== void 0 ? _a : 0},${r.note}`;
+                        return `S${s ? printSourceState(s.currentPokestops) : 0},${r.note}`;
                     });
                     getKey = createGetter(function* (s) {
-                        var _a;
-                        return (_a = s === null || s === void 0 ? void 0 : s.currentPokestops) !== null && _a !== void 0 ? _a : 0;
+                        var _a, _b;
+                        return (_b = (_a = s === null || s === void 0 ? void 0 : s.currentPokestops) === null || _a === void 0 ? void 0 : _a.value) !== null && _b !== void 0 ? _b : 0;
                     });
                     isAscendent = true;
                     break;
                 case "currentGyms":
                     getNote = createGetter(function* (s, r) {
-                        var _a;
-                        return `G${(_a = s === null || s === void 0 ? void 0 : s.currentGyms) !== null && _a !== void 0 ? _a : 0},${r.note}`;
+                        return `G${s ? printSourceState(s.currentGyms) : 0},${r.note}`;
                     });
                     getKey = createGetter(function* (s) {
-                        var _a;
-                        return (_a = s === null || s === void 0 ? void 0 : s.currentGyms) !== null && _a !== void 0 ? _a : 0;
+                        var _a, _b;
+                        return (_b = (_a = s === null || s === void 0 ? void 0 : s.currentGyms) === null || _a === void 0 ? void 0 : _a.value) !== null && _b !== void 0 ? _b : 0;
                     });
                     isAscendent = false;
                     break;
@@ -1980,10 +2025,12 @@ function countByGyms(kind, searchValue) {
             return {
                 *predicate(r) {
                     var _a;
-                    const value = (_a = resolve(r)) === null || _a === void 0 ? void 0 : _a[selector];
-                    return (value === searchValue ||
-                        (typeof value === "string" &&
-                            value.startsWith(String(searchValue))));
+                    const source = (_a = resolve(r)) === null || _a === void 0 ? void 0 : _a[selector];
+                    if (source === undefined)
+                        return false;
+                    if (source.value === searchValue)
+                        return true;
+                    return printSourceState(source).startsWith(String(searchValue));
                 },
             };
         },
@@ -2386,6 +2433,7 @@ function createParser({ next, getText: getCurrentTokenText, getPosition }, repor
 
 
 
+
 function eachJsonStrings(json, action) {
     if (json === null)
         return;
@@ -2415,33 +2463,26 @@ function eachJsonStrings(json, action) {
     }
 }
 function eachRouteStrings(route, action) {
-    if (action(route.routeName) === "break") {
+    if (action(route.routeName) === "break")
         return "break";
-    }
-    if (action(route.description) === "break") {
+    if (action(route.description) === "break")
         return "break";
-    }
-    if (action(route.note) === "break") {
+    if (action(route.note) === "break")
         return "break";
-    }
     const tags = getRouteTags(route);
-    if (tags == null) {
+    if (tags == null)
         return;
-    }
     return eachJsonStrings(tags, action);
 }
 function normalize(text) {
     return text.normalize("NFKC").toLowerCase();
 }
-function includesAmbiguousTextInRoute(route, word) {
-    let success = false;
-    eachRouteStrings(route, (text) => {
-        if (normalize(text).includes(normalize(word))) {
-            success = true;
-            return "break";
-        }
-    });
-    return success;
+function eachPortalStrings({ image, title }, action) {
+    if (image != null && action(image) === "break")
+        return "break";
+    if (title != null && action(title) === "break")
+        return "break";
+    return;
 }
 /** ラインタイムの規定ロケールで比較 */
 const { compare: compareString } = new Intl.Collator();
@@ -2499,18 +2540,22 @@ const anyQuery = {
         return emptyUnit;
     },
 };
-function includes(words) {
-    const unit = Object.assign(Object.assign({}, emptyUnit), { *predicate(route) {
-            for (const word of words) {
-                if (!includesAmbiguousTextInRoute(route, word)) {
-                    return false;
-                }
-            }
-            return true;
-        } });
+function includes(word) {
     return {
         *initialize() {
-            return unit;
+            let tempHasWord = false;
+            word = normalize(word);
+            function finder(text) {
+                if (normalize(text).includes(word)) {
+                    tempHasWord = true;
+                    return "break";
+                }
+            }
+            return Object.assign(Object.assign({}, emptyUnit), { *predicate(route) {
+                    tempHasWord = false;
+                    eachRouteStrings(route, finder);
+                    return tempHasWord;
+                } });
         },
     };
 }
@@ -2530,15 +2575,70 @@ function reachableWithRaw(options) {
     };
 }
 const reachable = reachableWithRaw();
-function queryAsFactory(query) {
-    return typeof query === "string" || typeof query === "number"
-        ? includes([String(query)])
-        : query;
+function latLngToBounds(coordinates, sizeInMeters) {
+    const latAccuracy = (180 * sizeInMeters) / 40075017, lngAccuracy = latAccuracy / Math.cos((Math.PI / 180) * coordinates.lat);
+    return L.latLngBounds([coordinates.lat - latAccuracy, coordinates.lng - lngAccuracy], [coordinates.lat + latAccuracy, coordinates.lng + lngAccuracy]);
+}
+function hasNearbyPortalWith(options) {
+    return {
+        *initialize(e) {
+            var _a, _b, _c;
+            /** [m] */
+            const maxDistance = (_a = options === null || options === void 0 ? void 0 : options.distance) !== null && _a !== void 0 ? _a : 10;
+            /** [s] */
+            const fetchDuration = (_b = options === null || options === void 0 ? void 0 : options.duration) !== null && _b !== void 0 ? _b : 60 * 60 * 24 * 7; // 一週間
+            const fetchedCellsOnly = (_c = options === null || options === void 0 ? void 0 : options.fetchedCellsOnly) !== null && _c !== void 0 ? _c : false;
+            function maybeDuplicatedPortal(routeCoordinates, nearPortal) {
+                const nearPortalCoordinates = L.latLng(nearPortal.lat, nearPortal.lng);
+                if (routeCoordinates.distanceTo(nearPortalCoordinates) <=
+                    maxDistance) {
+                    return true;
+                }
+                return false;
+            }
+            const cells = yield* buildCells(e.routes);
+            return {
+                *predicate(r) {
+                    /** [ms] */
+                    const minFetchDate = Date.now() - fetchDuration * 1000;
+                    const coordinates = coordinateToLatLng(r.coordinates[0]);
+                    const bounds = latLngToBounds(coordinates, maxDistance);
+                    // 指定された領域から近いセル17を列挙
+                    for (const cell17 of getNearCellsForBounds(bounds, 17)) {
+                        const cell17Center = cell17.getLatLng();
+                        const cell17Record = getCell17(cells, cell17Center);
+                        // セル14の記録が取得されていない場合重複とする
+                        const cell14Record = getCell14(cells, cell17Center);
+                        const cell14FetchDate = cell14Record === null || cell14Record === void 0 ? void 0 : cell14Record.fullFetchDate;
+                        if (cell17Record == null) {
+                            if (!fetchedCellsOnly &&
+                                cell14FetchDate === "no-fetched") {
+                                return true;
+                            }
+                            continue;
+                        }
+                        // セル情報取得時間が古い場合重複とする
+                        if (typeof cell14FetchDate === "number" &&
+                            cell14FetchDate < minFetchDate) {
+                            return true;
+                        }
+                        // セル17に含まれるポータルと重複するかチェック
+                        for (const portal of cell17Record.portals) {
+                            if (maybeDuplicatedPortal(coordinates, portal)) {
+                                return true;
+                            }
+                        }
+                    }
+                    return false;
+                },
+            };
+        },
+    };
 }
 function* orderByKey(query, getKey, isAscendent) {
     return {
         *initialize(e) {
-            const unit = yield* queryAsFactory(query).initialize(e);
+            const unit = yield* e.queryAsFactory(query).initialize(e);
             return Object.assign(Object.assign({}, unit), { *getSorter() {
                     return {
                         getKey,
@@ -2585,7 +2685,7 @@ function* mapGenerator(array, mapping) {
 function* and(...queries) {
     return {
         *initialize(e) {
-            const units = yield* mapGenerator(queries, (q) => queryAsFactory(q).initialize(e));
+            const units = yield* mapGenerator(queries, (q) => e.queryAsFactory(q).initialize(e));
             return Object.assign(Object.assign({}, units.reduce(Object.assign, emptyUnit)), { *predicate(r) {
                     for (const u of units) {
                         if (!(yield* u.predicate(r))) {
@@ -2600,7 +2700,7 @@ function* and(...queries) {
 function* or(...queries) {
     return {
         *initialize(e) {
-            const units = yield* mapGenerator(queries, (q) => queryAsFactory(q).initialize(e));
+            const units = yield* mapGenerator(queries, (q) => e.queryAsFactory(q).initialize(e));
             return Object.assign(Object.assign({}, units.reduce(Object.assign, emptyUnit)), { *predicate(r) {
                     for (const u of units) {
                         if (yield* u.predicate(r)) {
@@ -2641,9 +2741,6 @@ const library = {
     *getDescription(route) {
         return route.description;
     },
-    *includes(...words) {
-        return includes(words);
-    },
     reachable,
     *reachableWith(...options) {
         return reachableWithRaw(...options);
@@ -2655,7 +2752,9 @@ const library = {
     *not(query) {
         return {
             *initialize(e) {
-                const { predicate } = yield* queryAsFactory(query).initialize(e);
+                const { predicate } = yield* e
+                    .queryAsFactory(query)
+                    .initialize(e);
                 return Object.assign(Object.assign({}, emptyUnit), { *predicate(r) {
                         return !(yield* predicate(r));
                     } });
@@ -2665,14 +2764,14 @@ const library = {
     *withTitle(getTitle, query) {
         return {
             initialize(e) {
-                return Object.assign(Object.assign({}, queryAsFactory(query).initialize(e)), { getTitle });
+                return Object.assign(Object.assign({}, e.queryAsFactory(query).initialize(e)), { getTitle });
             },
         };
     },
     *withNote(getNote, query) {
         return {
             *initialize(e) {
-                return Object.assign(Object.assign({}, (yield* queryAsFactory(query).initialize(e))), { getNote });
+                return Object.assign(Object.assign({}, (yield* e.queryAsFactory(query).initialize(e))), { getNote });
             },
         };
     },
@@ -2683,24 +2782,51 @@ const library = {
     *potentialStops(count) {
         return countByGyms("potentialStops", count);
     },
-    *cell(level, options) {
+    *portalCountInCell14(count) {
         return {
             *initialize(e) {
-                var _a;
-                const location = (_a = options === null || options === void 0 ? void 0 : options.location) !== null && _a !== void 0 ? _a : e.getUserCoordinate();
-                if (location == null)
-                    return emptyUnit;
-                const cell = S2.S2Cell.FromLatLng(coordinateToLatLng(location), level);
-                const cellId = cell.toString();
+                const cells = yield* buildCells(e.routes);
+                const cache = new WeakMap();
+                function getCell14PortalCount(r) {
+                    const cell14 = getCell14(cells, coordinateToLatLng(r.coordinates[0]));
+                    if (cell14 == null)
+                        return 0;
+                    let count = cache.get(cell14);
+                    if (count != null)
+                        return count;
+                    count = 0;
+                    for (const { portals } of cell14.cell17s.values()) {
+                        count += portals.length;
+                    }
+                    cache.set(cell14, count);
+                    return count;
+                }
                 return {
                     *predicate(r) {
-                        const cell = S2.S2Cell.FromLatLng(coordinateToLatLng(r.coordinates[0]), level);
-                        return cellId === cell.toString();
+                        return getCell14PortalCount(r) === count;
                     },
                 };
             },
         };
     },
+    *portalCountInCell17(count) {
+        return {
+            *initialize(e) {
+                const cells = yield* buildCells(e.routes);
+                return {
+                    *predicate(r) {
+                        var _a;
+                        const cell17 = getCell17(cells, coordinateToLatLng(r.coordinates[0]));
+                        return ((_a = cell17 === null || cell17 === void 0 ? void 0 : cell17.portals.length) !== null && _a !== void 0 ? _a : 0) === count;
+                    },
+                };
+            },
+        };
+    },
+    *portalNearbyWith(options) {
+        return hasNearbyPortalWith(options);
+    },
+    portalNearby: hasNearbyPortalWith(),
     any: anyQuery,
     *["_add_"](x, y) {
         return x + y;
@@ -2739,6 +2865,15 @@ const parser = createParser(tokenizer, (d, start, end) => diagnosticsCache.push(
     message: d,
     range: { start, end },
 }));
+function routeQueryAsFactory(query) {
+    switch (typeof query) {
+        case "string":
+        case "number":
+            return includes(String(query));
+        default:
+            return query;
+    }
+}
 function createQuery(expression) {
     diagnosticsCache.length = 0;
     try {
@@ -2747,7 +2882,7 @@ function createQuery(expression) {
         return {
             *getQuery() {
                 // TODO: 静的チェックする
-                return queryAsFactory((yield* evaluateWithLibrary(json)));
+                return routeQueryAsFactory((yield* evaluateWithLibrary(json)));
             },
             diagnostics: diagnosticsCache.slice(),
         };
@@ -3345,6 +3480,10 @@ function asyncMain() {
         const progress = (message) => {
             const { type } = message;
             switch (type) {
+                case "waiting-until-routes-layer-loading": {
+                    reportElement.innerText = `${routeLayerGroupName} レイヤーを有効にするとルート一覧が表示されます。`;
+                    break;
+                }
                 case "upload-waiting": {
                     const remainingMessage = message.queueCount <= 1
                         ? ""
@@ -3764,6 +3903,7 @@ function asyncMain() {
         const tempLatLng1 = L.latLng(0, 0);
         const tempLatLng2 = L.latLng(0, 0);
         const defaultEnvironment = {
+            queryAsFactory: routeQueryAsFactory,
             routes: [],
             distance(c1, c2) {
                 tempLatLng1.lat = c1[0];
@@ -4233,6 +4373,7 @@ function asyncMain() {
         const routeLayerGroup = L.layerGroup();
         window.addLayerGroup(routeLayerGroupName, routeLayerGroup, true);
         // Routes レイヤーが表示されるまで読み込みを中止
+        progress({ type: "waiting-until-routes-layer-loading" });
         yield waitLayerAdded(map, routeLayerGroup);
         if (state.routes === "routes-unloaded") {
             const routeMap = new Map();
