@@ -1,4 +1,6 @@
 /* eslint-disable require-yield */
+import type { CellId } from "iitc-plugin-portal-records/source/typed-s2cell";
+import type { PortalRecord } from "iitc-plugin-portal-records/source/portal-records";
 import { awaitPromise, getSignal, type Effective } from "./effective";
 import { getRouteKind, type Route } from "./route";
 import { error } from "./standard-extensions";
@@ -16,10 +18,6 @@ function getOrCreate<K, V>(
     return v;
 }
 
-type CellId<L extends number> = string & {
-    readonly privateSymbol: unique symbol;
-    readonly level: L;
-};
 type CellId17 = CellId<17>;
 type CellId14 = CellId<14>;
 

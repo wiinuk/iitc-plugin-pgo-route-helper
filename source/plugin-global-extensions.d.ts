@@ -127,7 +127,5 @@ interface WindowForContentScope {
 }
 /** portal-records */
 var portal_records_cef3ad7e_0804_420c_8c44_ef4e08dbcdc2:
-    | Promise<
-          import("../../iitc-plugin-portal-records/source/public-api").PublicApi
-      >
+    | Promise<import("iitc-plugin-portal-records/source/public-api").PublicApi>
     | undefined;
