@@ -6,7 +6,7 @@
 // @downloadURL  https://github.com/wiinuk/iitc-plugin-pgo-route-helper/raw/master/iitc-plugin-pgo-route-helper.user.js
 // @updateURL    https://github.com/wiinuk/iitc-plugin-pgo-route-helper/raw/master/iitc-plugin-pgo-route-helper.user.js
 // @homepageURL  https://github.com/wiinuk/iitc-plugin-pgo-route-helper
-// @version      0.10.4
+// @version      0.10.5
 // @description  IITC plugin to assist in Pokémon GO route creation.
 // @author       Wiinuk
 // @include      https://*.ingress.com/intel*
@@ -1734,9 +1734,9 @@ function getCell14sForSpots(routes) {
         const cell = getS2Cell(coordinate, 14);
         cell14s.set(cell.toString(), cell);
         for (const neighborCell of cell.getNeighbors()) {
-            cell14s.set(cell.toString(), neighborCell);
+            cell14s.set(neighborCell.toString(), neighborCell);
             for (const nearCell of neighborCell.getNeighbors()) {
-                cell14s.set(cell.toString(), nearCell);
+                cell14s.set(nearCell.toString(), nearCell);
             }
         }
     }
@@ -2782,7 +2782,7 @@ const library = {
     *potentialStops(count) {
         return countByGyms("potentialStops", count);
     },
-    *portalCountInCell14(count) {
+    *cell14Portals(count) {
         return {
             *initialize(e) {
                 const cells = yield* buildCells(e.routes);
@@ -2798,6 +2798,13 @@ const library = {
                     for (const { portals } of cell14.cell17s.values()) {
                         count += portals.length;
                     }
+                    if (count === 0) {
+                        switch (cell14.fullFetchDate) {
+                            case "no-fetched":
+                            case "unknown":
+                                count = NaN;
+                        }
+                    }
                     cache.set(cell14, count);
                     return count;
                 }
@@ -2809,7 +2816,7 @@ const library = {
             },
         };
     },
-    *portalCountInCell17(count) {
+    *cell17Portals(count) {
         return {
             *initialize(e) {
                 const cells = yield* buildCells(e.routes);
