@@ -490,7 +490,7 @@ const library = {
     *potentialStops(count: number | string): Effective<Query<Route>> {
         return countByGyms("potentialStops", count);
     },
-    *portalCountInCell14(count: number): Effective<Query<Route>> {
+    *cell14Portals(count: number): Effective<Query<Route>> {
         return {
             *initialize(e) {
                 const cells = yield* buildCells(e.routes);
@@ -509,6 +509,13 @@ const library = {
                     for (const { portals } of cell14.cell17s.values()) {
                         count += portals.length;
                     }
+                    if (count === 0) {
+                        switch (cell14.fullFetchDate) {
+                            case "no-fetched":
+                            case "unknown":
+                                count = NaN;
+                        }
+                    }
                     cache.set(cell14, count);
                     return count;
                 }
@@ -520,7 +527,7 @@ const library = {
             },
         };
     },
-    *portalCountInCell17(count: number): Effective<Query<Route>> {
+    *cell17Portals(count: number): Effective<Query<Route>> {
         return {
             *initialize(e) {
                 const cells = yield* buildCells(e.routes);
