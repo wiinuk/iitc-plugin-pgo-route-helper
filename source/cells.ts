@@ -1,3 +1,4 @@
+// spell-checker: ignore lngs
 /* eslint-disable require-yield */
 import type { CellId } from "iitc-plugin-portal-records/source/typed-s2cell";
 import type { PortalRecord } from "iitc-plugin-portal-records/source/portal-records";
@@ -21,14 +22,21 @@ function getOrCreate<K, V>(
 type CellId17 = CellId<17>;
 type CellId14 = CellId<14>;
 
-interface S2CellWith<L extends number> extends S2Cell {
+export interface S2CellWith<L extends number> extends S2Cell {
     readonly level: L;
+    getNeighbors(): [
+        S2CellWith<L>,
+        S2CellWith<L>,
+        S2CellWith<L>,
+        S2CellWith<L>
+    ];
     toString(): CellId<L>;
 }
+export type Cell17PortalRecord = PortalRecord | IITCPortalLocationsPluginPortal;
 type Cell17 = Readonly<{
     s2Cell: S2CellWith<17>;
     routes: Route[];
-    portals: unknown[];
+    portals: Cell17PortalRecord[];
 }>;
 export type Cell14 = {
     readonly s2Cell: S2CellWith<14>;
@@ -117,7 +125,8 @@ function getOrCreateCell17(cells: Cell14s, coordinate: S2LatLng) {
         portals: [],
     }));
 }
-function getCell14sIncludesSpots(routes: readonly Route[]) {
+/** スポットがあるセルとその回りのセルを取得する */
+function getCell14sForSpots(routes: readonly Route[]) {
     const cell14s = new Map<CellId14, S2CellWith<14>>();
     for (const route of routes) {
         const coordinate = getSpotLatLng(route);
@@ -125,6 +134,12 @@ function getCell14sIncludesSpots(routes: readonly Route[]) {
 
         const cell = getS2Cell(coordinate, 14);
         cell14s.set(cell.toString(), cell);
+        for (const neighborCell of cell.getNeighbors()) {
+            cell14s.set(cell.toString(), neighborCell);
+            for (const nearCell of neighborCell.getNeighbors()) {
+                cell14s.set(cell.toString(), nearCell);
+            }
+        }
     }
     return cell14s.values();
 }
@@ -166,8 +181,8 @@ function* buildCellsOfPortalRecords(
     const signal = yield* getSignal();
     const cells: Cell14s = new Map();
 
-    // スポットが存在するセル14内の記録を取得
-    for (const s2Cell of getCell14sIncludesSpots(routes)) {
+    // スポットが存在するセル14とその回りのセル14の記録を取得
+    for (const s2Cell of getCell14sForSpots(routes)) {
         const coordinate = s2Cell.getLatLng();
         const cellRecord = yield* awaitPromise(
             records.getS2Cell14(coordinate.lat, coordinate.lng, {
@@ -202,4 +217,25 @@ export function* buildCells(routes: readonly Route[]): Effective<Cell14s> {
         return buildCellsOfPortalLocations(routes, cache);
     }
     return error`plugin portalLocations or portalRecords not defined`;
+}
+
+/** 指定された領域に近いセルを返す */
+export function getNearCellsForBounds<TLevel extends number>(
+    bounds: L.LatLngBounds,
+    level: TLevel
+) {
+    const result: S2CellWith<TLevel>[] = [];
+    const seenCellIds = new Set<CellId<TLevel>>();
+    const remainingCells = [getS2Cell(bounds.getCenter(), level)];
+    for (let cell; (cell = remainingCells.pop()); ) {
+        const id = cell.toString();
+        if (seenCellIds.has(id)) continue;
+        seenCellIds.add(id);
+
+        const corners = cell.getCornerLatLngs();
+        if (!bounds.intersects(L.latLngBounds(corners))) continue;
+        result.push(cell);
+        remainingCells.push(...cell.getNeighbors());
+    }
+    return result;
 }

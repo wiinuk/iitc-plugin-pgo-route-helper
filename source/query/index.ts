@@ -18,7 +18,14 @@ import { countByGyms, getGymsOrderKinds, orderByGyms } from "./gyms";
 import { createParser, createTokenizer, tokenDefinitions } from "./parser";
 import type { Diagnostic } from "./service";
 import type { EffectiveFunction, Effective } from "../effective";
-import { buildCells, getCell14, getCell17, type Cell14 } from "../cells";
+import {
+    buildCells,
+    getCell14,
+    getCell17,
+    getNearCellsForBounds,
+    type Cell14,
+    type Cell17PortalRecord,
+} from "../cells";
 
 function eachJsonStrings(
     json: MutableJson,
@@ -183,6 +190,96 @@ function reachableWithRaw(options?: {
     };
 }
 const reachable = reachableWithRaw();
+
+function latLngToBounds(coordinates: L.LatLng, sizeInMeters: number) {
+    const latAccuracy = (180 * sizeInMeters) / 40075017,
+        lngAccuracy = latAccuracy / Math.cos((Math.PI / 180) * coordinates.lat);
+
+    return L.latLngBounds(
+        [coordinates.lat - latAccuracy, coordinates.lng - lngAccuracy],
+        [coordinates.lat + latAccuracy, coordinates.lng + lngAccuracy]
+    );
+}
+
+function hasNearbyPortalWith(options?: {
+    /** [m]。重複判定する最大距離。これを超えると重複としない */
+    distance?: number;
+    /** [s]。指定した期間より昔に取得したポータルは情報が不確かとして重複とする */
+    duration?: number;
+    /** 取得されていないセルを無視する */
+    fetchedCellsOnly?: boolean;
+}): Query<Route> {
+    return {
+        *initialize(e) {
+            /** [m] */
+            const maxDistance = options?.distance ?? 10;
+            /** [s] */
+            const fetchDuration = options?.duration ?? 60 * 60 * 24 * 7; // 一週間
+            const fetchedCellsOnly = options?.fetchedCellsOnly ?? false;
+
+            function maybeDuplicatedPortal(
+                routeCoordinates: L.LatLng,
+                nearPortal: Cell17PortalRecord
+            ) {
+                const nearPortalCoordinates = L.latLng(
+                    nearPortal.lat,
+                    nearPortal.lng
+                );
+                if (
+                    routeCoordinates.distanceTo(nearPortalCoordinates) <=
+                    maxDistance
+                ) {
+                    return true;
+                }
+                return false;
+            }
+            const cells = yield* buildCells(e.routes);
+            return {
+                *predicate(r) {
+                    /** [ms] */
+                    const minFetchDate = Date.now() - fetchDuration * 1000;
+                    const coordinates = coordinateToLatLng(r.coordinates[0]);
+                    const bounds = latLngToBounds(coordinates, maxDistance);
+
+                    // 指定された領域から近いセル17を列挙
+                    for (const cell17 of getNearCellsForBounds(bounds, 17)) {
+                        const cell17Center = cell17.getLatLng();
+                        const cell17Record = getCell17(cells, cell17Center);
+
+                        // セル14の記録が取得されていない場合重複とする
+                        const cell14Record = getCell14(cells, cell17Center);
+                        const cell14FetchDate = cell14Record?.fullFetchDate;
+                        if (cell17Record == null) {
+                            if (
+                                !fetchedCellsOnly &&
+                                cell14FetchDate === "no-fetched"
+                            ) {
+                                return true;
+                            }
+                            continue;
+                        }
+
+                        // セル情報取得時間が古い場合重複とする
+                        if (
+                            typeof cell14FetchDate === "number" &&
+                            cell14FetchDate < minFetchDate
+                        ) {
+                            return true;
+                        }
+
+                        // セル17に含まれるポータルと重複するかチェック
+                        for (const portal of cell17Record.portals) {
+                            if (maybeDuplicatedPortal(coordinates, portal)) {
+                                return true;
+                            }
+                        }
+                    }
+                    return false;
+                },
+            };
+        },
+    };
+}
 
 function* orderByKey(
     query: Query<Route>,
@@ -439,6 +536,10 @@ const library = {
             },
         };
     },
+    *portalNearbyWith(options?: Parameters<typeof hasNearbyPortalWith>[0]) {
+        return hasNearbyPortalWith(options);
+    },
+    portalNearby: hasNearbyPortalWith(),
     any: anyQuery,
     *["_add_"](x: number, y: number) {
         return x + y;

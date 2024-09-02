@@ -17,6 +17,6 @@ interface S2Cell {
     readonly level: number;
     getLatLng(): S2LatLng;
     getCornerLatLngs(): [S2LatLng, S2LatLng, S2LatLng, S2LatLng];
-    getNeighbors(): [S2LatLng, S2LatLng, S2LatLng, S2LatLng];
+    getNeighbors(): [S2Cell, S2Cell, S2Cell, S2Cell];
     toString(): string;
 }
