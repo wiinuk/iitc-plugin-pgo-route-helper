@@ -135,9 +135,9 @@ function getCell14sForSpots(routes: readonly Route[]) {
         const cell = getS2Cell(coordinate, 14);
         cell14s.set(cell.toString(), cell);
         for (const neighborCell of cell.getNeighbors()) {
-            cell14s.set(cell.toString(), neighborCell);
+            cell14s.set(neighborCell.toString(), neighborCell);
             for (const nearCell of neighborCell.getNeighbors()) {
-                cell14s.set(cell.toString(), nearCell);
+                cell14s.set(nearCell.toString(), nearCell);
             }
         }
     }
