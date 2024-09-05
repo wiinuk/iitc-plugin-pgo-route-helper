@@ -6,7 +6,7 @@
 // @downloadURL  https://github.com/wiinuk/iitc-plugin-pgo-route-helper/raw/master/iitc-plugin-pgo-route-helper.user.js
 // @updateURL    https://github.com/wiinuk/iitc-plugin-pgo-route-helper/raw/master/iitc-plugin-pgo-route-helper.user.js
 // @homepageURL  https://github.com/wiinuk/iitc-plugin-pgo-route-helper
-// @version      0.10.5
+// @version      0.10.6
 // @description  IITC plugin to assist in Pokémon GO route creation.
 // @author       Wiinuk
 // @include      https://*.ingress.com/intel*
@@ -1785,15 +1785,15 @@ function* buildCellsOfPortalRecords(routes, records) {
 }
 function* buildCells(routes) {
     var _a;
-    const portalRecords = portal_records_cef3ad7e_0804_420c_8c44_ef4e08dbcdc2;
-    if (portalRecords != null) {
-        return yield* buildCellsOfPortalRecords(routes, yield* awaitPromise(portalRecords));
+    if (typeof portal_records_cef3ad7e_0804_420c_8c44_ef4e08dbcdc2 !==
+        "undefined") {
+        return yield* buildCellsOfPortalRecords(routes, yield* awaitPromise(portal_records_cef3ad7e_0804_420c_8c44_ef4e08dbcdc2));
     }
     const cache = (_a = plugin.portalLocations) === null || _a === void 0 ? void 0 : _a.cache;
     if (cache != null) {
         return buildCellsOfPortalLocations(routes, cache);
     }
-    return standard_extensions_error `plugin portalLocations or portalRecords not defined`;
+    return standard_extensions_error `plugin 'portal-location.user.js' or 'iitc-plugin-portal-records.user.js' not installed`;
 }
 /** 指定された領域に近いセルを返す */
 function getNearCellsForBounds(bounds, level) {
