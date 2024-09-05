@@ -1,4 +1,4 @@
-// spell-checker: ignore lngs
+// spell-checker: ignore lngs cef3ad7e_0804_420c_8c44_ef4e08dbcdc2
 /* eslint-disable require-yield */
 import type { CellId } from "iitc-plugin-portal-records/source/typed-s2cell";
 import type { PortalRecord } from "iitc-plugin-portal-records/source/portal-records";
@@ -205,18 +205,22 @@ function* buildCellsOfPortalRecords(
     return cells;
 }
 export function* buildCells(routes: readonly Route[]): Effective<Cell14s> {
-    const portalRecords = portal_records_cef3ad7e_0804_420c_8c44_ef4e08dbcdc2;
-    if (portalRecords != null) {
+    if (
+        typeof portal_records_cef3ad7e_0804_420c_8c44_ef4e08dbcdc2 !==
+        "undefined"
+    ) {
         return yield* buildCellsOfPortalRecords(
             routes,
-            yield* awaitPromise(portalRecords)
+            yield* awaitPromise(
+                portal_records_cef3ad7e_0804_420c_8c44_ef4e08dbcdc2
+            )
         );
     }
     const cache = plugin.portalLocations?.cache;
     if (cache != null) {
         return buildCellsOfPortalLocations(routes, cache);
     }
-    return error`plugin portalLocations or portalRecords not defined`;
+    return error`plugin 'portal-location.user.js' or 'iitc-plugin-portal-records.user.js' not installed`;
 }
 
 /** 指定された領域に近いセルを返す */
