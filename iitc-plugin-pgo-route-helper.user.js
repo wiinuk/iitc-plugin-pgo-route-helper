@@ -6,7 +6,7 @@
 // @downloadURL  https://github.com/wiinuk/iitc-plugin-pgo-route-helper/raw/master/iitc-plugin-pgo-route-helper.user.js
 // @updateURL    https://github.com/wiinuk/iitc-plugin-pgo-route-helper/raw/master/iitc-plugin-pgo-route-helper.user.js
 // @homepageURL  https://github.com/wiinuk/iitc-plugin-pgo-route-helper
-// @version      0.10.6
+// @version      0.10.7
 // @description  IITC plugin to assist in Pokémon GO route creation.
 // @author       Wiinuk
 // @include      https://*.ingress.com/intel*
@@ -2579,6 +2579,35 @@ function latLngToBounds(coordinates, sizeInMeters) {
     const latAccuracy = (180 * sizeInMeters) / 40075017, lngAccuracy = latAccuracy / Math.cos((Math.PI / 180) * coordinates.lat);
     return L.latLngBounds([coordinates.lat - latAccuracy, coordinates.lng - lngAccuracy], [coordinates.lat + latAccuracy, coordinates.lng + lngAccuracy]);
 }
+function hasPortalInCell17With(options) {
+    return {
+        *initialize(e) {
+            var _a;
+            const duration = (_a = options === null || options === void 0 ? void 0 : options.duration) !== null && _a !== void 0 ? _a : 60 * 60 * 24 * 7; // 一週間
+            const includesNotFetchedCells = !(options === null || options === void 0 ? void 0 : options.fetchedCellsOnly);
+            const minFetchDate = Date.now() - duration * 1000;
+            const cells = yield* buildCells(e.routes);
+            return {
+                *predicate(r) {
+                    var _a;
+                    const coordinates = coordinateToLatLng(r.coordinates[0]);
+                    const cell17 = getCell17(cells, coordinates);
+                    // セル情報が取得されていないなら検索にヒットさせる
+                    if (cell17 == null)
+                        return includesNotFetchedCells;
+                    // セルの取得日時が古いなら検索にヒットさせる
+                    const fetchDate = (_a = getCell14(cells, coordinates)) === null || _a === void 0 ? void 0 : _a.fullFetchDate;
+                    if (typeof fetchDate === "number" &&
+                        fetchDate < minFetchDate) {
+                        return true;
+                    }
+                    // ポータルが存在するか
+                    return 0 < cell17.portals.length;
+                },
+            };
+        },
+    };
+}
 function hasNearbyPortalWith(options) {
     return {
         *initialize(e) {
@@ -2830,6 +2859,10 @@ const library = {
             },
         };
     },
+    *hasPortalInCell17With(...args) {
+        return hasPortalInCell17With(...args);
+    },
+    hasPortalInCell17: hasPortalInCell17With(),
     *portalNearbyWith(options) {
         return hasNearbyPortalWith(options);
     },
