@@ -201,14 +201,73 @@ function latLngToBounds(coordinates: L.LatLng, sizeInMeters: number) {
     );
 }
 
-function hasNearbyPortalWith(options?: {
+interface QueryWithCellRecordOptions {
+    /** [s]。指定した期間より昔に取得したポータルは情報が不確かなので検索にヒットする */
+    duration?: number;
+    /** 取得されていないセルを検索の対象外とする */
+    fetchedCellsOnly?: boolean;
+}
+
+function hasPortalInCell17With(
+    options?: QueryWithCellRecordOptions
+): Query<Route> {
+    return {
+        *initialize(e) {
+            const duration = options?.duration ?? 60 * 60 * 24 * 7; // 一週間
+            const includesNotFetchedCells = !options?.fetchedCellsOnly;
+            const minFetchDate = Date.now() - duration * 1000;
+
+            const cells = yield* buildCells(e.routes);
+            return {
+                *predicate(r) {
+                    const coordinates = coordinateToLatLng(r.coordinates[0]);
+                    const cell17 = getCell17(cells, coordinates);
+
+                    // セル情報が取得されていないなら検索にヒットさせる
+                    if (cell17 == null) return includesNotFetchedCells;
+
+                    // セルの取得日時が古いなら検索にヒットさせる
+                    const fetchDate = getCell14(
+                        cells,
+                        coordinates
+                    )?.fullFetchDate;
+                    if (
+                        typeof fetchDate === "number" &&
+                        fetchDate < minFetchDate
+                    ) {
+                        return true;
+                    }
+
+                    // ポータルが存在するか
+                    return 0 < cell17.portals.length;
+                },
+            };
+        },
+    };
+}
+// *cell17Portals(count: number): Effective<Query<Route>> {
+//     return {
+//         *initialize(e) {
+//             const cells = yield* buildCells(e.routes);
+//             return {
+//                 *predicate(r) {
+//                     const cell17 = getCell17(
+//                         cells,
+//                         coordinateToLatLng(r.coordinates[0])
+//                     );
+//                     return (cell17?.portals.length ?? 0) === count;
+//                 },
+//             };
+//         },
+//     };
+// },
+// includesPortalsInCell17,
+
+interface HasNearbyPortalOptions extends QueryWithCellRecordOptions {
     /** [m]。重複判定する最大距離。これを超えると重複としない */
     distance?: number;
-    /** [s]。指定した期間より昔に取得したポータルは情報が不確かとして重複とする */
-    duration?: number;
-    /** 取得されていないセルを無視する */
-    fetchedCellsOnly?: boolean;
-}): Query<Route> {
+}
+function hasNearbyPortalWith(options?: HasNearbyPortalOptions): Query<Route> {
     return {
         *initialize(e) {
             /** [m] */
@@ -543,6 +602,12 @@ const library = {
             },
         };
     },
+    *hasPortalInCell17With(
+        ...args: Parameters<typeof hasPortalInCell17With>
+    ): Effective<Query<Route>> {
+        return hasPortalInCell17With(...args);
+    },
+    hasPortalInCell17: hasPortalInCell17With(),
     *portalNearbyWith(options?: Parameters<typeof hasNearbyPortalWith>[0]) {
         return hasNearbyPortalWith(options);
     },
