@@ -1216,14 +1216,15 @@ async function asyncMain() {
 
     $(selectedRouteButtonContainer).buttonset();
 
-    const editor = createDialog(editorElement, { title: "Routes" });
-    editor.setForegroundColor("#FFCE00");
-    editor.setBackgroundColor("rgba(8, 48, 78, 0.9)");
+    const editor = $(editorElement).dialog({
+        autoOpen: false,
+        title: "ルート",
+    });
 
     document.querySelector("#toolbox")?.append(
         addListeners(<a>Route Helper</a>, {
             click() {
-                editor.show();
+                editor.dialog("open");
                 return false;
             },
         })
