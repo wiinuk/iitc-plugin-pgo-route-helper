@@ -1202,15 +1202,14 @@ async function asyncMain() {
 
     $(selectedRouteButtonContainer).buttonset();
 
-    const editor = $(editorElement).dialog({
-        autoOpen: false,
-        title: "ルート",
-    });
+    const editor = createDialog(editorElement, { title: "Routes" });
+editor.setForegroundColor("#FFCE00");
+    editor.setBackgroundColor("rgba(8, 48, 78, 0.9)");
 
     document.querySelector("#toolbox")?.append(
         addListeners(<a>Route Helper</a>, {
             click() {
-                editor.dialog("open");
+                editor.show();
                 return false;
             },
         })
