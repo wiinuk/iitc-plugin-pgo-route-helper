@@ -6,7 +6,7 @@
 // @downloadURL  https://github.com/wiinuk/iitc-plugin-pgo-route-helper/raw/master/iitc-plugin-pgo-route-helper.user.js
 // @updateURL    https://github.com/wiinuk/iitc-plugin-pgo-route-helper/raw/master/iitc-plugin-pgo-route-helper.user.js
 // @homepageURL  https://github.com/wiinuk/iitc-plugin-pgo-route-helper
-// @version      0.10.8
+// @version      0.11.0
 // @description  IITC plugin to assist in Pokémon GO route creation.
 // @author       Wiinuk
 // @include      https://*.ingress.com/intel*
@@ -3522,6 +3522,95 @@ function createDialog(innerElement, options) {
     };
 }
 
+;// CONCATENATED MODULE: ./images/pin.svg
+const pin_namespaceObject = "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 100 100\">\r\n  <path d=\"M50 5\r\n           A20 20 0 0 1 70 25\r\n           C70 40 50 70 50 70\r\n           C50 70 30 40 30 25\r\n           A20 20 0 0 1 50 5Z\"\r\n        fill=\"#FF4444\"\r\n        stroke=\"#D40000\"\r\n        stroke-width=\"2\"/>\r\n  <circle cx=\"50\" cy=\"25\" r=\"8\"\r\n          fill=\"#FFFFFF\"/>\r\n</svg>\r\n";
+;// CONCATENATED MODULE: ./source/search-routes.ts
+var search_routes_awaiter = (undefined && undefined.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+
+
+
+
+
+function truncateText(text, maxLength, ellipsis) {
+    return maxLength < text.length ? text.slice(0, maxLength) + ellipsis : text;
+}
+function createSearchEventHandler(options) {
+    const { progress, defaultEnvironment, getCurrentRoutes, onSelected } = options;
+    function protectedCall(action, signal) {
+        return search_routes_awaiter(this, void 0, void 0, function* () {
+            try {
+                return yield handleAwaitOrError(action(), signal);
+            }
+            catch (error) {
+                progress({ type: "query-evaluation-error", error });
+                return null;
+            }
+        });
+    }
+    const emptyUnitQuery = {
+        // eslint-disable-next-line require-yield
+        *predicate() {
+            return false;
+        },
+    };
+    const emptyQuery = {
+        // eslint-disable-next-line require-yield
+        *initialize() {
+            return emptyUnitQuery;
+        },
+    };
+    let pinIconCache;
+    function handleQuery(query, signal) {
+        var _a, _b, _c;
+        return search_routes_awaiter(this, void 0, void 0, function* () {
+            const { getQuery, diagnostics } = createQuery(query.term);
+            progress({
+                type: "search-query-errors-occurred",
+                diagnostics,
+            });
+            const queryFactory = (_a = (yield protectedCall(getQuery, signal))) !== null && _a !== void 0 ? _a : emptyQuery;
+            const routes = [...getCurrentRoutes()];
+            const queryEnvironment = Object.assign(Object.assign({}, defaultEnvironment), { routes });
+            const unitQuery = (_b = (yield protectedCall(() => queryFactory.initialize(queryEnvironment), signal))) !== null && _b !== void 0 ? _b : emptyUnitQuery;
+            const { getNote, predicate, getSorter, getTitle } = unitQuery;
+            for (const route of routes) {
+                if (getRouteKind(route) !== "spot")
+                    continue;
+                const hit = yield protectedCall(() => predicate(route), signal);
+                if (!hit)
+                    continue;
+                const title = (_c = (getTitle &&
+                    (yield protectedCall(() => getTitle(route), signal)))) !== null && _c !== void 0 ? _c : route.routeName;
+                const note = getNote
+                    ? yield protectedCall(() => getNote(route), signal)
+                    : null;
+                const position = coordinateToLatLng(route.coordinates[0]);
+                const description = truncateText(`${note == null ? "" : note + " "}${route.description}`, 40, "…");
+                const icon = (pinIconCache !== null && pinIconCache !== void 0 ? pinIconCache : (pinIconCache = `data:image/svg+xml;base64,` + btoa(pin_namespaceObject)));
+                query.addResult({
+                    title,
+                    position,
+                    description,
+                    icon,
+                    onSelected(_result, _clickEvent) {
+                        onSelected(route.routeId);
+                    },
+                });
+            }
+        });
+    }
+    const cancelScope = createAsyncCancelScope(options.handleAsyncError);
+    return (query) => cancelScope((signal) => search_routes_awaiter(this, void 0, void 0, function* () { return handleQuery(query, signal); }));
+}
+
 ;// CONCATENATED MODULE: ./source/iitc-plugin-pgo-route-helper.tsx
 var iitc_plugin_pgo_route_helper_awaiter = (undefined && undefined.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
@@ -3535,6 +3624,7 @@ var iitc_plugin_pgo_route_helper_awaiter = (undefined && undefined.__awaiter) ||
 
 /* eslint-disable require-yield */
 // spell-checker: ignore layeradd drivetunnel latlngschanged lngs latlng buttonset moveend zoomend
+
 
 
 
@@ -3734,6 +3824,14 @@ function asyncMain() {
                 }
                 case "user-location-fetched":
                     break;
+                case "search-query-errors-occurred": {
+                    const { diagnostics } = message;
+                    const [diagnostic, ...tail] = diagnostics;
+                    if (!diagnostic)
+                        break;
+                    reportElement.innerText = `クエリ構文エラー: (${diagnostic.range.start}, ${diagnostic.range.end}): ${diagnostic.message} と 他${tail.length}件のエラー`;
+                    break;
+                }
                 default:
                     throw new Error(`Unknown message type ${type}`);
             }
@@ -4600,6 +4698,21 @@ function asyncMain() {
             updateVisibleRoutesInMap();
             map.on("moveend", updateVisibleRoutesInMap);
             map.on("zoomend", updateVisibleRoutesInMap);
+            addHook("search", createSearchEventHandler({
+                defaultEnvironment,
+                *getCurrentRoutes() {
+                    if (state.routes === "routes-unloaded")
+                        return;
+                    for (const { route } of state.routes.values())
+                        yield route;
+                },
+                progress,
+                handleAsyncError,
+                onSelected(routeId) {
+                    state.selectedRouteId = routeId;
+                    onMoveToSelectedElement(true);
+                },
+            }));
         }
     });
 }
