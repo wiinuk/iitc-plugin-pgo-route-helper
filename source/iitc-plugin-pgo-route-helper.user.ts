@@ -18,6 +18,7 @@
 // @match        https://*.ingress.com/mission/*
 // @match        http://*.ingress.com/mission/*
 // @icon         https://www.google.com/s2/favicons?domain=iitc.me
+// @require      https://raw.githubusercontent.com/hunterjm/s2-geometry.js/master/src/s2geometry.js
 // @grant        GM_info
 // ==/UserScript==
 

@@ -129,3 +129,20 @@ interface WindowForContentScope {
 var portal_records_cef3ad7e_0804_420c_8c44_ef4e08dbcdc2:
     | Promise<import("iitc-plugin-portal-records/source/public-api").PublicApi>
     | undefined;
+
+/** portal-names-ex */
+var portal_names_ex_7813e090_1fdc_4e32_b89a_ce40fe28d009:
+    | {
+          addCustomLabel(
+              lat: number,
+              lng: number,
+              label: string,
+              options?: {
+                  color?: string;
+                  priority?: number;
+                  onClick?(target: ExternalLabelSource): void;
+              }
+          ): string;
+          removeCustomLabel(guid: string): void;
+      }
+    | undefined;
