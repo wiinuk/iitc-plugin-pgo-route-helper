@@ -57,6 +57,10 @@ import { getTokenCategory, mapTokenDefinitions } from "./query/service";
 import { createVirtualList } from "./virtual-list";
 import { handleAwaitOrError, type EffectiveFunction } from "./effective";
 import { createDialog } from "./dialog";
+import {
+    createSearchEventHandler,
+    type SearchHandlerProgress,
+} from "./search-routes";
 
 function reportError(error: unknown) {
     console.error(error);
@@ -243,6 +247,7 @@ async function asyncMain() {
 
     const progress = (
         message:
+            | SearchHandlerProgress
             | { type: "waiting-until-routes-layer-loading" }
             | {
                   type: "upload-waiting";
@@ -356,6 +361,14 @@ async function asyncMain() {
             }
             case "user-location-fetched":
                 break;
+            case "search-query-errors-occurred": {
+                const { diagnostics } = message;
+                const [diagnostic, ...tail] = diagnostics;
+                if (!diagnostic) break;
+
+                reportElement.innerText = `クエリ構文エラー: (${diagnostic.range.start}, ${diagnostic.range.end}): ${diagnostic.message} と 他${tail.length}件のエラー`;
+                break;
+            }
             default:
                 throw new Error(`Unknown message type ${type satisfies never}`);
         }
@@ -1469,5 +1482,21 @@ async function asyncMain() {
         updateVisibleRoutesInMap();
         map.on("moveend", updateVisibleRoutesInMap);
         map.on("zoomend", updateVisibleRoutesInMap);
+        addHook(
+            "search",
+            createSearchEventHandler({
+                defaultEnvironment,
+                *getCurrentRoutes() {
+                    if (state.routes === "routes-unloaded") return;
+                    for (const { route } of state.routes.values()) yield route;
+                },
+                progress,
+                handleAsyncError,
+                onSelected(routeId) {
+                    state.selectedRouteId = routeId;
+                    onMoveToSelectedElement(true);
+                },
+            })
+        );
     }
 }

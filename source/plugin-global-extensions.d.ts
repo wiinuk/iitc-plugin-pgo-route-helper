@@ -36,13 +36,31 @@ function addLayerGroup<Layer extends L.ILayer>(
 interface IITCPlugin extends Record<string, unknown> {
     (): void;
 }
-interface IITCSearchResult {
-    description?: string;
-    icon?: string;
-    title?: string;
-    layer?: L.ILayer;
-    bounds?: L.LatLngBounds;
+
+interface IITCWithPosition {
+    position: L.LatLng;
+    bounds?: undefined;
 }
+interface IITCWithBounds {
+    position?: undefined;
+    bounds: L.LatLngBounds;
+}
+interface IITCAnySearchResult {
+    title: string;
+
+    position?: L.LatLng;
+    bounds?: L.LatLngBounds;
+
+    description?: string;
+    layer?: L.ILayer | null;
+    icon?: string;
+
+    onSelected?(result: IITCSearchResult, event: Event): boolean | void;
+    onRemove?(result: IITCSearchResult): void;
+}
+type IITCSearchResult = IITCAnySearchResult &
+    (IITCWithPosition | IITCWithBounds);
+
 interface IITCSearchQuery {
     readonly term: string;
     addResult(result: IITCSearchResult): unknown;
