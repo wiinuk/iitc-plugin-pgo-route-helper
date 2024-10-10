@@ -56,6 +56,7 @@ import { tokenDefinitions } from "./query/parser";
 import { getTokenCategory, mapTokenDefinitions } from "./query/service";
 import { createVirtualList } from "./virtual-list";
 import { handleAwaitOrError, type EffectiveFunction } from "./effective";
+import { createDialog } from "./dialog";
 
 function reportError(error: unknown) {
     console.error(error);
@@ -1203,7 +1204,7 @@ async function asyncMain() {
     $(selectedRouteButtonContainer).buttonset();
 
     const editor = createDialog(editorElement, { title: "Routes" });
-editor.setForegroundColor("#FFCE00");
+    editor.setForegroundColor("#FFCE00");
     editor.setBackgroundColor("rgba(8, 48, 78, 0.9)");
 
     document.querySelector("#toolbox")?.append(
