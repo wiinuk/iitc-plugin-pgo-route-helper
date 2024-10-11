@@ -68,10 +68,7 @@ input.editable-text {
 .properties-editor {
     display: flex;
     flex-direction: column;
-    resize: both;
-    overflow: auto;
-    max-width: 100%;
-    max-height: 100vh;
+    height: 100%;
 }
 
 .properties-editor textarea,
