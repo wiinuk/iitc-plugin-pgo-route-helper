@@ -1,9 +1,12 @@
 .dialog {
+    --initial-height: min(300px, 50%);
+    --initial-width: min(400px, 80%);
+
     position: fixed;
-    top: var(--drag-top, calc(100% - 300px));
-    left: var(--drag-left, calc(100% - 400px));
-    height: 300px;
-    width: 400px;
+    top: var(--drag-top, calc(100% - var(--initial-height)));
+    left: var(--drag-left, calc(100% - var(--initial-width)));
+    height: var(--initial-height);
+    width: var(--initial-width);
 
     --foreground-color: var(--external-foreground-color, darkgray);
     --background-color: var(--external-background-color, aliceblue);
