@@ -68,7 +68,7 @@
     background: none;
     border: none;
     cursor: pointer;
-    margin-left: 5px;
+    padding: 0 12px;
 }
 .titlebar-button::before {
     background-color: var(--background-color);
