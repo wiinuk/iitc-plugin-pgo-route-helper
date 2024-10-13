@@ -43,6 +43,7 @@
     align-items: center;
     align-content: center;
     user-select: none;
+    touch-action: none;
 
     padding: 0.3em;
 }
