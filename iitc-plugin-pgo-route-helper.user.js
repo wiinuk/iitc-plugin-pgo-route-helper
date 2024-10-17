@@ -6,7 +6,7 @@
 // @downloadURL  https://github.com/wiinuk/iitc-plugin-pgo-route-helper/raw/master/iitc-plugin-pgo-route-helper.user.js
 // @updateURL    https://github.com/wiinuk/iitc-plugin-pgo-route-helper/raw/master/iitc-plugin-pgo-route-helper.user.js
 // @homepageURL  https://github.com/wiinuk/iitc-plugin-pgo-route-helper
-// @version      0.11.1
+// @version      0.11.2
 // @description  IITC plugin to assist in Pokémon GO route creation.
 // @author       Wiinuk
 // @include      https://*.ingress.com/intel*
@@ -578,7 +578,7 @@ function waitElementLoaded() {
     return new Promise((resolve) => document.addEventListener("DOMContentLoaded", () => resolve()));
 }
 let styleElement = null;
-function document_extensions_addStyle(cssOrTemplate, ...substitutions) {
+function addStyle(cssOrTemplate, ...substitutions) {
     const css = typeof cssOrTemplate === "string"
         ? cssOrTemplate
         : String.raw(cssOrTemplate, ...substitutions);
@@ -781,36 +781,36 @@ function includesIn(bounds, route) {
 }
 
 ;// CONCATENATED MODULE: ./source/styles.module.css
-const styles_module_cssText = ".import-text-input-70130d92d3fccfdbeee5f77f387fba75ebc62e18 {\r\n    position: fixed;\r\n    top: 0;\r\n    left: 0;\r\n    width: 100%;\r\n    height: 100%;\r\n    z-index: 10000;\r\n\r\n    display: flex;\r\n    justify-content: center;\r\n    align-items: center;\r\n}\r\n\r\n.hidden-4bd5c99c50e4ce5f02c2f0c79bb12e9efe7e4674 {\r\n    display: none;\r\n}\r\n.ellipsis-text-d531c9ad409c516788785d1228941a1a0d5454c3 {\r\n    white-space: nowrap;\r\n    overflow: hidden;\r\n    text-overflow: ellipsis;\r\n}\r\n.ellipsis-text-d531c9ad409c516788785d1228941a1a0d5454c3 br {\r\n    display: none;\r\n}\r\n\r\ninput.editable-text-137db7cf798b0228bf870ff413eb6c58dd91cfb3 {\r\n    border: none;\r\n    background: none;\r\n    font-size: 16px;\r\n    color: black;\r\n}\r\n\r\n.spot-label-f6d34bab95a2e8a79edba5dc6bfcdada5996acf2 {\r\n    color: #FFFFBB;\r\n    font-size: 11px;\r\n    line-height: 12px;\r\n    text-align: center;\r\n    padding: 2px;\r\n    overflow: hidden;\r\n    white-space: nowrap;\r\n    text-overflow: ellipsis;\r\n    text-shadow: 1px 1px #000, 1px -1px #000, -1px 1px #000, -1px -1px #000, 0 0 5px #000;\r\n    pointer-events: none;\r\n}\r\n.spot-handle-bcd6b669f77bacdc85e8348216269b280b7d187f {\r\n    --background-hue-3c7691fa995b58814688a58853d62f84aac29b67: 152deg;\r\n    --background-opacity-884f1ac7c48e5f65d05c693e2d46918bf22b11a0: 40%;\r\n    --border-width-c05a863546ec4280c83a465a7334e61ab9cfb241: 2px;\r\n    --border-saturation-a0ebda5363e97610d6eb91997360f62ee2956bd3: 0%;\r\n    --border-opacity-ee55d27012064766481b7f2d6601c894de839a93: 80%;\r\n\r\n    transition: all 0.5s, transform 0s;\r\n    box-sizing: border-box;\r\n    background-color: hsla(var(--background-hue-3c7691fa995b58814688a58853d62f84aac29b67), 84%, 56%, var(--background-opacity-884f1ac7c48e5f65d05c693e2d46918bf22b11a0));\r\n    border: solid var(--border-width-c05a863546ec4280c83a465a7334e61ab9cfb241) hsla(56, var(--border-saturation-a0ebda5363e97610d6eb91997360f62ee2956bd3), 39%, var(--border-opacity-ee55d27012064766481b7f2d6601c894de839a93));\r\n    border-radius: 100%;\r\n}\r\n.spot-handle-bcd6b669f77bacdc85e8348216269b280b7d187f.draggable-1d55610102e2db88aa80bc457312f64ae587a42f {\r\n    --background-opacity-884f1ac7c48e5f65d05c693e2d46918bf22b11a0: 100%;\r\n    --border-opacity-ee55d27012064766481b7f2d6601c894de839a93: 100%;\r\n    border-radius: 0;\r\n}\r\n.spot-handle-bcd6b669f77bacdc85e8348216269b280b7d187f.highlighted-40ec77f4c2a44b61893c27db949655bc1d72549b {\r\n    --border-width-c05a863546ec4280c83a465a7334e61ab9cfb241: 4px;\r\n    --border-saturation-a0ebda5363e97610d6eb91997360f62ee2956bd3: 100%;\r\n}\r\n\r\n.properties-editor-267376dedb604ef81067616e1cd6803b6f2ef818 {\r\n    display: flex;\r\n    flex-direction: column;\r\n    resize: both;\r\n    overflow: auto;\r\n    max-width: 100%;\r\n    max-height: 100vh;\r\n}\r\n\r\n.properties-editor-267376dedb604ef81067616e1cd6803b6f2ef818 textarea,\r\n.properties-editor-267376dedb604ef81067616e1cd6803b6f2ef818 input {\r\n    box-sizing: border-box;\r\n    width: 100%;\r\n    resize: vertical;\r\n}\r\n.properties-editor-267376dedb604ef81067616e1cd6803b6f2ef818 input.title-7836ba96823213ceea208e0c8ed9124a4d4c50d5 {\r\n    width: auto;\r\n}\r\n\r\n.properties-editor-267376dedb604ef81067616e1cd6803b6f2ef818 textarea.invalid-8f891b28065659ace6fb34f6c2cc1d607487a560 {\r\n    border: solid 1px red;\r\n    background-color: lightgoldenrodyellow;\r\n}\r\n\r\n.route-list-f7c80b2c07bfae39be018ce114030e10c7186b95 .selecting-6953219c629b91e84e8c0319c9f76a530d4151ec {\r\n    background: #FECA40;\r\n}\r\n\r\n.route-list-f7c80b2c07bfae39be018ce114030e10c7186b95 .selected-f73c5c56dfde15e665fb5db3d94a09c635040028 {\r\n    background: #F39814;\r\n    color: white;\r\n}\r\n\r\n.route-list-f7c80b2c07bfae39be018ce114030e10c7186b95 {\r\n    flex-grow: 1;\r\n    overflow: hidden;\r\n\r\n    list-style-type: none;\r\n    margin: 0;\r\n    padding: 0;\r\n}\r\n\r\n.route-list-f7c80b2c07bfae39be018ce114030e10c7186b95 .route-list-item-db189da3e86e074b3acb5034327b25307e65b7b2 {\r\n    margin: var(--route-list-item-margin-bf55bf51792d3d7b683c6c71f29b8d338fccb60c);\r\n    padding: var(--route-list-item-padding-183003cff0666ca8e5710faa88ee55885da070c9);\r\n    cursor: pointer;\r\n    user-select: none;\r\n}\r\n.route-list-f7c80b2c07bfae39be018ce114030e10c7186b95 .note-4f8b928d307d8d69e0e73d9bcd0a3ccef8922f2f {\r\n    font-size: 75%;\r\n    padding-left: 0.5em;\r\n    color: #ffffffab;\r\n}\r\n\r\n.auto-complete-list-42b0fdbd5bd2371368087bb7d8f6dab69264b432 {\r\n    position: absolute;\r\n    background-color: #f9f9f9;\r\n    min-width: 160px;\r\n    box-shadow: 0px 8px 16px 0px rgba(0, 0, 0, 0.2);\r\n    padding: 12px 16px;\r\n    z-index: 1;\r\n}\r\n\r\n.auto-complete-list-42b0fdbd5bd2371368087bb7d8f6dab69264b432 .auto-complete-list-item-0bde18971f498462cf70d6fea791d14be306d2a6 {\r\n    color: black;\r\n    padding: 12px 16px;\r\n    text-decoration: none;\r\n    display: block;\r\n}\r\n\r\n.auto-complete-list-42b0fdbd5bd2371368087bb7d8f6dab69264b432 .auto-complete-list-item-0bde18971f498462cf70d6fea791d14be306d2a6:hover {\r\n    background-color: #ddd;\r\n}\r\n\r\n\r\n/* アコーディオン */\r\n/* マーカー */\r\n.accordion-3cd6e47cd0ddf2f163e600d44a9c458f027d9c9c>summary::-webkit-details-marker {\r\n    display: none;\r\n}\r\n\r\n.accordion-3cd6e47cd0ddf2f163e600d44a9c458f027d9c9c>summary::before {\r\n    content: \"\";\r\n    position: absolute;\r\n    width: 6px;\r\n    height: 6px;\r\n    border-top: 2px solid #fff;\r\n    border-right: 2px solid #fff;\r\n\r\n    transform: rotate(225deg);\r\n    top: calc(50% - 3px);\r\n    right: 1em;\r\n}\r\n\r\n/* 閉じているとき */\r\n.accordion-3cd6e47cd0ddf2f163e600d44a9c458f027d9c9c>summary {\r\n    cursor: grab;\r\n    display: block;\r\n    height: auto;\r\n    padding: 3px;\r\n    width: auto;\r\n    height: auto;\r\n\r\n    background: #019bc656;\r\n    border: solid 1px #00000000\r\n}\r\n\r\n.accordion-3cd6e47cd0ddf2f163e600d44a9c458f027d9c9c>* {\r\n    backface-visibility: hidden;\r\n    transform: translateZ(0);\r\n    transition: all 0.3s;\r\n}\r\n\r\n.accordion-3cd6e47cd0ddf2f163e600d44a9c458f027d9c9c> :not(summary) {\r\n    margin-bottom: 6px;\r\n    padding: 0 3px;\r\n    border: solid 1px #00000000;\r\n}\r\n\r\n/* 開いたとき */\r\n.accordion-3cd6e47cd0ddf2f163e600d44a9c458f027d9c9c[open]>summary {\r\n    background: #c6880156;\r\n}\r\n\r\n.accordion-3cd6e47cd0ddf2f163e600d44a9c458f027d9c9c[open]>summary::before {\r\n    transform: rotate(135deg);\r\n}\r\n\r\n.accordion-3cd6e47cd0ddf2f163e600d44a9c458f027d9c9c[open]> :not(summary) {\r\n    padding: 3px;\r\n    transition: all 0.3s;\r\n\r\n    border: solid 1px #c6880156;\r\n}\r\n";
-const styles_module_variables = {
-    "--background-hue": "--background-hue-3c7691fa995b58814688a58853d62f84aac29b67",
-    "--background-opacity": "--background-opacity-884f1ac7c48e5f65d05c693e2d46918bf22b11a0",
-    "--border-width": "--border-width-c05a863546ec4280c83a465a7334e61ab9cfb241",
-    "--border-saturation": "--border-saturation-a0ebda5363e97610d6eb91997360f62ee2956bd3",
-    "--border-opacity": "--border-opacity-ee55d27012064766481b7f2d6601c894de839a93",
-    "--route-list-item-margin": "--route-list-item-margin-bf55bf51792d3d7b683c6c71f29b8d338fccb60c",
-    "--route-list-item-padding": "--route-list-item-padding-183003cff0666ca8e5710faa88ee55885da070c9",
+const cssText = ".import-text-input-ed6c584df855f5930917cab1f8269c9e8c1916e8 {\r\n    position: fixed;\r\n    top: 0;\r\n    left: 0;\r\n    width: 100%;\r\n    height: 100%;\r\n    z-index: 10000;\r\n\r\n    display: flex;\r\n    justify-content: center;\r\n    align-items: center;\r\n}\r\n\r\n.hidden-dcc1c54415ad7be0ab599778ed2f74a8b16cb564 {\r\n    display: none;\r\n}\r\n.ellipsis-text-b0a58bd974ef27fa4206a60a1a2cde63f82605ee {\r\n    white-space: nowrap;\r\n    overflow: hidden;\r\n    text-overflow: ellipsis;\r\n}\r\n.ellipsis-text-b0a58bd974ef27fa4206a60a1a2cde63f82605ee br {\r\n    display: none;\r\n}\r\n\r\ninput.editable-text-c6dfb1e51225459184650cb24475cdb508eaf81b {\r\n    border: none;\r\n    background: none;\r\n    font-size: 16px;\r\n    color: black;\r\n}\r\n\r\n.spot-label-707ab04af5937fd294aed16adad4e1232b42a0b1 {\r\n    color: #FFFFBB;\r\n    font-size: 11px;\r\n    line-height: 12px;\r\n    text-align: center;\r\n    padding: 2px;\r\n    overflow: hidden;\r\n    white-space: nowrap;\r\n    text-overflow: ellipsis;\r\n    text-shadow: 1px 1px #000, 1px -1px #000, -1px 1px #000, -1px -1px #000, 0 0 5px #000;\r\n    pointer-events: none;\r\n}\r\n.spot-handle-ae32e3610080b739174b76c404145c4988e0e156 {\r\n    --background-hue-585738f4482e2df39529b70e4ab358499e50ea7e: 152deg;\r\n    --background-opacity-b42870653cb49112dc4ccadaf7c4118ad1f4618d: 40%;\r\n    --border-width-b76b14b31515b8a01ffd2581976a50ff617adefb: 2px;\r\n    --border-saturation-228d53eac5682d1ac3a269287ae1cd4e642de8a0: 0%;\r\n    --border-opacity-9572af3613c18605255e803f1d1c8b2cbe433d73: 80%;\r\n\r\n    transition: all 0.5s, transform 0s;\r\n    box-sizing: border-box;\r\n    background-color: hsla(var(--background-hue-585738f4482e2df39529b70e4ab358499e50ea7e), 84%, 56%, var(--background-opacity-b42870653cb49112dc4ccadaf7c4118ad1f4618d));\r\n    border: solid var(--border-width-b76b14b31515b8a01ffd2581976a50ff617adefb) hsla(56, var(--border-saturation-228d53eac5682d1ac3a269287ae1cd4e642de8a0), 39%, var(--border-opacity-9572af3613c18605255e803f1d1c8b2cbe433d73));\r\n    border-radius: 100%;\r\n}\r\n.spot-handle-ae32e3610080b739174b76c404145c4988e0e156.draggable-948a72fb556cce5808f3f71ca30e875cd205b8d1 {\r\n    --background-opacity-b42870653cb49112dc4ccadaf7c4118ad1f4618d: 100%;\r\n    --border-opacity-9572af3613c18605255e803f1d1c8b2cbe433d73: 100%;\r\n    border-radius: 0;\r\n}\r\n.spot-handle-ae32e3610080b739174b76c404145c4988e0e156.highlighted-e6e4cfd2950557eac9d903f30826cf59843dc898 {\r\n    --border-width-b76b14b31515b8a01ffd2581976a50ff617adefb: 4px;\r\n    --border-saturation-228d53eac5682d1ac3a269287ae1cd4e642de8a0: 100%;\r\n}\r\n\r\n.properties-editor-e90cf6c617e53a9c59683c9c8150aef14895aaae {\r\n    display: flex;\r\n    flex-direction: column;\r\n    height: 100%;\r\n}\r\n\r\n.properties-editor-e90cf6c617e53a9c59683c9c8150aef14895aaae textarea,\r\n.properties-editor-e90cf6c617e53a9c59683c9c8150aef14895aaae input {\r\n    box-sizing: border-box;\r\n    width: 100%;\r\n    resize: vertical;\r\n}\r\n.properties-editor-e90cf6c617e53a9c59683c9c8150aef14895aaae input.title-f25918f001924f5c8de77d52c1aef5efc983892b {\r\n    width: auto;\r\n}\r\n\r\n.properties-editor-e90cf6c617e53a9c59683c9c8150aef14895aaae textarea.invalid-1b6f34912cbd632b0885c4e1199579ca4bdec1b2 {\r\n    border: solid 1px red;\r\n    background-color: lightgoldenrodyellow;\r\n}\r\n\r\n.route-list-08c84f1169709f8f9e3469d56006a0646670fe70 .selecting-a735b162066f932227c9d8333031f113ba1054d0 {\r\n    background: #FECA40;\r\n}\r\n\r\n.route-list-08c84f1169709f8f9e3469d56006a0646670fe70 .selected-e52f4d093c053017df9cb9a1d0228f1a0bb097af {\r\n    background: #F39814;\r\n    color: white;\r\n}\r\n\r\n.route-list-08c84f1169709f8f9e3469d56006a0646670fe70 {\r\n    flex-grow: 1;\r\n    overflow: hidden;\r\n\r\n    list-style-type: none;\r\n    margin: 0;\r\n    padding: 0;\r\n}\r\n\r\n.route-list-08c84f1169709f8f9e3469d56006a0646670fe70 .route-list-item-7fc93ef1fbbf99305d9a48d77889097d719eb7f5 {\r\n    margin: var(--route-list-item-margin-6c74dc8d2ba1fcccb386c63bf25f24196aaff2cb);\r\n    padding: var(--route-list-item-padding-9117414f70e8720298b1a81d8c3cfa11723f9876);\r\n    cursor: pointer;\r\n    user-select: none;\r\n}\r\n.route-list-08c84f1169709f8f9e3469d56006a0646670fe70 .note-7043e128c08da5952b748866eb0a335b9e894ee4 {\r\n    font-size: 75%;\r\n    padding-left: 0.5em;\r\n    color: #ffffffab;\r\n}\r\n\r\n.auto-complete-list-26d9d45c81ecc25875c663a3f4276dcdf9b3d59a {\r\n    position: absolute;\r\n    background-color: #f9f9f9;\r\n    min-width: 160px;\r\n    box-shadow: 0px 8px 16px 0px rgba(0, 0, 0, 0.2);\r\n    padding: 12px 16px;\r\n    z-index: 1;\r\n}\r\n\r\n.auto-complete-list-26d9d45c81ecc25875c663a3f4276dcdf9b3d59a .auto-complete-list-item-751a4e8106915335407a1cf81650ef47d84e4179 {\r\n    color: black;\r\n    padding: 12px 16px;\r\n    text-decoration: none;\r\n    display: block;\r\n}\r\n\r\n.auto-complete-list-26d9d45c81ecc25875c663a3f4276dcdf9b3d59a .auto-complete-list-item-751a4e8106915335407a1cf81650ef47d84e4179:hover {\r\n    background-color: #ddd;\r\n}\r\n\r\n\r\n/* アコーディオン */\r\n/* マーカー */\r\n.accordion-9d803004d1df14de9a91623042c4b41b9529eafb>summary::-webkit-details-marker {\r\n    display: none;\r\n}\r\n\r\n.accordion-9d803004d1df14de9a91623042c4b41b9529eafb>summary::before {\r\n    content: \"\";\r\n    position: absolute;\r\n    width: 6px;\r\n    height: 6px;\r\n    border-top: 2px solid #fff;\r\n    border-right: 2px solid #fff;\r\n\r\n    transform: rotate(225deg);\r\n    top: calc(50% - 3px);\r\n    right: 1em;\r\n}\r\n\r\n/* 閉じているとき */\r\n.accordion-9d803004d1df14de9a91623042c4b41b9529eafb>summary {\r\n    cursor: grab;\r\n    display: block;\r\n    height: auto;\r\n    padding: 3px;\r\n    width: auto;\r\n    height: auto;\r\n\r\n    background: #019bc656;\r\n    border: solid 1px #00000000\r\n}\r\n\r\n.accordion-9d803004d1df14de9a91623042c4b41b9529eafb>* {\r\n    backface-visibility: hidden;\r\n    transform: translateZ(0);\r\n    transition: all 0.3s;\r\n}\r\n\r\n.accordion-9d803004d1df14de9a91623042c4b41b9529eafb> :not(summary) {\r\n    margin-bottom: 6px;\r\n    padding: 0 3px;\r\n    border: solid 1px #00000000;\r\n}\r\n\r\n/* 開いたとき */\r\n.accordion-9d803004d1df14de9a91623042c4b41b9529eafb[open]>summary {\r\n    background: #c6880156;\r\n}\r\n\r\n.accordion-9d803004d1df14de9a91623042c4b41b9529eafb[open]>summary::before {\r\n    transform: rotate(135deg);\r\n}\r\n\r\n.accordion-9d803004d1df14de9a91623042c4b41b9529eafb[open]> :not(summary) {\r\n    padding: 3px;\r\n    transition: all 0.3s;\r\n\r\n    border: solid 1px #c6880156;\r\n}\r\n";
+const variables = {
+    "--background-hue": "--background-hue-585738f4482e2df39529b70e4ab358499e50ea7e",
+    "--background-opacity": "--background-opacity-b42870653cb49112dc4ccadaf7c4118ad1f4618d",
+    "--border-width": "--border-width-b76b14b31515b8a01ffd2581976a50ff617adefb",
+    "--border-saturation": "--border-saturation-228d53eac5682d1ac3a269287ae1cd4e642de8a0",
+    "--border-opacity": "--border-opacity-9572af3613c18605255e803f1d1c8b2cbe433d73",
+    "--route-list-item-margin": "--route-list-item-margin-6c74dc8d2ba1fcccb386c63bf25f24196aaff2cb",
+    "--route-list-item-padding": "--route-list-item-padding-9117414f70e8720298b1a81d8c3cfa11723f9876",
 };
 /* harmony default export */ const styles_module = ({
-    "import-text-input": "import-text-input-70130d92d3fccfdbeee5f77f387fba75ebc62e18",
-    hidden: "hidden-4bd5c99c50e4ce5f02c2f0c79bb12e9efe7e4674",
-    "ellipsis-text": "ellipsis-text-d531c9ad409c516788785d1228941a1a0d5454c3",
-    "editable-text": "editable-text-137db7cf798b0228bf870ff413eb6c58dd91cfb3",
-    "spot-label": "spot-label-f6d34bab95a2e8a79edba5dc6bfcdada5996acf2",
-    "spot-handle": "spot-handle-bcd6b669f77bacdc85e8348216269b280b7d187f",
-    draggable: "draggable-1d55610102e2db88aa80bc457312f64ae587a42f",
-    highlighted: "highlighted-40ec77f4c2a44b61893c27db949655bc1d72549b",
-    "properties-editor": "properties-editor-267376dedb604ef81067616e1cd6803b6f2ef818",
-    title: "title-7836ba96823213ceea208e0c8ed9124a4d4c50d5",
-    invalid: "invalid-8f891b28065659ace6fb34f6c2cc1d607487a560",
-    "route-list": "route-list-f7c80b2c07bfae39be018ce114030e10c7186b95",
-    selecting: "selecting-6953219c629b91e84e8c0319c9f76a530d4151ec",
-    selected: "selected-f73c5c56dfde15e665fb5db3d94a09c635040028",
-    "route-list-item": "route-list-item-db189da3e86e074b3acb5034327b25307e65b7b2",
-    note: "note-4f8b928d307d8d69e0e73d9bcd0a3ccef8922f2f",
-    "auto-complete-list": "auto-complete-list-42b0fdbd5bd2371368087bb7d8f6dab69264b432",
-    "auto-complete-list-item": "auto-complete-list-item-0bde18971f498462cf70d6fea791d14be306d2a6",
-    accordion: "accordion-3cd6e47cd0ddf2f163e600d44a9c458f027d9c9c",
+    "import-text-input": "import-text-input-ed6c584df855f5930917cab1f8269c9e8c1916e8",
+    hidden: "hidden-dcc1c54415ad7be0ab599778ed2f74a8b16cb564",
+    "ellipsis-text": "ellipsis-text-b0a58bd974ef27fa4206a60a1a2cde63f82605ee",
+    "editable-text": "editable-text-c6dfb1e51225459184650cb24475cdb508eaf81b",
+    "spot-label": "spot-label-707ab04af5937fd294aed16adad4e1232b42a0b1",
+    "spot-handle": "spot-handle-ae32e3610080b739174b76c404145c4988e0e156",
+    draggable: "draggable-948a72fb556cce5808f3f71ca30e875cd205b8d1",
+    highlighted: "highlighted-e6e4cfd2950557eac9d903f30826cf59843dc898",
+    "properties-editor": "properties-editor-e90cf6c617e53a9c59683c9c8150aef14895aaae",
+    title: "title-f25918f001924f5c8de77d52c1aef5efc983892b",
+    invalid: "invalid-1b6f34912cbd632b0885c4e1199579ca4bdec1b2",
+    "route-list": "route-list-08c84f1169709f8f9e3469d56006a0646670fe70",
+    selecting: "selecting-a735b162066f932227c9d8333031f113ba1054d0",
+    selected: "selected-e52f4d093c053017df9cb9a1d0228f1a0bb097af",
+    "route-list-item": "route-list-item-7fc93ef1fbbf99305d9a48d77889097d719eb7f5",
+    note: "note-7043e128c08da5952b748866eb0a335b9e894ee4",
+    "auto-complete-list": "auto-complete-list-26d9d45c81ecc25875c663a3f4276dcdf9b3d59a",
+    "auto-complete-list-item": "auto-complete-list-item-751a4e8106915335407a1cf81650ef47d84e4179",
+    accordion: "accordion-9d803004d1df14de9a91623042c4b41b9529eafb",
 });
 
 ;// CONCATENATED MODULE: ../gas-drivetunnel/source/schemas.ts
@@ -3325,7 +3325,7 @@ function createEmptyElements() {
 let css = virtual_list_module_cssText;
 function createVirtualList() {
     if (css != null) {
-        document_extensions_addStyle(css);
+        addStyle(css);
         css = null;
     }
     const list = jsx("ul", { class: virtual_list_module["list"] });
@@ -3372,27 +3372,29 @@ function createVirtualList() {
 }
 
 ;// CONCATENATED MODULE: ./source/dialog.module.css
-const dialog_module_cssText = ".dialog-0fab83141c032b3857ba6337125367e8aa58fc11 {\r\n    position: fixed;\r\n    top: var(--drag-top-545aa02c235a82800cf76da2b028bcf4d8880b37, calc(100% - 300px));\r\n    left: var(--drag-left-0985c7fbbe44c4c984c6e203866e21806f161c23, calc(100% - 400px));\r\n    height: 300px;\r\n    width: 400px;\r\n\r\n    --foreground-color-0195777b5d1282f9020a08bc9524346cebf4fb8e: var(--external-foreground-color-93f87c2cb3cc33055e8363b3d417606c9cde5ff7, darkgray);\r\n    --background-color-1c43d12379d097131ad6b214f1693fd4b9ad11b5: var(--external-background-color-e366d8b7f841d2bb6476fc5c735972be444b13c3, aliceblue);\r\n\r\n    color: var(--foreground-color-0195777b5d1282f9020a08bc9524346cebf4fb8e);\r\n    background: var(--background-color-1c43d12379d097131ad6b214f1693fd4b9ad11b5);\r\n    box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);\r\n    z-index: 10000;\r\n\r\n    overflow: auto;\r\n    resize: both;\r\n    display: flex;\r\n    flex-direction: column;\r\n}\r\n.dialog-0fab83141c032b3857ba6337125367e8aa58fc11.maximized-b02f3ffc933a09938e7a230643156c68afdad35f {\r\n    /* resize: both によってブラウザによって設定されたインラインスタイルを上書きするため */\r\n    width: 100% !important;\r\n    height: 100% !important;\r\n    left: 0;\r\n    top: 0;\r\n    resize: none;\r\n}\r\n.dialog-0fab83141c032b3857ba6337125367e8aa58fc11.minimized-b36394fa9bafd266caafe73155b4c68ece0270f5 {\r\n    resize: none;\r\n\r\n    /* resize: both によってブラウザによって設定されたインラインスタイルを上書きするため */\r\n    width: auto !important;\r\n    height: auto !important;\r\n}\r\n\r\n.titlebar-b0e98a52047c821dc13e056eb8d21d153b4c82bf {\r\n    display: flex;\r\n    justify-content: space-between;\r\n    align-items: center;\r\n    align-content: center;\r\n    user-select: none;\r\n\r\n    padding: 0.3em;\r\n}\r\n.titlebar-icon-3d5ebc5b0d88ff9f9941e1f33803c6a4427f6b22 {\r\n    width: 16px;\r\n    height: 16px;\r\n    margin-right: 8px;\r\n}\r\n.titlebar-title-6365aa6fc8d367b235e3aec0034ff97ef579e9e7 {\r\n    display: flex;\r\n    justify-content: center;\r\n    flex-grow: 1;\r\n\r\n    cursor: move;\r\n}\r\n.titlebar-right-controls-a84d0396f64a3663663a4f1c72a652220200006f {\r\n    display: flex;\r\n    align-items: center;\r\n}\r\n.titlebar-button-43e21808e0d8637896b6a13384b7f8fd0ad29bf0 {\r\n    color: var(--foreground-color-0195777b5d1282f9020a08bc9524346cebf4fb8e);\r\n    background: none;\r\n    border: none;\r\n    cursor: pointer;\r\n    margin-left: 5px;\r\n}\r\n.titlebar-button-43e21808e0d8637896b6a13384b7f8fd0ad29bf0::before {\r\n    background-color: var(--background-color-1c43d12379d097131ad6b214f1693fd4b9ad11b5);\r\n    color: var(--foreground-color-0195777b5d1282f9020a08bc9524346cebf4fb8e);\r\n}\r\n.maximize-toggle-button-0a922b15e3cdb9eb5760703015867a45f6acf7d5::before {\r\n    content: \"□\";\r\n}\r\n.maximized-b02f3ffc933a09938e7a230643156c68afdad35f .maximize-toggle-button-0a922b15e3cdb9eb5760703015867a45f6acf7d5::before {\r\n    content: \"❐\";\r\n}\r\n.minimize-toggle-button-e21f6acdd20cab2cf4345bc5f1b64fdadaedf0ba::before {\r\n    content: \"＿\";\r\n}\r\n.minimized-b36394fa9bafd266caafe73155b4c68ece0270f5 .minimize-toggle-button-e21f6acdd20cab2cf4345bc5f1b64fdadaedf0ba::before {\r\n    content: \"❐\";\r\n}\r\n\r\n.minimized-b36394fa9bafd266caafe73155b4c68ece0270f5 .titlebar-button-43e21808e0d8637896b6a13384b7f8fd0ad29bf0:not(.minimize-toggle-button-e21f6acdd20cab2cf4345bc5f1b64fdadaedf0ba) {\r\n    display: none;\r\n}\r\n\r\n.inner-container-83f742fabb9f5e7ccdb261796e05b07e4df7695f {\r\n    flex-grow: 1;\r\n    overflow: auto;\r\n}\r\n.minimized-b36394fa9bafd266caafe73155b4c68ece0270f5 .inner-container-83f742fabb9f5e7ccdb261796e05b07e4df7695f {\r\n    display: none;\r\n}\r\n";
+const dialog_module_cssText = ".dialog-f5a8a421c93884f3cc491257a7df2045e1400b9d {\r\n    --initial-height-d70f4aa89aeb288f7c37c554c44bfcba77460eb6: min(300px, 50%);\r\n    --initial-width-b48d6f7c854203fdb9472a5956aa4bb3c2f3c96a: min(400px, 80%);\r\n\r\n    position: fixed;\r\n    top: var(--drag-top-cfd7a9ebe3a128bd1063ee9f7d63befc76197955, calc(100% - var(--initial-height-d70f4aa89aeb288f7c37c554c44bfcba77460eb6)));\r\n    left: var(--drag-left-c4b5a320e1f3a5fcbb678b9edb8dec38c2914592, calc(100% - var(--initial-width-b48d6f7c854203fdb9472a5956aa4bb3c2f3c96a)));\r\n    height: var(--initial-height-d70f4aa89aeb288f7c37c554c44bfcba77460eb6);\r\n    width: var(--initial-width-b48d6f7c854203fdb9472a5956aa4bb3c2f3c96a);\r\n\r\n    --foreground-color-2ef02938f4d428e3f496543716eef36dddaa365a: var(--external-foreground-color-035fd489b8ef66bf7be2e541a55a578626cea3ed, darkgray);\r\n    --background-color-02474067cb7e4e72e354e521b09f398829276e15: var(--external-background-color-0a770a51b03fa7949d4c3681bfbe2b1c8c0e4944, aliceblue);\r\n\r\n    color: var(--foreground-color-2ef02938f4d428e3f496543716eef36dddaa365a);\r\n    background: var(--background-color-02474067cb7e4e72e354e521b09f398829276e15);\r\n    box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);\r\n    z-index: 10000;\r\n\r\n    overflow: auto;\r\n    resize: both;\r\n    display: flex;\r\n    flex-direction: column;\r\n}\r\n.dialog-f5a8a421c93884f3cc491257a7df2045e1400b9d.maximized-83f4bdd8131b200a9c6ffafe14eec1298ed74e55 {\r\n    /* resize: both によってブラウザによって設定されたインラインスタイルを上書きするため */\r\n    width: 100% !important;\r\n    height: 100% !important;\r\n    left: 0;\r\n    top: 0;\r\n    resize: none;\r\n}\r\n.dialog-f5a8a421c93884f3cc491257a7df2045e1400b9d.minimized-18ef04fed3604e28041591dab09c4b0f97c62db0 {\r\n    resize: none;\r\n\r\n    /* resize: both によってブラウザによって設定されたインラインスタイルを上書きするため */\r\n    width: auto !important;\r\n    height: auto !important;\r\n}\r\n\r\n.titlebar-f0e8f4f607877e2db2cd9463b3f9a1b093cca602 {\r\n    display: flex;\r\n    justify-content: space-between;\r\n    align-items: center;\r\n    align-content: center;\r\n    user-select: none;\r\n    touch-action: none;\r\n\r\n    padding: 0.3em;\r\n}\r\n.titlebar-icon-8c212486d87ad803541508fa27f1b2a64ea2021d {\r\n    width: 16px;\r\n    height: 16px;\r\n    margin-right: 8px;\r\n}\r\n.titlebar-title-f118a152a62cb315773413141a6f21d8029ce811 {\r\n    display: flex;\r\n    justify-content: center;\r\n    flex-grow: 1;\r\n\r\n    cursor: move;\r\n}\r\n.titlebar-right-controls-2f9936bbda9f3e1a2dfced6820dfc03201662486 {\r\n    display: flex;\r\n    align-items: center;\r\n}\r\n.titlebar-button-19249541dae9835bc54fa2dce7fe04f353582a11 {\r\n    color: var(--foreground-color-2ef02938f4d428e3f496543716eef36dddaa365a);\r\n    background: none;\r\n    border: none;\r\n    cursor: pointer;\r\n    padding: 0 12px;\r\n}\r\n.titlebar-button-19249541dae9835bc54fa2dce7fe04f353582a11::before {\r\n    background-color: var(--background-color-02474067cb7e4e72e354e521b09f398829276e15);\r\n    color: var(--foreground-color-2ef02938f4d428e3f496543716eef36dddaa365a);\r\n}\r\n.maximize-toggle-button-5973e77f16fcf90f39a55bbd1fa54c732bfea153::before {\r\n    content: \"□\";\r\n}\r\n.maximized-83f4bdd8131b200a9c6ffafe14eec1298ed74e55 .maximize-toggle-button-5973e77f16fcf90f39a55bbd1fa54c732bfea153::before {\r\n    content: \"❐\";\r\n}\r\n.minimize-toggle-button-c36dd0202f62c749148adfec76106bb982adc929::before {\r\n    content: \"＿\";\r\n}\r\n.minimized-18ef04fed3604e28041591dab09c4b0f97c62db0 .minimize-toggle-button-c36dd0202f62c749148adfec76106bb982adc929::before {\r\n    content: \"❐\";\r\n}\r\n\r\n.minimized-18ef04fed3604e28041591dab09c4b0f97c62db0 .titlebar-button-19249541dae9835bc54fa2dce7fe04f353582a11:not(.minimize-toggle-button-c36dd0202f62c749148adfec76106bb982adc929) {\r\n    display: none;\r\n}\r\n\r\n.inner-container-bd3c3d93bc3573faad020976a2a0fcb95c9b1644 {\r\n    flex-grow: 1;\r\n    overflow: auto;\r\n}\r\n.minimized-18ef04fed3604e28041591dab09c4b0f97c62db0 .inner-container-bd3c3d93bc3573faad020976a2a0fcb95c9b1644 {\r\n    display: none;\r\n}\r\n";
 const dialog_module_variables = {
-    "--drag-top": "--drag-top-545aa02c235a82800cf76da2b028bcf4d8880b37",
-    "--drag-left": "--drag-left-0985c7fbbe44c4c984c6e203866e21806f161c23",
-    "--foreground-color": "--foreground-color-0195777b5d1282f9020a08bc9524346cebf4fb8e",
-    "--external-foreground-color": "--external-foreground-color-93f87c2cb3cc33055e8363b3d417606c9cde5ff7",
-    "--background-color": "--background-color-1c43d12379d097131ad6b214f1693fd4b9ad11b5",
-    "--external-background-color": "--external-background-color-e366d8b7f841d2bb6476fc5c735972be444b13c3",
+    "--initial-height": "--initial-height-d70f4aa89aeb288f7c37c554c44bfcba77460eb6",
+    "--initial-width": "--initial-width-b48d6f7c854203fdb9472a5956aa4bb3c2f3c96a",
+    "--drag-top": "--drag-top-cfd7a9ebe3a128bd1063ee9f7d63befc76197955",
+    "--drag-left": "--drag-left-c4b5a320e1f3a5fcbb678b9edb8dec38c2914592",
+    "--foreground-color": "--foreground-color-2ef02938f4d428e3f496543716eef36dddaa365a",
+    "--external-foreground-color": "--external-foreground-color-035fd489b8ef66bf7be2e541a55a578626cea3ed",
+    "--background-color": "--background-color-02474067cb7e4e72e354e521b09f398829276e15",
+    "--external-background-color": "--external-background-color-0a770a51b03fa7949d4c3681bfbe2b1c8c0e4944",
 };
 /* harmony default export */ const dialog_module = ({
-    dialog: "dialog-0fab83141c032b3857ba6337125367e8aa58fc11",
-    maximized: "maximized-b02f3ffc933a09938e7a230643156c68afdad35f",
-    minimized: "minimized-b36394fa9bafd266caafe73155b4c68ece0270f5",
-    titlebar: "titlebar-b0e98a52047c821dc13e056eb8d21d153b4c82bf",
-    "titlebar-icon": "titlebar-icon-3d5ebc5b0d88ff9f9941e1f33803c6a4427f6b22",
-    "titlebar-title": "titlebar-title-6365aa6fc8d367b235e3aec0034ff97ef579e9e7",
-    "titlebar-right-controls": "titlebar-right-controls-a84d0396f64a3663663a4f1c72a652220200006f",
-    "titlebar-button": "titlebar-button-43e21808e0d8637896b6a13384b7f8fd0ad29bf0",
-    "maximize-toggle-button": "maximize-toggle-button-0a922b15e3cdb9eb5760703015867a45f6acf7d5",
-    "minimize-toggle-button": "minimize-toggle-button-e21f6acdd20cab2cf4345bc5f1b64fdadaedf0ba",
-    "inner-container": "inner-container-83f742fabb9f5e7ccdb261796e05b07e4df7695f",
+    dialog: "dialog-f5a8a421c93884f3cc491257a7df2045e1400b9d",
+    maximized: "maximized-83f4bdd8131b200a9c6ffafe14eec1298ed74e55",
+    minimized: "minimized-18ef04fed3604e28041591dab09c4b0f97c62db0",
+    titlebar: "titlebar-f0e8f4f607877e2db2cd9463b3f9a1b093cca602",
+    "titlebar-icon": "titlebar-icon-8c212486d87ad803541508fa27f1b2a64ea2021d",
+    "titlebar-title": "titlebar-title-f118a152a62cb315773413141a6f21d8029ce811",
+    "titlebar-right-controls": "titlebar-right-controls-2f9936bbda9f3e1a2dfced6820dfc03201662486",
+    "titlebar-button": "titlebar-button-19249541dae9835bc54fa2dce7fe04f353582a11",
+    "maximize-toggle-button": "maximize-toggle-button-5973e77f16fcf90f39a55bbd1fa54c732bfea153",
+    "minimize-toggle-button": "minimize-toggle-button-c36dd0202f62c749148adfec76106bb982adc929",
+    "inner-container": "inner-container-bd3c3d93bc3573faad020976a2a0fcb95c9b1644",
 });
 
 ;// CONCATENATED MODULE: ./source/dialog.tsx
@@ -3402,6 +3404,12 @@ const dialog_module_variables = {
 function makeDraggable(element, handleElement = element, options) {
     let offsetX = 0, offsetY = 0;
     function setPosition(left, top) {
+        const rect = element.getBoundingClientRect();
+        const windowWidth = window.innerWidth;
+        const windowHeight = window.innerHeight;
+        // ウインドウ内に収まるようにする
+        left = Math.max(0, Math.min(left, windowWidth - rect.width));
+        top = Math.max(0, Math.min(top, windowHeight - rect.height));
         if (options === null || options === void 0 ? void 0 : options.propertyNames) {
             const { left: leftName, top: topName } = options.propertyNames;
             element.style.setProperty(leftName, `${left}px`);
@@ -3412,83 +3420,60 @@ function makeDraggable(element, handleElement = element, options) {
             element.style.top = `${top}px`;
         }
     }
-    let onPointerMove = null;
+    const onPointerMove = (e) => {
+        setPosition(e.clientX - offsetX, e.clientY - offsetY);
+    };
     handleElement.addEventListener("pointerdown", (e) => {
-        onPointerMove = (e) => {
-            // 画面範囲外に持って行かれないようにする
-            if (e.clientX < 0 ||
-                e.clientY < 0 ||
-                window.innerWidth < e.clientX ||
-                window.innerHeight < e.clientY) {
-                return;
-            }
-            setPosition(e.clientX - offsetX, e.clientY - offsetY);
-        };
         handleElement.addEventListener("pointermove", onPointerMove);
         handleElement.setPointerCapture(e.pointerId);
         offsetX = e.clientX - element.offsetLeft;
         offsetY = e.clientY - element.offsetTop;
     });
     handleElement.addEventListener("pointerup", (e) => {
-        if (!onPointerMove)
-            return;
         handleElement.removeEventListener("pointermove", onPointerMove);
         handleElement.releasePointerCapture(e.pointerId);
-        onPointerMove = null;
     });
-    // ウインドウや要素のサイズ変更で隠れたら見える位置に移動する
-    window.addEventListener("resize", tweakBounds);
-    element.addEventListener("resize", tweakBounds);
-    function tweakBounds() {
+    // ウインドウサイズに合わせてサイズを変更する
+    function adjustSize() {
         const rect = element.getBoundingClientRect();
         const windowWidth = window.innerWidth;
         const windowHeight = window.innerHeight;
-        let newX = offsetX;
-        let newY = offsetY;
-        if (rect.left < 0) {
-            newX = 0;
+        if (rect.width > windowWidth) {
+            element.style.width = `${windowWidth}px`;
         }
-        else if (rect.right > windowWidth) {
-            newX = windowWidth - rect.width;
+        if (rect.height > windowHeight) {
+            element.style.height = `${windowHeight}px`;
         }
-        if (rect.top < 0) {
-            newY = 0;
-        }
-        else if (rect.bottom > windowHeight) {
-            newY = windowHeight - rect.height;
-        }
-        if (newX !== offsetX || newY !== offsetY) {
-            offsetX = newX;
-            offsetY = newY;
-            setPosition(offsetX, offsetY);
-        }
+        setPosition(rect.left, rect.top);
     }
+    window.addEventListener("resize", adjustSize);
+    adjustSize();
 }
 let applyCss = () => {
-    addStyle(cssText);
+    addStyle(dialog_module_cssText);
     applyCss = null;
 };
 function createDialog(innerElement, options) {
     var _a;
     applyCss === null || applyCss === void 0 ? void 0 : applyCss();
-    const minimizeToggleButton = (_jsx("button", { class: classNames["titlebar-button"] +
+    const minimizeToggleButton = (jsx("button", { class: dialog_module["titlebar-button"] +
             " " +
-            classNames["minimize-toggle-button"], title: "minimize" }));
-    const maximizeToggleButton = (_jsx("button", { class: classNames["titlebar-button"] +
+            dialog_module["minimize-toggle-button"], title: "minimize" }));
+    const maximizeToggleButton = (jsx("button", { class: dialog_module["titlebar-button"] +
             " " +
-            classNames["maximize-toggle-button"], title: "maximize" }));
-    const closeButton = (_jsx("button", { class: classNames["titlebar-button"], title: "close", children: "\u00D7" }));
-    const titleSpan = (_jsx("div", { class: classNames["titlebar-title"], children: (_a = options === null || options === void 0 ? void 0 : options.title) !== null && _a !== void 0 ? _a : "" }));
-    const titleBar = (_jsxs("div", { class: classNames["titlebar"], children: [titleSpan, _jsxs("div", { class: classNames["titlebar-right-controls"], children: [minimizeToggleButton, maximizeToggleButton, closeButton] })] }));
-    const dialogElement = (_jsxs("div", { class: classNames["dialog"], children: [titleBar, _jsx("div", { class: classNames["inner-container"], children: innerElement })] }));
+            dialog_module["maximize-toggle-button"], title: "maximize" }));
+    const closeButton = (jsx("button", { class: dialog_module["titlebar-button"], title: "close", children: "\u00D7" }));
+    const titleSpan = (jsx("div", { class: dialog_module["titlebar-title"], children: (_a = options === null || options === void 0 ? void 0 : options.title) !== null && _a !== void 0 ? _a : "" }));
+    const titleBar = (jsxs("div", { class: dialog_module["titlebar"], children: [titleSpan, jsxs("div", { class: dialog_module["titlebar-right-controls"], children: [minimizeToggleButton, maximizeToggleButton, closeButton] })] }));
+    const dialogElement = (jsxs("div", { class: dialog_module["dialog"], children: [titleBar, jsx("div", { class: dialog_module["inner-container"], children: innerElement })] }));
     titleBar.addEventListener("dblclick", toggleMaximizedState);
     minimizeToggleButton.addEventListener("click", toggleMinimizedState);
     maximizeToggleButton.addEventListener("click", toggleMaximizedState);
     closeButton.addEventListener("click", hide);
     makeDraggable(dialogElement, titleSpan, {
         propertyNames: {
-            left: variables["--drag-left"],
-            top: variables["--drag-top"],
+            left: dialog_module_variables["--drag-left"],
+            top: dialog_module_variables["--drag-top"],
         },
     });
     function show() {
@@ -3498,12 +3483,12 @@ function createDialog(innerElement, options) {
         document.body.removeChild(dialogElement);
     }
     function toggleMaximizedState() {
-        dialogElement.classList.remove(classNames["minimized"]);
-        dialogElement.classList.toggle(classNames["maximized"]);
+        dialogElement.classList.remove(dialog_module["minimized"]);
+        dialogElement.classList.toggle(dialog_module["maximized"]);
     }
     function toggleMinimizedState() {
-        dialogElement.classList.remove(classNames["maximized"]);
-        dialogElement.classList.toggle(classNames["minimized"]);
+        dialogElement.classList.remove(dialog_module["maximized"]);
+        dialogElement.classList.toggle(dialog_module["minimized"]);
     }
     return {
         show,
@@ -3514,10 +3499,10 @@ function createDialog(innerElement, options) {
             titleSpan.append(title);
         },
         setForegroundColor(cssColorText) {
-            dialogElement.style.setProperty(variables["--external-foreground-color"], cssColorText);
+            dialogElement.style.setProperty(dialog_module_variables["--external-foreground-color"], cssColorText);
         },
         setBackgroundColor(cssColorText) {
-            dialogElement.style.setProperty(variables["--external-background-color"], cssColorText);
+            dialogElement.style.setProperty(dialog_module_variables["--external-background-color"], cssColorText);
         },
     };
 }
@@ -3745,7 +3730,7 @@ function asyncMain() {
         if (!isIITCMobile) {
             L.Icon.Default.imagePath = `https://unpkg.com/leaflet@${L.version}/dist/images/`;
         }
-        document_extensions_addStyle(styles_module_cssText);
+        addStyle(cssText);
         const config = loadConfig();
         if (config.userId == null) {
             config.userId = `user${Math.floor(Math.random() * 999999) + 1}`;
@@ -4389,8 +4374,8 @@ function asyncMain() {
         const routeListItemMargin = 3;
         const routeListItemHeight = 18;
         const routeListElement = createVirtualList();
-        routeListElement.element.style.setProperty(styles_module_variables["--route-list-item-padding"], routeListItemPadding + "px");
-        routeListElement.element.style.setProperty(styles_module_variables["--route-list-item-margin"], routeListItemMargin + "px");
+        routeListElement.element.style.setProperty(variables["--route-list-item-padding"], routeListItemPadding + "px");
+        routeListElement.element.style.setProperty(variables["--route-list-item-margin"], routeListItemMargin + "px");
         routeListElement.element.classList.add(styles_module["route-list"]);
         const setQueryExpressionCancelScope = createAsyncCancelScope(handleAsyncError);
         function setQueryExpressionDelayed(delayMilliseconds, queryText) {
@@ -4455,7 +4440,7 @@ function asyncMain() {
                 setQueryExpressionDelayed(500, e.value);
             },
         });
-        document_extensions_addStyle(queryEditor.cssText);
+        addStyle(queryEditor.cssText);
         const selectedRouteButtonContainer = (jsxs("span", { children: [addRouteElement, addSpotElement, deleteSelectedRouteElement, moveToRouteElement, setAsTemplateElement] }));
         const selectedRouteEditorContainer = (jsxs("details", { open: true, class: styles_module.accordion, children: [jsx("summary", { children: titleElement }), jsxs("div", { children: [jsx("div", { children: descriptionElement }), jsx("div", { children: notesElement }), jsx("div", { children: coordinatesElement }), jsx("div", { children: lengthElement }), jsx("div", { children: addListeners(jsx("input", { class: styles_module["editable-text"], type: "text", placeholder: "\u30E6\u30FC\u30B6\u30FC\u540D", value: config.userId }), {
                                 change() {
@@ -4466,13 +4451,12 @@ function asyncMain() {
         const editorElement = (jsxs("div", { id: "pgo-route-helper-editor", class: styles_module["properties-editor"], children: [selectedRouteEditorContainer, queryEditor.element, routeListElement.element, reportElement] }));
         document.body.append(editorElement);
         $(selectedRouteButtonContainer).buttonset();
-        const editor = $(editorElement).dialog({
-            autoOpen: false,
-            title: "ルート",
-        });
+        const editor = createDialog(editorElement, { title: "Routes" });
+        editor.setForegroundColor("#FFCE00");
+        editor.setBackgroundColor("rgba(8, 48, 78, 0.9)");
         (_b = document.querySelector("#toolbox")) === null || _b === void 0 ? void 0 : _b.append(addListeners(jsx("a", { children: "Route Helper" }), {
             click() {
-                editor.dialog("open");
+                editor.show();
                 return false;
             },
         }));
