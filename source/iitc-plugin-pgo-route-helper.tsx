@@ -1,6 +1,5 @@
 /* eslint-disable require-yield */
-// spell-checker: ignore layeradd drivetunnel latlngschanged lngs latlng buttonset moveend zoomend
-import { z } from "../../gas-drivetunnel/source/json-schema";
+// spell-checker: ignore layeradd latlngschanged lngs latlng buttonset moveend zoomend
 import {
     addListeners,
     addStyle,
@@ -40,20 +39,15 @@ import * as remote from "./remote";
 import { isIITCMobile } from "./environment";
 import { createPolylineEditorPlugin } from "./polyline-editor";
 import jqueryUIPolyfillTouchEvents from "./jquery-ui-polyfill-touch-events";
-import type { LastOfArray } from "./type-level";
 import {
     anyQuery,
-    createQuery,
     type QueryEnvironment,
     type QueryKey,
     compareQueryKey,
     type UnitQueryFactory,
     routeQueryAsFactory,
 } from "./query";
-import { createQueryEditor } from "./query-editor";
 import { applyTemplate } from "./template";
-import { tokenDefinitions } from "./query/parser";
-import { getTokenCategory, mapTokenDefinitions } from "./query/service";
 import { createVirtualList } from "./virtual-list";
 import { handleAwaitOrError, type EffectiveFunction } from "./effective";
 import { createDialog } from "./dialog";
@@ -61,6 +55,8 @@ import {
     createSearchEventHandler,
     type SearchHandlerProgress,
 } from "./search-routes";
+import { createQueryLauncher, type LauncherProgress } from "./query-launcher";
+import { loadConfig, saveConfig } from "./config";
 
 function reportError(error: unknown) {
     console.error(error);
@@ -81,69 +77,9 @@ export function main() {
     handleAsyncError(asyncMain());
 }
 
-function getConfigureSchemas() {
-    const configV1Properties = {
-        version: z.literal("1"),
-        userId: z.string().optional(),
-    };
-    const configV1Schema = z.strictObject(configV1Properties);
-    const configV2Properties = {
-        ...configV1Properties,
-        version: z.literal("2"),
-        apiRoot: z.string().optional(),
-    };
-    const configV2Schema = z.strictObject(configV2Properties);
-    const configV3Properties = {
-        ...configV2Properties,
-        version: z.literal("3"),
-        routeQueries: z.array(z.string()).optional(),
-    };
-    const configV3Schema = z.strictObject(configV3Properties);
-    return [configV1Schema, configV2Schema, configV3Schema] as const;
-}
-const configSchemas = getConfigureSchemas();
-const configVAnySchema = z.union(configSchemas);
-type ConfigVAny = z.infer<typeof configVAnySchema>;
-type Config = z.infer<LastOfArray<typeof configSchemas>>;
-
 const apiRoot =
     "https://script.google.com/macros/s/AKfycbx-BeayFoyAro3uwYbuG9C12M3ODyuZ6GDwbhW3ifq76DWBAvzMskn9tc4dTuvLmohW/exec";
 
-const storageConfigKey = "pgo-route-helper-config";
-function upgradeConfig(config: ConfigVAny): Config {
-    switch (config.version) {
-        case "1":
-            return upgradeConfig({
-                ...config,
-                version: "2",
-                apiRoot: undefined,
-            });
-        case "2":
-            return upgradeConfig({
-                ...config,
-                version: "3",
-                routeQueries: undefined,
-            });
-        case "3":
-            return config;
-    }
-}
-function loadConfig(): Config {
-    const json = localStorage.getItem(storageConfigKey);
-    try {
-        if (json != null) {
-            return upgradeConfig(configVAnySchema.parse(JSON.parse(json)));
-        }
-    } catch (e) {
-        console.error(e);
-    }
-    return {
-        version: "3",
-    };
-}
-function saveConfig(config: Config) {
-    localStorage.setItem(storageConfigKey, JSON.stringify(config));
-}
 function waitLayerAdded(map: L.Map, layer: L.ILayer) {
     if (map.hasLayer(layer)) {
         return Promise.resolve();
@@ -179,6 +115,42 @@ function createScheduler() {
         },
     };
 }
+
+type MainProgressMessage =
+    | { type: "waiting-until-routes-layer-loading" }
+    | {
+          type: "upload-waiting";
+          routeName: string;
+          milliseconds: number;
+          queueCount: number;
+      }
+    | { type: "uploading"; routeName: string }
+    | { type: "uploaded"; routeName: string; queueCount: number }
+    | {
+          type: "downloading";
+      }
+    | { type: "downloaded"; routeCount: number }
+    | { type: "adding"; routeName: string; routeId: string }
+    | {
+          type: "routes-added";
+          count: number;
+          durationMilliseconds: number;
+      }
+    | {
+          type: "query-evaluation-completed";
+          allCount: number;
+          hitCount: number;
+      }
+    | { type: "query-evaluation-error"; error: unknown }
+    | {
+          type: "user-location-fetched";
+          center: Readonly<{ lat: number; lng: number }> | null;
+      };
+
+type ProgressMessage =
+    | SearchHandlerProgress
+    | LauncherProgress
+    | MainProgressMessage;
 
 async function asyncMain() {
     const window = (
@@ -234,7 +206,6 @@ async function asyncMain() {
         templateCandidateRouteId: null | string;
         routes: "routes-unloaded" | Map<string, RouteWithView>;
         routeListQuery: Readonly<{
-            queryText: string;
             query: EffectiveFunction<[], UnitQueryFactory<Route>> | undefined;
         }>;
     } = {
@@ -242,50 +213,10 @@ async function asyncMain() {
         deleteRouteId: null,
         templateCandidateRouteId: null,
         routes: "routes-unloaded",
-        routeListQuery: { queryText: "", query: undefined },
+        routeListQuery: { query: undefined },
     };
 
-    const progress = (
-        message:
-            | SearchHandlerProgress
-            | { type: "waiting-until-routes-layer-loading" }
-            | {
-                  type: "upload-waiting";
-                  routeName: string;
-                  milliseconds: number;
-                  queueCount: number;
-              }
-            | { type: "uploading"; routeName: string }
-            | { type: "uploaded"; routeName: string; queueCount: number }
-            | {
-                  type: "downloading";
-              }
-            | { type: "downloaded"; routeCount: number }
-            | { type: "adding"; routeName: string; routeId: string }
-            | {
-                  type: "routes-added";
-                  count: number;
-                  durationMilliseconds: number;
-              }
-            | {
-                  type: "query-parse-completed";
-                  hasFilter: boolean;
-              }
-            | {
-                  type: "query-evaluation-completed";
-                  allCount: number;
-                  hitCount: number;
-              }
-            | {
-                  type: "query-parse-error-occurred";
-                  messages: readonly string[];
-              }
-            | { type: "query-evaluation-error"; error: unknown }
-            | {
-                  type: "user-location-fetched";
-                  center: Readonly<{ lat: number; lng: number }> | null;
-              }
-    ) => {
+    const progress = (message: ProgressMessage) => {
         const { type } = message;
         switch (type) {
             case "waiting-until-routes-layer-loading": {
@@ -367,6 +298,14 @@ async function asyncMain() {
                 if (!diagnostic) break;
 
                 reportElement.innerText = `クエリ構文エラー: (${diagnostic.range.start}, ${diagnostic.range.end}): ${diagnostic.message} と 他${tail.length}件のエラー`;
+                break;
+            }
+            case "queries-save-started": {
+                reportElement.innerText = "クエリを保存しています。";
+                break;
+            }
+            case "queries-save-completed": {
+                reportElement.innerText = "クエリを保存しました。";
                 break;
             }
             default:
@@ -808,20 +747,6 @@ async function asyncMain() {
         state.selectedRouteId = selectedRouteIds[0] ?? null;
         updateSelectedRouteInfo();
     }
-    function saveQueryHistory(queryText: string) {
-        const maxHistoryCount = 10;
-        let history = config.routeQueries ?? [];
-        history = history.filter((q) => q.trim() !== queryText.trim());
-        history.push(queryText);
-        if (!history.includes(queryText.trim())) {
-            history.push(queryText);
-        }
-        if (maxHistoryCount < history.length) {
-            history = history.slice(-maxHistoryCount);
-        }
-        config.routeQueries = history;
-        saveConfig(config);
-    }
 
     const tempLatLng1 = L.latLng(0, 0);
     const tempLatLng2 = L.latLng(0, 0);
@@ -858,7 +783,7 @@ async function asyncMain() {
             return await handleAwaitOrError(action(), signal);
         } catch (error) {
             progress({ type: "query-evaluation-error", error });
-            queryEditor.addDiagnostic({
+            queryLauncher.addDiagnostic({
                 message: String(error),
                 range: {
                     start: 1,
@@ -874,7 +799,7 @@ async function asyncMain() {
     async function updateRouteListElementAsync(signal: AbortSignal) {
         if (state.routes === "routes-unloaded") return;
 
-        const { query, queryText } = state.routeListQuery;
+        const { query } = state.routeListQuery;
         const views = [...state.routes.values()];
         const routes = views.map((r) => r.route);
         const isQueryUndefined = query === undefined;
@@ -1004,7 +929,6 @@ async function asyncMain() {
                 allCount: views.length,
             });
         }
-        saveQueryHistory(queryText);
     }
     function updateRoutesListElement() {
         asyncUpdateRouteListElementScope(updateRouteListElementAsync);
@@ -1091,76 +1015,25 @@ async function asyncMain() {
     );
     routeListElement.element.classList.add(classNames["route-list"]);
 
-    const setQueryExpressionCancelScope =
-        createAsyncCancelScope(handleAsyncError);
-    function setQueryExpressionDelayed(
-        delayMilliseconds: number,
-        queryText: string
-    ) {
-        setQueryExpressionCancelScope(async (signal) => {
-            if (state.routeListQuery.queryText.trim() === queryText.trim())
-                return;
-
-            await sleep(delayMilliseconds, { signal });
-            if (queryText.trim() === "") {
-                state.routeListQuery = {
-                    queryText,
-                    query: undefined,
-                };
-                progress({
-                    type: "query-parse-completed",
-                    hasFilter: false,
-                });
-            } else {
-                queryEditor.clearDiagnostics();
-                const { getQuery, diagnostics } = createQuery(queryText);
-
-                for (const diagnostic of diagnostics) {
-                    queryEditor.addDiagnostic(diagnostic);
-                }
-                if (0 !== diagnostics.length) {
-                    progress({
-                        type: "query-parse-error-occurred",
-                        messages: diagnostics.map((d) => d.message),
-                    });
-                } else {
-                    progress({
-                        type: "query-parse-completed",
-                        hasFilter: true,
-                    });
-                }
-                state.routeListQuery = {
-                    queryText,
-                    query: getQuery,
-                };
-            }
+    const queryLauncher = await createQueryLauncher({
+        handleAsyncError,
+        onCurrentQueryChanged(source, query) {
+            state.routeListQuery = {
+                query: query === "simple-query" ? undefined : query,
+            };
             updateRoutesListElement();
-        });
-    }
-    const queryEditor = createQueryEditor({
-        classNames: {
-            autoCompleteList: classNames["auto-complete-list"],
-            autoCompleteListItem: classNames["auto-complete-list-item"],
         },
-        initialText: config.routeQueries?.at(-1),
-        placeholder: "🔍ルート検索",
-        tokenDefinitions: mapTokenDefinitions(
-            tokenDefinitions,
-            getTokenCategory
-        ),
-        getCompletions() {
-            return config.routeQueries?.reverse()?.map((queryText) => {
-                return {
-                    displayText: queryText,
-                    complete: () => queryText,
-                };
-            });
+        async loadSources() {
+            return config.querySources ?? { sources: [], selectedIndex: 0 };
         },
-        onValueChange(e) {
-            setQueryExpressionDelayed(500, e.value);
+        async saveSources(sources) {
+            config.querySources = sources;
+            saveConfig(config);
         },
+        progress,
+        signal: new AbortController().signal,
     });
-    addStyle(queryEditor.cssText);
+    addStyle(queryLauncher.cssText);
 
     const selectedRouteButtonContainer = (
         <span>
@@ -1207,7 +1080,7 @@ async function asyncMain() {
             class={classNames["properties-editor"]}
         >
             {selectedRouteEditorContainer}
-            {queryEditor.element}
+            {queryLauncher.element}
             {routeListElement.element}
             {reportElement}
         </div>
