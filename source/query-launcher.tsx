@@ -220,15 +220,20 @@ export async function createQueryLauncher({
     function updateQueryList() {
         queryListElement.innerHTML = "";
         state.sources.map((source, index) => {
-            const listItem = addListeners(
-                <li class={`${classNames["ellipsis-text"]} ${classNames["horizontal-list-item"]}`}>
+            const listButton = addListeners(
+                <button
+                    class={`${classNames["ellipsis-text"]} ${classNames["select-button"]}`}
+                >
                     {source.summary}
-                </li>,
+                </button>,
                 {
                     click() {
                         selectQuery(index);
                     },
                 }
+            );
+            const listItem = (
+                <li class={classNames["horizontal-list-item"]}>{listButton}</li>
             );
             queryListElement.appendChild(listItem);
         });

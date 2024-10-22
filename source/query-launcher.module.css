@@ -14,5 +14,8 @@
 .horizontal-list-item {
     display: inline-block;
     margin-right: 10px;
+}
+
+.select-button {
     max-width: 5em;
 }
