@@ -9,18 +9,23 @@
     flex-direction: row;
     flex-wrap: nowrap;
     overflow-x: auto;
+    padding: 0;
+    margin: 0;
 }
 
 .horizontal-list-item {
     display: inline-block;
-    margin-right: 10px;
 }
 
 .select-button {
-    max-width: 5em;
+    max-width: 10em;
+    min-height: 2em;
+    border-radius: 1em;
+    border: solid 1px black;
+    margin: 1px;
 }
 
 .selected-query-source {
-    background-color: #f0f0f0;
-    font-weight: bold;
+    background-color: #ffec8b;
+    box-shadow: white 0 0 0px 1px;
 }

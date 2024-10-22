@@ -223,7 +223,9 @@ export async function createQueryLauncher({
         state.sources.map((source, index) => {
             const listButton = addListeners(
                 <button
-                    class={`${classNames["ellipsis-text"]} ${classNames["select-button"]} ${
+                    class={`${classNames["ellipsis-text"]} ${
+                        classNames["select-button"]
+                    } ${
                         index === state.selectedSourceIndex
                             ? classNames["selected-query-source"]
                             : ""
