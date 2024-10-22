@@ -3,3 +3,15 @@
     white-space: nowrap;
     text-overflow: ellipsis;
 }
+
+.horizontal-list {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+}
+
+.horizontal-list-item {
+    display: inline-block;
+    margin-right: 10px;
+}

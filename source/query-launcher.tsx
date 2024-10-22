@@ -226,7 +226,7 @@ export async function createQueryLauncher({
                 },
             });
             const listItem = addListeners(
-                <li class={classNames["ellipsis-text"]}>
+                <li class={`${classNames["ellipsis-text"]} ${classNames["horizontal-list-item"]}`}>
                     {source.summary}
                     {deleteButton}
                 </li>,
@@ -243,7 +243,7 @@ export async function createQueryLauncher({
     const saveButtonElement = addListeners(<button>Save Query</button>, {
         click: saveQuery,
     });
-    const queryListElement = <ul></ul>;
+    const queryListElement = <ul class={classNames["horizontal-list"]}></ul>;
     const element = (
         <div>
             {queryEditor.element}
