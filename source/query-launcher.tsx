@@ -35,7 +35,7 @@ export type LauncherProgress =
 
 interface QuerySources {
     readonly sources: readonly QuerySource[];
-    readonly selectedName: string;
+    readonly selectedSourceName: string | null;
 }
 interface CreateLauncherOptions {
     signal: AbortSignal;
@@ -65,15 +65,13 @@ export async function createQueryLauncher({
     const initialSources = await loadSources({ signal });
     const state = {
         sources: initialSources.sources.slice(),
-        selectedSourceName: initialSources.selectedName,
+        selectedSourceName: initialSources.selectedSourceName,
     };
 
     async function setQueryExpression(signal: AbortSignal) {
         await sleep(checkDelayMilliseconds, { signal });
 
-        const currentSource = state.sources.find(
-            (source) => source.name === state.selectedSourceName
-        );
+        const currentSource = getCurrentSource();
         if (currentSource == null) return;
 
         const queryText = currentSource.text;
@@ -131,7 +129,7 @@ export async function createQueryLauncher({
         await saveSources(
             {
                 sources: state.sources,
-                selectedName: state.selectedSourceName,
+                selectedSourceName: state.selectedSourceName,
             },
             { signal }
         );
@@ -152,9 +150,7 @@ export async function createQueryLauncher({
     }
 
     const queryEditor = createQueryEditor({
-        initialText: state.sources.find(
-            (source) => source.name === state.selectedSourceName
-        )?.text,
+        initialText: getCurrentSource()?.text,
         placeholder: "🔍ルート検索",
         tokenDefinitions: mapTokenDefinitions(
             tokenDefinitions,
@@ -167,16 +163,21 @@ export async function createQueryLauncher({
     });
 
     function setCurrentSourceText(text: string) {
-        const currentSource = state.sources.find(
-            (source) => source.name === state.selectedSourceName
-        );
-        if (currentSource == null) return;
+        let currentSource = getCurrentSource();
+        if (currentSource == null) {
+            currentSource = addNewQuery("", text);
+        }
         state.sources = state.sources.map((s) =>
             s.name === state.selectedSourceName ? { ...s, text } : s
         );
     }
     function getSourceOfName(name: string) {
         return state.sources.find((source) => source.name === name);
+    }
+    function getCurrentSource() {
+        return state.selectedSourceName != null
+            ? getSourceOfName(state.selectedSourceName)
+            : undefined;
     }
     function uniqueName(
         baseName: string,
@@ -190,20 +191,21 @@ export async function createQueryLauncher({
             if (!getSourceOfName(newName)) return newName;
         }
     }
-    function saveQuery() {
-        const currentSource = state.sources.find(
-            (source) => source.name === state.selectedSourceName
-        );
-        if (currentSource == null) return;
-
+    function addNewQuery(summary: string, text: string) {
         const newSource: QuerySource = {
             name: uniqueName("module"),
-            summary: currentSource.summary,
-            text: currentSource.text,
+            summary,
+            text,
         };
 
         state.sources.push(newSource);
         state.selectedSourceName = newSource.name;
+        return newSource;
+    }
+    function saveQuery() {
+        const currentSource = getCurrentSource();
+        if (currentSource == null) return;
+        addNewQuery(currentSource.summary, currentSource.text);
         updateQueryList();
     }
 
@@ -246,7 +248,7 @@ export async function createQueryLauncher({
                             ? classNames["selected-query-source"]
                             : ""
                     } ${classNames["draggable"]}`}
-                    draggable="true"
+                    draggable={true}
                 >
                     {source.summary}
                 </button>,
@@ -256,17 +258,25 @@ export async function createQueryLauncher({
                     },
                     dragstart(e) {
                         e.dataTransfer?.setData("text/plain", index.toString());
-                        e.currentTarget.classList.add(classNames["dragging"]);
+                        (e.currentTarget as HTMLButtonElement).classList.add(
+                            classNames["dragging"]
+                        );
                     },
                     dragend(e) {
-                        e.currentTarget.classList.remove(classNames["dragging"]);
+                        (e.currentTarget as HTMLButtonElement).classList.remove(
+                            classNames["dragging"]
+                        );
                     },
                     dragover(e) {
                         e.preventDefault();
-                        e.currentTarget.classList.add(classNames["drag-over"]);
+                        (e.currentTarget as HTMLButtonElement).classList.add(
+                            classNames["drag-over"]
+                        );
                     },
                     dragleave(e) {
-                        e.currentTarget.classList.remove(classNames["drag-over"]);
+                        (e.currentTarget as HTMLButtonElement).classList.remove(
+                            classNames["drag-over"]
+                        );
                     },
                     drop(e) {
                         e.preventDefault();
@@ -275,12 +285,22 @@ export async function createQueryLauncher({
                             10
                         );
                         const toIndex = index;
-                        if (fromIndex >= 0 && toIndex >= 0 && fromIndex !== toIndex) {
-                            const [movedSource] = state.sources.splice(fromIndex, 1);
-                            state.sources.splice(toIndex, 0, movedSource);
+                        if (
+                            fromIndex >= 0 &&
+                            toIndex >= 0 &&
+                            fromIndex !== toIndex
+                        ) {
+                            const [movedSource] = state.sources.splice(
+                                fromIndex,
+                                1
+                            );
+                            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+                            state.sources.splice(toIndex, 0, movedSource!);
                             updateQueryList();
                         }
-                        e.currentTarget.classList.remove(classNames["drag-over"]);
+                        (e.currentTarget as HTMLButtonElement).classList.remove(
+                            classNames["drag-over"]
+                        );
                     },
                 }
             );

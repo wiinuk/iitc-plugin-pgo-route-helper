@@ -28,7 +28,7 @@ function getConfigureSchemas() {
     });
     const sourcesSchema = z.strictObject({
         sources: z.array(sourceSchema),
-        selectedIndex: z.number(),
+        selectedSourceName: z.union([z.string(), z.null()]),
     });
     const configV4Properties = {
         ...configV3Properties,
@@ -72,7 +72,7 @@ function upgradeConfig(config: ConfigVAny): Config {
                 ...config,
                 version: "4",
                 routeQueries: null,
-                querySources: { sources, selectedIndex: 0 },
+                querySources: { sources, selectedSourceName: null },
             });
         }
         case "4":

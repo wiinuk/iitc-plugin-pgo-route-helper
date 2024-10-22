@@ -1024,7 +1024,9 @@ async function asyncMain() {
             updateRoutesListElement();
         },
         async loadSources() {
-            return config.querySources ?? { sources: [], selectedIndex: 0 };
+            return (
+                config.querySources ?? { sources: [], selectedSourceName: null }
+            );
         },
         async saveSources(sources) {
             config.querySources = {
