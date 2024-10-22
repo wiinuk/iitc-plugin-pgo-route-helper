@@ -198,7 +198,8 @@ export async function createQueryLauncher({
         updateQueryList();
     }
 
-    function deleteQuery(index: number) {
+    function deleteQuery() {
+        const index = state.selectedSourceIndex;
         if (index < 0 || index >= state.sources.length) return;
 
         state.sources.splice(index, 1);
@@ -219,16 +220,9 @@ export async function createQueryLauncher({
     function updateQueryList() {
         queryListElement.innerHTML = "";
         state.sources.map((source, index) => {
-            const deleteButton = addListeners(<button>Delete</button>, {
-                click(e) {
-                    e.stopPropagation();
-                    deleteQuery(index);
-                },
-            });
             const listItem = addListeners(
                 <li class={`${classNames["ellipsis-text"]} ${classNames["horizontal-list-item"]}`}>
                     {source.summary}
-                    {deleteButton}
                 </li>,
                 {
                     click() {
@@ -243,11 +237,15 @@ export async function createQueryLauncher({
     const saveButtonElement = addListeners(<button>Save Query</button>, {
         click: saveQuery,
     });
+    const deleteButtonElement = addListeners(<button>Delete Query</button>, {
+        click: deleteQuery,
+    });
     const queryListElement = <ul class={classNames["horizontal-list"]}></ul>;
     const element = (
         <div>
             {queryEditor.element}
             {saveButtonElement}
+            {deleteButtonElement}
             {queryListElement}
         </div>
     );
