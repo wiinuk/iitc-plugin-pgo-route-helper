@@ -1,3 +1,4 @@
+import { addListeners } from "./document-extensions";
 import { type EffectiveFunction } from "./effective";
 import { createQuery, type UnitQueryFactory } from "./query";
 import { createQueryEditor } from "./query-editor";
@@ -33,8 +34,8 @@ export type LauncherProgress =
       };
 
 interface QuerySources {
-    sources: QuerySource[];
-    selectedIndex: number;
+    readonly sources: readonly QuerySource[];
+    readonly selectedIndex: number;
 }
 interface CreateLauncherOptions {
     signal: AbortSignal;
@@ -67,25 +68,25 @@ export async function createQueryLauncher({
         selectedSourceIndex: initialSources.selectedIndex,
     };
 
-    async function setQueryExpression(queryText: string, signal: AbortSignal) {
+    async function setQueryExpression(signal: AbortSignal) {
         await sleep(checkDelayMilliseconds, { signal });
 
         const currentSource = state.sources[state.selectedSourceIndex];
         if (currentSource == null) return;
 
-        if (currentSource.text.trim() === queryText.trim()) {
-            return;
-        }
+        const queryText = currentSource.text;
         if (queryText.trim() === "") {
             const source = (state.sources[state.selectedSourceIndex] = {
                 ...currentSource,
                 text: queryText,
+                summary: queryText,
             });
+            updateQueryList();
             progress?.({
                 type: "query-parse-completed",
                 hasFilter: false,
             });
-            onCurrentQueryChanged?.(source, "simple-query");
+            onCurrentQueryChanged?.({ ...source }, "simple-query");
         } else {
             queryEditor.clearDiagnostics();
             const { getQuery, diagnostics } = createQuery(queryText);
@@ -107,7 +108,9 @@ export async function createQueryLauncher({
             const source = (state.sources[state.selectedSourceIndex] = {
                 ...currentSource,
                 text: queryText,
+                summary: queryText,
             });
+            updateQueryList();
             onCurrentQueryChanged?.(source, getQuery);
         }
     }
@@ -131,10 +134,10 @@ export async function createQueryLauncher({
 
     const setQueryExpressionCancelScope =
         createAsyncCancelScope(handleAsyncError);
-    function setQueryExpressionDelayed(queryText: string) {
+    function setQueryExpressionDelayed() {
         setQueryExpressionCancelScope(async (signal) => {
             await Promise.all([
-                setQueryExpression(queryText, signal),
+                setQueryExpression(signal),
                 saveQueries(signal),
             ]);
         });
@@ -148,16 +151,44 @@ export async function createQueryLauncher({
             getTokenCategory
         ),
         onValueChange(e) {
-            setQueryExpressionDelayed(e.value);
+            setCurrentSourceText(e.value);
+            setQueryExpressionDelayed();
         },
     });
 
+    function setCurrentSourceText(text: string) {
+        const currentSource = state.sources[state.selectedSourceIndex];
+        if (currentSource == null) return;
+        state.sources[state.selectedSourceIndex] = {
+            ...currentSource,
+            text,
+        };
+    }
+    function getSourceOfName(name: string) {
+        for (let i = 0; i < state.sources.length; i++) {
+            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+            const source = state.sources[i]!;
+            if (source.name === name) return source;
+        }
+    }
+    function uniqueName(
+        baseName: string,
+        startIndex = 2,
+        naming: (baseName: string, suffixNumber: number) => string = (n, i) =>
+            `${n}${i}`
+    ) {
+        if (!getSourceOfName(baseName)) return baseName;
+        for (let i = Math.floor(Math.max(startIndex, 0)); ; i++) {
+            const newName = naming(baseName, i);
+            if (!getSourceOfName(newName)) return newName;
+        }
+    }
     function saveQuery() {
         const currentSource = state.sources[state.selectedSourceIndex];
         if (currentSource == null) return;
 
         const newSource: QuerySource = {
-            name: `Query ${state.sources.length + 1}`,
+            name: uniqueName("module", state.selectedSourceIndex + 1),
             summary: currentSource.summary,
             text: currentSource.text,
         };
@@ -178,40 +209,46 @@ export async function createQueryLauncher({
     }
 
     function selectQuery(index: number) {
-        if (index < 0 || index >= state.sources.length) return;
+        const selectedSource = state.sources[index];
+        if (selectedSource == null) return;
 
         state.selectedSourceIndex = index;
-        const selectedSource = state.sources[state.selectedSourceIndex];
         queryEditor.setValue(selectedSource.text);
     }
 
     function updateQueryList() {
-        const queryListElement = document.getElementById("query-list");
-        if (!queryListElement) return;
-
         queryListElement.innerHTML = "";
-        state.sources.forEach((source, index) => {
-            const listItem = document.createElement("li");
-            listItem.textContent = source.name;
-            listItem.addEventListener("click", () => selectQuery(index));
-
-            const deleteButton = document.createElement("button");
-            deleteButton.textContent = "Delete";
-            deleteButton.addEventListener("click", (e) => {
-                e.stopPropagation();
-                deleteQuery(index);
+        state.sources.map((source, index) => {
+            const deleteButton = addListeners(<button>Delete</button>, {
+                click(e) {
+                    e.stopPropagation();
+                    deleteQuery(index);
+                },
             });
-
-            listItem.appendChild(deleteButton);
+            const listItem = addListeners(
+                <li class={classNames["ellipsis-text"]}>
+                    {source.summary}
+                    {deleteButton}
+                </li>,
+                {
+                    click() {
+                        selectQuery(index);
+                    },
+                }
+            );
             queryListElement.appendChild(listItem);
         });
     }
 
+    const saveButtonElement = addListeners(<button>Save Query</button>, {
+        click: saveQuery,
+    });
+    const queryListElement = <ul></ul>;
     const element = (
         <div>
             {queryEditor.element}
-            <button onClick={saveQuery}>Save Query</button>
-            <ul id="query-list"></ul>
+            {saveButtonElement}
+            {queryListElement}
         </div>
     );
 

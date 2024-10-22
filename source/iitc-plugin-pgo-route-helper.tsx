@@ -1027,7 +1027,10 @@ async function asyncMain() {
             return config.querySources ?? { sources: [], selectedIndex: 0 };
         },
         async saveSources(sources) {
-            config.querySources = sources;
+            config.querySources = {
+                ...sources,
+                sources: sources.sources.slice(),
+            };
             saveConfig(config);
         },
         progress,
