@@ -151,7 +151,72 @@ export async function createQueryLauncher({
             setQueryExpressionDelayed(e.value);
         },
     });
-    const element = <div>{queryEditor.element}</div>;
+
+    function saveQuery() {
+        const currentSource = state.sources[state.selectedSourceIndex];
+        if (currentSource == null) return;
+
+        const newSource: QuerySource = {
+            name: `Query ${state.sources.length + 1}`,
+            summary: currentSource.summary,
+            text: currentSource.text,
+        };
+
+        state.sources.push(newSource);
+        state.selectedSourceIndex = state.sources.length - 1;
+        updateQueryList();
+    }
+
+    function deleteQuery(index: number) {
+        if (index < 0 || index >= state.sources.length) return;
+
+        state.sources.splice(index, 1);
+        if (state.selectedSourceIndex >= state.sources.length) {
+            state.selectedSourceIndex = state.sources.length - 1;
+        }
+        updateQueryList();
+    }
+
+    function selectQuery(index: number) {
+        if (index < 0 || index >= state.sources.length) return;
+
+        state.selectedSourceIndex = index;
+        const selectedSource = state.sources[state.selectedSourceIndex];
+        queryEditor.setValue(selectedSource.text);
+    }
+
+    function updateQueryList() {
+        const queryListElement = document.getElementById("query-list");
+        if (!queryListElement) return;
+
+        queryListElement.innerHTML = "";
+        state.sources.forEach((source, index) => {
+            const listItem = document.createElement("li");
+            listItem.textContent = source.name;
+            listItem.addEventListener("click", () => selectQuery(index));
+
+            const deleteButton = document.createElement("button");
+            deleteButton.textContent = "Delete";
+            deleteButton.addEventListener("click", (e) => {
+                e.stopPropagation();
+                deleteQuery(index);
+            });
+
+            listItem.appendChild(deleteButton);
+            queryListElement.appendChild(listItem);
+        });
+    }
+
+    const element = (
+        <div>
+            {queryEditor.element}
+            <button onClick={saveQuery}>Save Query</button>
+            <ul id="query-list"></ul>
+        </div>
+    );
+
+    updateQueryList();
+
     return {
         element,
         cssText: cssText + "\n" + queryEditor.cssText,
