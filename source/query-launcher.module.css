@@ -19,3 +19,8 @@
 .select-button {
     max-width: 5em;
 }
+
+.selected-query-source {
+    background-color: #f0f0f0;
+    font-weight: bold;
+}
