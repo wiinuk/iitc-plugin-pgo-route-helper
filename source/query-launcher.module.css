@@ -29,3 +29,15 @@
     background-color: #ffec8b;
     box-shadow: white 0 0 0px 1px;
 }
+
+.draggable {
+    cursor: grab;
+}
+
+.dragging {
+    opacity: 0.5;
+}
+
+.drag-over {
+    border: 2px dashed #000;
+}
