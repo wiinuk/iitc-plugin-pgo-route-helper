@@ -34,7 +34,8 @@ export type LauncherProgress =
       }
     | {
           type: "queries-save-completed";
-      };
+      }
+    | { type: "query-name-duplicated"; name: string };
 
 interface QuerySources {
     readonly sources: readonly QuerySource[];
@@ -178,7 +179,13 @@ export async function createQueryLauncher({
                 if (currentSource == null) return;
                 const newName = (e.target as HTMLInputElement).value;
                 if (newName.trim() === "") return;
-                if (getSourceOfName(newName)) return;
+                if (getSourceOfName(newName)) {
+                    progress?.({
+                        type: "query-name-duplicated",
+                        name: newName,
+                    });
+                    return;
+                }
                 setCurrentSource({ ...currentSource, name: newName });
                 updateQueryList();
             },

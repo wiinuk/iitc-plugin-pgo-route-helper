@@ -312,6 +312,10 @@ async function asyncMain() {
                 reportElement.innerText = "クエリを保存しました。";
                 break;
             }
+            case "query-name-duplicated": {
+                reportElement.innerText = `クエリ '${message.name}' は既に存在します。別の名前を指定してください。`;
+                break;
+            }
             default:
                 throw new Error(`Unknown message type ${type satisfies never}`);
         }
