@@ -171,6 +171,7 @@ export async function createQueryLauncher({
                 type="text"
                 placeholder="クエリ名"
                 value={getCurrentSource()?.name ?? ""}
+                class={classNames["name-input"]}
             />
         ) as HTMLInputElement,
         {
@@ -178,6 +179,7 @@ export async function createQueryLauncher({
                 const currentSource = getCurrentSource();
                 if (currentSource == null) return;
                 const newName = (e.target as HTMLInputElement).value;
+                if (currentSource.name === newName) return;
                 if (newName.trim() === "") return;
                 if (getSourceOfName(newName)) {
                     progress?.({
@@ -382,12 +384,14 @@ export async function createQueryLauncher({
         >
             <summary>{queryListElement}</summary>
             <div class={classNames["tab-contents"]}>
-                {nameInputElement}
                 {queryEditor.element}
-                {saveButtonElement}
-                {deleteButtonElement}
-                {moveLeftButtonElement}
-                {moveRightButtonElement}
+                <div class={classNames["commands-container"]}>
+                    {saveButtonElement}
+                    {deleteButtonElement}
+                    {moveLeftButtonElement}
+                    {moveRightButtonElement}
+                    {nameInputElement}
+                </div>
             </div>
         </details>
     );
