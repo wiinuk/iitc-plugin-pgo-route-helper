@@ -344,6 +344,24 @@ export async function createQueryLauncher({
         click: moveQueryRight,
     });
     const queryListElement = <ul class={classNames["select-list"]}></ul>;
+    const nameInputElement = addListeners(
+        <input
+            type="text"
+            placeholder="クエリ名"
+            value={getCurrentSource()?.name ?? ""}
+        />,
+        {
+            input(e) {
+                const currentSource = getCurrentSource();
+                if (currentSource == null) return;
+                const newName = (e.target as HTMLInputElement).value;
+                if (newName.trim() === "") return;
+                if (getSourceOfName(newName)) return;
+                setCurrentSource({ ...currentSource, name: newName });
+                updateQueryList();
+            },
+        }
+    );
     const element = (
         <details
             open
@@ -351,6 +369,7 @@ export async function createQueryLauncher({
         >
             <summary>{queryListElement}</summary>
             <div class={classNames["tab-contents"]}>
+                {nameInputElement}
                 {queryEditor.element}
                 {saveButtonElement}
                 {deleteButtonElement}
