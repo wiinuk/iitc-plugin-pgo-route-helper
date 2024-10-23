@@ -80,6 +80,7 @@ details.tab > .tab-contents:not(summary) {
 .commands-container {
     display: flex;
     flex-direction: row;
+    flex-wrap: wrap;
 }
 .name-input {
     flex: 0 0 content;
