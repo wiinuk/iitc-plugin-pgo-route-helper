@@ -233,20 +233,23 @@ export async function createQueryLauncher({
 
     function moveQueryLeft() {
         const index = state.selectedSourceIndex;
-        if (index == null || index <= 0) return;
+        if (index == null || index < 1 || state.sources.length <= index) return;
 
         const [movedSource] = state.sources.splice(index, 1);
-        state.sources.splice(index - 1, 0, movedSource);
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        state.sources.splice(index - 1, 0, movedSource!);
         state.selectedSourceIndex = index - 1;
         updateQueryList();
     }
 
     function moveQueryRight() {
         const index = state.selectedSourceIndex;
-        if (index == null || index >= state.sources.length - 1) return;
+        if (index == null || index < 0 || state.sources.length - 1 <= index)
+            return;
 
         const [movedSource] = state.sources.splice(index, 1);
-        state.sources.splice(index + 1, 0, movedSource);
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        state.sources.splice(index + 1, 0, movedSource!);
         state.selectedSourceIndex = index + 1;
         updateQueryList();
     }
@@ -334,18 +337,12 @@ export async function createQueryLauncher({
     const deleteButtonElement = addListeners(<button>🗑️削除</button>, {
         click: deleteQuery,
     });
-    const moveLeftButtonElement = addListeners(
-        <button class={classNames["move-left-button"]}>⬅️</button>,
-        {
-            click: moveQueryLeft,
-        }
-    );
-    const moveRightButtonElement = addListeners(
-        <button class={classNames["move-right-button"]}>➡️</button>,
-        {
-            click: moveQueryRight,
-        }
-    );
+    const moveLeftButtonElement = addListeners(<button>⬅️</button>, {
+        click: moveQueryLeft,
+    });
+    const moveRightButtonElement = addListeners(<button>➡️</button>, {
+        click: moveQueryRight,
+    });
     const queryListElement = <ul class={classNames["select-list"]}></ul>;
     const element = (
         <details
