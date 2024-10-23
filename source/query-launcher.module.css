@@ -74,3 +74,29 @@ details.tab > .tab-contents:not(summary) {
 .drag-over {
     border: 2px dashed #000;
 }
+
+/* Styles for the new buttons to move selected elements left and right */
+.move-buttons-container {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 1em;
+}
+
+.move-left-button,
+.move-right-button {
+    background-color: #4CAF50;
+    border: none;
+    color: white;
+    padding: 0.5em 1em;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    font-size: 1em;
+    margin: 0.2em;
+    cursor: pointer;
+}
+
+.move-left-button:hover,
+.move-right-button:hover {
+    background-color: #45a049;
+}
