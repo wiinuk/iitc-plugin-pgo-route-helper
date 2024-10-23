@@ -151,6 +151,40 @@ export async function createQueryLauncher({
         });
     }
 
+    const saveButtonElement = addListeners(<button>➕保存</button>, {
+        click: saveQuery,
+    });
+    const deleteButtonElement = addListeners(<button>🗑️削除</button>, {
+        click: deleteQuery,
+    });
+    const moveLeftButtonElement = addListeners(<button>⬅️</button>, {
+        click: moveQueryLeft,
+    });
+    const moveRightButtonElement = addListeners(<button>➡️</button>, {
+        click: moveQueryRight,
+    });
+    const queryListElement = <ul class={classNames["select-list"]}></ul>;
+    const nameInputElement = addListeners(
+        (
+            <input
+                type="text"
+                placeholder="クエリ名"
+                value={getCurrentSource()?.name ?? ""}
+            />
+        ) as HTMLInputElement,
+        {
+            input(e) {
+                const currentSource = getCurrentSource();
+                if (currentSource == null) return;
+                const newName = (e.target as HTMLInputElement).value;
+                if (newName.trim() === "") return;
+                if (getSourceOfName(newName)) return;
+                setCurrentSource({ ...currentSource, name: newName });
+                updateQueryList();
+            },
+        }
+    );
+
     const queryEditor = createQueryEditor({
         initialText: getCurrentSource()?.text,
         placeholder: "🔍ルート検索",
@@ -182,7 +216,7 @@ export async function createQueryLauncher({
         const { sources, selectedSourceIndex: index } = state;
         if (index == null || index < 0 || sources.length <= index) return;
         state.sources.splice(index, 1, source);
-        nameInputElement.value = source.name; // P00e7
+        nameInputElement.value = source.name;
     }
     function uniqueName(
         baseName: string,
@@ -229,7 +263,7 @@ export async function createQueryLauncher({
 
         state.selectedSourceIndex = index;
         queryEditor.setValue(selectedSource.text);
-        nameInputElement.value = selectedSource.name; // Pca4a
+        nameInputElement.value = selectedSource.name;
         updateQueryList();
     }
 
@@ -331,40 +365,9 @@ export async function createQueryLauncher({
             );
             queryListElement.appendChild(listItem);
         });
-        nameInputElement.value = getCurrentSource()?.name ?? ""; // P6e71
+        nameInputElement.value = getCurrentSource()?.name ?? "";
     }
 
-    const saveButtonElement = addListeners(<button>➕保存</button>, {
-        click: saveQuery,
-    });
-    const deleteButtonElement = addListeners(<button>🗑️削除</button>, {
-        click: deleteQuery,
-    });
-    const moveLeftButtonElement = addListeners(<button>⬅️</button>, {
-        click: moveQueryLeft,
-    });
-    const moveRightButtonElement = addListeners(<button>➡️</button>, {
-        click: moveQueryRight,
-    });
-    const queryListElement = <ul class={classNames["select-list"]}></ul>;
-    const nameInputElement = addListeners(
-        <input
-            type="text"
-            placeholder="クエリ名"
-            value={getCurrentSource()?.name ?? ""}
-        />,
-        {
-            input(e) {
-                const currentSource = getCurrentSource();
-                if (currentSource == null) return;
-                const newName = (e.target as HTMLInputElement).value;
-                if (newName.trim() === "") return;
-                if (getSourceOfName(newName)) return;
-                setCurrentSource({ ...currentSource, name: newName });
-                updateQueryList();
-            },
-        }
-    );
     const element = (
         <details
             open
