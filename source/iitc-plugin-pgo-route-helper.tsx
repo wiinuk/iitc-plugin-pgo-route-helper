@@ -35,6 +35,9 @@ import classNames, {
     cssText,
     variables as cssVariables,
 } from "./styles.module.css";
+import accordionClassNames, {
+    cssText as accordionCssText,
+} from "./accordion.module.css";
 import * as remote from "./remote";
 import { isIITCMobile } from "./environment";
 import { createPolylineEditorPlugin } from "./polyline-editor";
@@ -173,6 +176,7 @@ async function asyncMain() {
         L.Icon.Default.imagePath = `https://unpkg.com/leaflet@${L.version}/dist/images/`;
     }
     addStyle(cssText);
+    addStyle(accordionCssText);
 
     const config = loadConfig();
     if (config.userId == null) {
@@ -1025,7 +1029,10 @@ async function asyncMain() {
         },
         async loadSources() {
             return (
-                config.querySources ?? { sources: [], selectedSourceName: null }
+                config.querySources ?? {
+                    sources: [],
+                    selectedSourceIndex: null,
+                }
             );
         },
         async saveSources(sources) {
@@ -1051,7 +1058,7 @@ async function asyncMain() {
     );
 
     const selectedRouteEditorContainer = (
-        <details open class={classNames.accordion}>
+        <details open class={accordionClassNames.accordion}>
             <summary>{titleElement}</summary>
             <div>
                 <div>{descriptionElement}</div>
