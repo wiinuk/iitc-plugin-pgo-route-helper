@@ -3,6 +3,9 @@ import { type EffectiveFunction } from "./effective";
 import { createQuery, type UnitQueryFactory } from "./query";
 import { createQueryEditor } from "./query-editor";
 import classNames, { cssText } from "./query-launcher.module.css";
+import accordionClassNames, {
+    cssText as accordionCssText,
+} from "./accordion.module.css";
 import { tokenDefinitions } from "./query/parser";
 import {
     getTokenCategory,
@@ -35,7 +38,7 @@ export type LauncherProgress =
 
 interface QuerySources {
     readonly sources: readonly QuerySource[];
-    readonly selectedSourceName: string | null;
+    readonly selectedSourceIndex: number | null;
 }
 interface CreateLauncherOptions {
     signal: AbortSignal;
@@ -62,11 +65,14 @@ export async function createQueryLauncher({
     const checkDelayMilliseconds = 500;
     const saveDelayMilliseconds = 5000;
 
-    const initialSources = await loadSources({ signal });
-    const state = {
-        sources: initialSources.sources.slice(),
-        selectedSourceName: initialSources.selectedSourceName,
-    };
+    async function createState() {
+        const { sources, selectedSourceIndex } = await loadSources({ signal });
+        return {
+            sources: sources.slice(),
+            selectedSourceIndex,
+        };
+    }
+    const state = await createState();
 
     async function setQueryExpression(signal: AbortSignal) {
         await sleep(checkDelayMilliseconds, { signal });
@@ -81,9 +87,7 @@ export async function createQueryLauncher({
                 text: queryText,
                 summary: queryText,
             };
-            state.sources = state.sources.map((s) =>
-                s.name === state.selectedSourceName ? source : s
-            );
+            setCurrentSource(source);
             updateQueryList();
             progress?.({
                 type: "query-parse-completed",
@@ -113,9 +117,7 @@ export async function createQueryLauncher({
                 text: queryText,
                 summary: queryText,
             };
-            state.sources = state.sources.map((s) =>
-                s.name === state.selectedSourceName ? source : s
-            );
+            setCurrentSource(source);
             updateQueryList();
             onCurrentQueryChanged?.(source, getQuery);
         }
@@ -129,7 +131,7 @@ export async function createQueryLauncher({
         await saveSources(
             {
                 sources: state.sources,
-                selectedSourceName: state.selectedSourceName,
+                selectedSourceIndex: state.selectedSourceIndex,
             },
             { signal }
         );
@@ -163,21 +165,23 @@ export async function createQueryLauncher({
     });
 
     function setCurrentSourceText(text: string) {
-        let currentSource = getCurrentSource();
+        const currentSource = getCurrentSource();
         if (currentSource == null) {
-            currentSource = addNewQuery("", text);
+            addNewQuery("", text);
+            return;
         }
-        state.sources = state.sources.map((s) =>
-            s.name === state.selectedSourceName ? { ...s, text } : s
-        );
+        setCurrentSource({ ...currentSource, text });
     }
     function getSourceOfName(name: string) {
         return state.sources.find((source) => source.name === name);
     }
     function getCurrentSource() {
-        return state.selectedSourceName != null
-            ? getSourceOfName(state.selectedSourceName)
-            : undefined;
+        return state.sources[state.selectedSourceIndex ?? -1];
+    }
+    function setCurrentSource(source: QuerySource) {
+        const { sources, selectedSourceIndex: index } = state;
+        if (index == null || index < 0 || sources.length <= index) return;
+        state.sources.splice(index, 1, source);
     }
     function uniqueName(
         baseName: string,
@@ -199,8 +203,7 @@ export async function createQueryLauncher({
         };
 
         state.sources.push(newSource);
-        state.selectedSourceName = newSource.name;
-        return newSource;
+        state.selectedSourceIndex = state.sources.length - 1;
     }
     function saveQuery() {
         const currentSource = getCurrentSource();
@@ -210,28 +213,20 @@ export async function createQueryLauncher({
     }
 
     function deleteQuery() {
-        const index = state.sources.findIndex(
-            (source) => source.name === state.selectedSourceName
-        );
-        if (index < 0 || index >= state.sources.length) return;
+        const index = state.selectedSourceIndex;
+        if (index == null || index < 0 || state.sources.length <= index) return;
 
         state.sources.splice(index, 1);
-        if (index >= state.sources.length) {
-            state.selectedSourceName =
-                state.sources[state.sources.length - 1]?.name ?? "";
-        } else {
-            state.selectedSourceName = state.sources[index]?.name ?? "";
-        }
+        state.selectedSourceIndex =
+            state.sources.length <= index ? state.sources.length - 1 : index;
         updateQueryList();
     }
 
-    function selectQuery(name: string) {
-        const selectedSource = state.sources.find(
-            (source) => source.name === name
-        );
+    function selectQuery(index: number) {
+        const selectedSource = state.sources[index];
         if (selectedSource == null) return;
 
-        state.selectedSourceName = name;
+        state.selectedSourceIndex = index;
         queryEditor.setValue(selectedSource.text);
         updateQueryList();
     }
@@ -241,20 +236,14 @@ export async function createQueryLauncher({
         state.sources.map((source, index) => {
             const listButton = addListeners(
                 <button
-                    class={`${classNames["ellipsis-text"]} ${
-                        classNames["select-button"]
-                    } ${
-                        source.name === state.selectedSourceName
-                            ? classNames["selected-query-source"]
-                            : ""
-                    } ${classNames["draggable"]}`}
+                    class={`${classNames["ellipsis-text"]} ${classNames["select-button"]} ${classNames["draggable"]}`}
                     draggable={true}
                 >
                     {source.summary}
                 </button>,
                 {
                     click() {
-                        selectQuery(source.name);
+                        selectQuery(index);
                     },
                     dragstart(e) {
                         e.dataTransfer?.setData("text/plain", index.toString());
@@ -305,33 +294,46 @@ export async function createQueryLauncher({
                 }
             );
             const listItem = (
-                <li class={classNames["horizontal-list-item"]}>{listButton}</li>
+                <li
+                    class={`${classNames["select-list-item"]} ${
+                        index === state.selectedSourceIndex
+                            ? classNames.selected
+                            : ""
+                    }`}
+                >
+                    {listButton}
+                </li>
             );
             queryListElement.appendChild(listItem);
         });
     }
 
-    const saveButtonElement = addListeners(<button>Save Query</button>, {
+    const saveButtonElement = addListeners(<button>➕保存</button>, {
         click: saveQuery,
     });
-    const deleteButtonElement = addListeners(<button>Delete Query</button>, {
+    const deleteButtonElement = addListeners(<button>🗑️削除</button>, {
         click: deleteQuery,
     });
-    const queryListElement = <ul class={classNames["horizontal-list"]}></ul>;
+    const queryListElement = <ul class={classNames["select-list"]}></ul>;
     const element = (
-        <div>
-            {queryEditor.element}
-            {saveButtonElement}
-            {deleteButtonElement}
-            {queryListElement}
-        </div>
+        <details
+            open
+            class={`${accordionClassNames.accordion} ${classNames.tab}`}
+        >
+            <summary>{queryListElement}</summary>
+            <div class={classNames["tab-contents"]}>
+                {queryEditor.element}
+                {saveButtonElement}
+                {deleteButtonElement}
+            </div>
+        </details>
     );
 
     updateQueryList();
 
     return {
         element,
-        cssText: cssText + "\n" + queryEditor.cssText,
+        cssText: [cssText, accordionCssText, queryEditor.cssText].join("\n"),
         addDiagnostic(d: Diagnostic) {
             queryEditor.addDiagnostic(d);
         },

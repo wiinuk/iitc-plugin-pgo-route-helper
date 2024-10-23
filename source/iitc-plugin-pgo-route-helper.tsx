@@ -1029,7 +1029,10 @@ async function asyncMain() {
         },
         async loadSources() {
             return (
-                config.querySources ?? { sources: [], selectedSourceName: null }
+                config.querySources ?? {
+                    sources: [],
+                    selectedSourceIndex: null,
+                }
             );
         },
         async saveSources(sources) {
