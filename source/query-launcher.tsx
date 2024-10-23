@@ -182,6 +182,7 @@ export async function createQueryLauncher({
         const { sources, selectedSourceIndex: index } = state;
         if (index == null || index < 0 || sources.length <= index) return;
         state.sources.splice(index, 1, source);
+        nameInputElement.value = source.name; // P00e7
     }
     function uniqueName(
         baseName: string,
@@ -228,6 +229,7 @@ export async function createQueryLauncher({
 
         state.selectedSourceIndex = index;
         queryEditor.setValue(selectedSource.text);
+        nameInputElement.value = selectedSource.name; // Pca4a
         updateQueryList();
     }
 
@@ -329,6 +331,7 @@ export async function createQueryLauncher({
             );
             queryListElement.appendChild(listItem);
         });
+        nameInputElement.value = getCurrentSource()?.name ?? ""; // P6e71
     }
 
     const saveButtonElement = addListeners(<button>➕保存</button>, {
