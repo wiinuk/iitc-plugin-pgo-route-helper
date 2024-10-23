@@ -161,6 +161,7 @@ export function createQueryEditor(
     }
 
     function onValueChange(element: HTMLTextAreaElement) {
+        updateScroll(element);
         options?.onValueChange?.(element);
         updateHighlightedElement(element.value);
     }
@@ -238,7 +239,6 @@ export function createQueryEditor(
         {
             input() {
                 onValueChange(this);
-                updateScroll(this);
             },
             scroll() {
                 updateScroll(this);
@@ -333,6 +333,7 @@ export function createQueryEditor(
         ),
         setValue(value: string) {
             inputField.value = value;
+            onValueChange(inputField);
         },
         clearDiagnostics,
         addDiagnostic,

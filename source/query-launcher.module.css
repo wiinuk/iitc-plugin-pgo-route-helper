@@ -1,0 +1,87 @@
+.ellipsis-text {
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+/* スクロールバー非表示 */
+.select-list::-webkit-scrollbar {
+    display: none;
+}
+.select-list {
+    scrollbar-width: none;
+}
+
+/* クエリリスト */
+.select-list {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    padding: 0;
+    margin: 0;
+    width: calc(100% - 2em);
+}
+
+.select-list-item {
+    display: inline-block;
+}
+
+.select-button {
+    max-width: 10em;
+    min-height: 2em;
+
+    border: none;
+    border-top: solid 3px gray;
+    background-color: #ffffffaa;
+}
+
+.selected.select-list-item > .select-button {
+    border-top-color: lightblue;
+    background-color: white;
+}
+
+.select-list-item:not(.selected) + .select-list-item:not(.selected)::before {
+    content: "";
+    display: block;
+    height: 1.2em;
+    border-left: 1px solid darkgray;
+    position: absolute;
+    top: 6px;
+    bottom: 0;
+    margin: auto;
+}
+
+/* タブコントロールっぽい見た目にする */
+details.tab > summary {
+    border-bottom-width: 0;
+    padding-bottom: 0;
+}
+details.tab > .tab-contents:not(summary) {
+    padding-top: 0;
+    border-top-width: 0;
+}
+
+
+/* ドラッグ中の見た目を変更 */
+.draggable {
+    cursor: grab;
+}
+
+.dragging {
+    opacity: 0.5;
+}
+
+.drag-over {
+    border: 2px dashed #000;
+}
+
+/* コマンドボタンの整列用 */
+.commands-container {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+}
+.name-input {
+    flex: 0 0 content;
+}
