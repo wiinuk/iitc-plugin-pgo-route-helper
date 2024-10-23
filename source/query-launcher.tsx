@@ -11,6 +11,8 @@ import {
 } from "./query/service";
 import type { Route } from "./route";
 import { createAsyncCancelScope, sleep } from "./standard-extensions";
+import jqueryUIPolyfillTouchEvents from "./jquery-ui-polyfill-touch-events";
+import { isIITCMobile } from "./environment";
 
 interface QuerySource {
     readonly name: string;
@@ -302,6 +304,29 @@ export async function createQueryLauncher({
                             classNames["drag-over"]
                         );
                     },
+                    touchstart(e) {
+                        e.preventDefault();
+                        e.currentTarget.classList.add(classNames["dragging"]);
+                    },
+                    touchend(e) {
+                        e.preventDefault();
+                        e.currentTarget.classList.remove(classNames["dragging"]);
+                    },
+                    touchmove(e) {
+                        e.preventDefault();
+                        const touch = e.touches[0];
+                        const target = document.elementFromPoint(
+                            touch.clientX,
+                            touch.clientY
+                        );
+                        if (target) {
+                            target.classList.add(classNames["drag-over"]);
+                        }
+                    },
+                    touchcancel(e) {
+                        e.preventDefault();
+                        e.currentTarget.classList.remove(classNames["dragging"]);
+                    },
                 }
             );
             const listItem = (
@@ -336,4 +361,8 @@ export async function createQueryLauncher({
             queryEditor.addDiagnostic(d);
         },
     };
+}
+
+if (isIITCMobile) {
+    jqueryUIPolyfillTouchEvents($);
 }
