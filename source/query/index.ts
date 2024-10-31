@@ -14,7 +14,12 @@ import {
     type Route,
 } from "../route";
 import { exhaustive, isArray } from "../standard-extensions";
-import { countByGyms, getGymsOrderKinds, orderByGyms } from "./gyms";
+import {
+    countByGyms,
+    getGymsOrderKinds,
+    orderByGyms,
+    stopsForNextGym,
+} from "./gyms";
 import { createParser, createTokenizer, tokenDefinitions } from "./parser";
 import type { Diagnostic } from "./service";
 import type { EffectiveFunction, Effective } from "../effective";
@@ -548,6 +553,9 @@ const library = {
     },
     *potentialStops(count: number | string): Effective<Query<Route>> {
         return countByGyms("potentialStops", count);
+    },
+    *stopsForNextGym(count: number): Effective<Query<Route>> {
+        return stopsForNextGym(count);
     },
     *cell14Portals(count: number): Effective<Query<Route>> {
         return {

@@ -55,8 +55,14 @@ function getCell14Statistics<T>(
     return statistics;
 }
 interface WithSourceState<T> {
+    /** 不正確な情報源から算出されたかもしれない何らかの値。 */
     value: T;
+    /** プロパティー値が `true` の場合、`value` を算出するのに必要な情報がロードできなかった事を示す。`value` は信頼できない値。 */
     isNotLoaded: boolean;
+    /**
+     * プロパティーに数値が入っている場合、`value` を算出できたが、情報源が時代遅れで不正確かもしれないことを示す。
+     * プロパティー値は情報源の取得時刻を示す `Date.now()` の戻り値。
+     */
     obsoleteDate?: number;
 }
 interface Cell14Gyms {
@@ -298,6 +304,42 @@ export function countByGyms(
                     return printSourceState(source).startsWith(
                         String(searchValue)
                     );
+                },
+            } satisfies UnitQuery<Route>;
+        },
+    };
+}
+export function stopsForNextGym(count: number): Query<Route> {
+    return {
+        *initialize(e) {
+            const resolve = yield* initializeRouteStatisticsResolver(e);
+            return {
+                *predicate(r) {
+                    const source = resolve(r)?.potentialPokestopsForNextGym;
+
+                    // 判定に必要な情報が足りないか古すぎるので再取得が必要
+                    if (
+                        source === undefined ||
+                        source.isNotLoaded ||
+                        source.obsoleteDate != null
+                    ) {
+                        return true;
+                    }
+                    return source.value === count;
+                },
+                *getNote(r) {
+                    const source = resolve(r)?.potentialPokestopsForNextGym;
+
+                    if (source === undefined || source.isNotLoaded) {
+                        return `SG?,${r.note}`;
+                    }
+                    if (source.obsoleteDate != null) {
+                        const dateString = timeToLocalISODateString(
+                            source.obsoleteDate
+                        );
+                        return `SG${source.value}@${dateString},${r.note}`;
+                    }
+                    return `SG${source.value},${r.note}`;
                 },
             } satisfies UnitQuery<Route>;
         },
