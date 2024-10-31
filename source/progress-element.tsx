@@ -48,6 +48,17 @@ export function createProgress({
         <div>{`ルートは読み込まれていません。レイヤー '${routeLayerGroupName}' を有効にすると読み込まれます。`}</div>
     ) as HTMLDivElement;
 
+    const progressBar = (
+        <progress value="0" max="100" style="width: 100%;"></progress>
+    ) as HTMLProgressElement;
+
+    const container = (
+        <div>
+            {reportElement}
+            {progressBar}
+        </div>
+    ) as HTMLDivElement;
+
     const progress = (message: ProgressMessage) => {
         const { type } = message;
         switch (type) {
@@ -65,12 +76,14 @@ export function createProgress({
                 )} の送信待機中 ( ${
                     message.milliseconds
                 } ms${remainingMessage} )`;
+                progressBar.value = 0;
                 break;
             }
             case "uploading": {
                 reportElement.innerText = `ルート ${JSON.stringify(
                     message.routeName
                 )} の変更を送信中。`;
+                progressBar.value = 50;
                 break;
             }
             case "uploaded": {
@@ -81,22 +94,27 @@ export function createProgress({
                 reportElement.innerText = `ルート ${JSON.stringify(
                     message.routeName
                 )} の変更を送信しました。${remainingMessage}`;
+                progressBar.value = 100;
                 break;
             }
             case "downloading": {
                 reportElement.innerText = `ルートを受信中`;
+                progressBar.value = 0;
                 break;
             }
             case "downloaded": {
                 reportElement.innerText = `${message.routeCount} 個のルートを受信しました。`;
+                progressBar.value = 100;
                 break;
             }
             case "adding": {
                 reportElement.innerText = `ルート: '${message.routeName}' ( ${message.routeId} ) を読み込みました`;
+                progressBar.value = 50;
                 break;
             }
             case "routes-added": {
                 reportElement.innerText = `${message.count} 個のルートを追加しました ( ${message.durationMilliseconds}ミリ秒 )`;
+                progressBar.value = 100;
                 break;
             }
             case "query-parse-completed": {
@@ -105,21 +123,25 @@ export function createProgress({
                 } else {
                     reportElement.innerText = "全件";
                 }
+                progressBar.value = 100;
                 break;
             }
             case "query-evaluation-completed": {
                 reportElement.innerText = `検索完了 (表示 ${message.hitCount} 件 / 全体 ${message.allCount} 件)`;
+                progressBar.value = 100;
                 break;
             }
             case "query-parse-error-occurred": {
                 reportElement.innerText = `クエリ構文エラー: ${(
                     message.messages satisfies readonly string[]
                 ).join(", ")}`;
+                progressBar.value = 0;
                 break;
             }
             case "query-evaluation-error": {
                 reportElement.innerText = String(message.error);
                 reportError(message.error);
+                progressBar.value = 0;
                 break;
             }
             case "user-location-fetched":
@@ -130,18 +152,22 @@ export function createProgress({
                 if (!diagnostic) break;
 
                 reportElement.innerText = `クエリ構文エラー: (${diagnostic.range.start}, ${diagnostic.range.end}): ${diagnostic.message} と 他${tail.length}件のエラー`;
+                progressBar.value = 0;
                 break;
             }
             case "queries-save-started": {
                 reportElement.innerText = "クエリを保存しています。";
+                progressBar.value = 0;
                 break;
             }
             case "queries-save-completed": {
                 reportElement.innerText = "クエリを保存しました。";
+                progressBar.value = 100;
                 break;
             }
             case "query-name-duplicated": {
                 reportElement.innerText = `クエリ '${message.name}' は既に存在します。別の名前を指定してください。`;
+                progressBar.value = 0;
                 break;
             }
             default:
@@ -149,7 +175,7 @@ export function createProgress({
         }
     };
     return {
-        element: reportElement,
+        element: container,
         progress,
     };
 }

@@ -433,7 +433,6 @@ async function asyncMain() {
                 coordinates = [latLngToCoordinate(map.getCenter())] as const;
                 routeName = "新しいスポット";
                 break;
-            }
             default:
                 return exhaustive(kind);
         }
