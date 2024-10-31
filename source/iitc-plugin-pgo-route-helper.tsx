@@ -957,10 +957,12 @@ async function asyncMain() {
             id="pgo-route-helper-editor"
             class={classNames["properties-editor"]}
         >
-            {selectedRouteEditorContainer}
-            {queryLauncher.element}
-            {routeListElement.element}
-            {reportElement}
+            <div class={classNames["without-report-container"]}>
+                {selectedRouteEditorContainer}
+                {queryLauncher.element}
+                {routeListElement.element}
+            </div>
+            <div class={classNames["report-container"]}>{reportElement}</div>
         </div>
     );
     document.body.append(editorElement);

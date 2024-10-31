@@ -86,6 +86,21 @@ input.editable-text {
     background-color: lightgoldenrodyellow;
 }
 
+.without-report-container {
+    flex-grow: 1;
+    height: 0;
+    overflow: auto;
+}
+.without-report-container {
+    display: flex;
+    flex-direction: column;
+}
+.report-container {
+    background: #00c2ff70;
+    color: #ffffff;
+    padding: 3px;
+}
+
 .route-list .selecting {
     background: #FECA40;
 }
