@@ -152,7 +152,7 @@ export async function createQueryLauncher({
         });
     }
 
-    const saveButtonElement = addListeners(<button>➕保存</button>, {
+    const saveButtonElement = addListeners(<button>➕追加</button>, {
         click: saveQuery,
     });
     const deleteButtonElement = addListeners(<button>🗑️削除</button>, {
@@ -210,7 +210,7 @@ export async function createQueryLauncher({
     function setCurrentSourceText(text: string) {
         const currentSource = getCurrentSource();
         if (currentSource == null) {
-            addNewQuery("", text);
+            insertNewQuery("", text, 0);
             return;
         }
         setCurrentSource({ ...currentSource, text });
@@ -239,20 +239,25 @@ export async function createQueryLauncher({
             if (!getSourceOfName(newName)) return newName;
         }
     }
-    function addNewQuery(summary: string, text: string) {
+    function insertNewQuery(summary: string, text: string, index: number) {
         const newSource: QuerySource = {
             name: uniqueName("module"),
             summary,
             text,
         };
 
-        state.sources.push(newSource);
-        state.selectedSourceIndex = state.sources.length - 1;
+        index = Math.min(Math.max(index, 0), state.sources.length);
+        state.sources.splice(index, 0, newSource);
+        state.selectedSourceIndex = index;
     }
     function saveQuery() {
         const currentSource = getCurrentSource();
         if (currentSource == null) return;
-        addNewQuery(currentSource.summary, currentSource.text);
+        insertNewQuery(
+            currentSource.summary,
+            currentSource.text,
+            Math.min((state.selectedSourceIndex ?? 0) + 1, state.sources.length)
+        );
         updateQueryList();
     }
 
