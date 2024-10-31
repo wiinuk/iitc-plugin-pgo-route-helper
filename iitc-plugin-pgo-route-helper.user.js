@@ -6,7 +6,7 @@
 // @downloadURL  https://github.com/wiinuk/iitc-plugin-pgo-route-helper/raw/master/iitc-plugin-pgo-route-helper.user.js
 // @updateURL    https://github.com/wiinuk/iitc-plugin-pgo-route-helper/raw/master/iitc-plugin-pgo-route-helper.user.js
 // @homepageURL  https://github.com/wiinuk/iitc-plugin-pgo-route-helper
-// @version      0.11.2
+// @version      0.11.3
 // @description  IITC plugin to assist in Pokémon GO route creation.
 // @author       Wiinuk
 // @include      https://*.ingress.com/intel*
@@ -109,321 +109,6 @@ _option) {
     return element;
 }
 const jsx = jsxs;
-
-;// CONCATENATED MODULE: ../gas-drivetunnel/source/json-schema-core.ts
-const pathCaches = [];
-const seenCaches = [];
-// eslint-disable-next-line @typescript-eslint/ban-types
-class Schema {
-    constructor(_validate, _isOptional = false) {
-        this._validate = _validate;
-        this._isOptional = _isOptional;
-    }
-    parse(target) {
-        var _a, _b;
-        const currentPath = (_a = pathCaches.pop()) !== null && _a !== void 0 ? _a : [];
-        const seen = (_b = seenCaches.pop()) !== null && _b !== void 0 ? _b : {
-            // TODO: ES5 または Rhino ランタイムは WeakMap が存在しない V8 はエラーが発生するので polyfill を使う
-            add() {
-                /* fake */
-            },
-            has() {
-                return false;
-            },
-        };
-        try {
-            return this._validate(target, currentPath, seen);
-        }
-        finally {
-            currentPath.length = 0;
-            pathCaches.push(currentPath);
-            seenCaches.push(seen);
-        }
-    }
-    optional() {
-        return optional(this);
-    }
-}
-function wrap(validate) {
-    return new Schema(validate);
-}
-class ValidationError extends Error {
-    constructor(message, path, expected, actual) {
-        super(message);
-        this.path = path;
-        this.expected = expected;
-        this.actual = actual;
-    }
-    get name() {
-        return "ValidationError";
-    }
-}
-function errorAsValidationDiagnostics(error) {
-    if (error instanceof ValidationError) {
-        return [
-            {
-                message: error.message,
-                path: error.path,
-                expected: error.expected,
-                actual: error.actual,
-            },
-        ];
-    }
-}
-function validationError(path, expected, actual) {
-    return new ValidationError(JSON.stringify({
-        path,
-        expected,
-        actual,
-    }), path, expected, actual);
-}
-function record(keySchema, valueSchema) {
-    return wrap((target, path, seen) => {
-        if (target == null || typeof target !== "object") {
-            throw validationError(path, "object", target === null ? "null" : typeof target);
-        }
-        if (seen.has(target)) {
-            return target;
-        }
-        seen.add(target);
-        for (const key of Object.keys(target)) {
-            const value = target[key];
-            keySchema.parse(key);
-            try {
-                path.push(key);
-                valueSchema._validate(value, path, seen);
-            }
-            finally {
-                path.pop();
-            }
-        }
-        return target;
-    });
-}
-function strictObject(shape) {
-    const props = [];
-    for (const key in shape) {
-        props.push([key, shape[key]]);
-    }
-    return wrap((target, path, seen) => {
-        if (target === null || typeof target !== "object") {
-            throw validationError(path, "object", target === null ? "null" : typeof target);
-        }
-        if (seen.has(target)) {
-            return target;
-        }
-        seen.add(target);
-        for (const [key, valueSchema] of props) {
-            if (!(key in target)) {
-                if (valueSchema._isOptional) {
-                    continue;
-                }
-                throw validationError(path, `{ '${key}': any }`, "object");
-            }
-            const value = target[key];
-            try {
-                path.push(key);
-                valueSchema._validate(value, path, seen);
-            }
-            finally {
-                path.pop();
-            }
-        }
-        return target;
-    });
-}
-function literal(value) {
-    const expected = typeof value === "string" ? JSON.stringify(value) : String(value);
-    return wrap((target, path) => {
-        if (target !== value) {
-            throw validationError(path, expected, typeof value === "object" ? "object" : String(target));
-        }
-        return target;
-    });
-}
-let stringSchema;
-function string() {
-    return (stringSchema !== null && stringSchema !== void 0 ? stringSchema : (stringSchema = wrap((target, path) => {
-        if (typeof target !== "string") {
-            throw validationError(path, "string", typeof target);
-        }
-        return target;
-    })));
-}
-let numberSchema;
-function number() {
-    return (numberSchema !== null && numberSchema !== void 0 ? numberSchema : (numberSchema = wrap((target, path) => {
-        if (typeof target !== "number") {
-            throw validationError(path, "number", typeof target);
-        }
-        return target;
-    })));
-}
-let booleanSchema;
-function json_schema_core_boolean() {
-    return (booleanSchema !== null && booleanSchema !== void 0 ? booleanSchema : (booleanSchema = wrap((target, path) => {
-        if (typeof target === "boolean") {
-            throw validationError(path, "boolean", typeof target);
-        }
-        return target;
-    })));
-}
-function tuple(schemas) {
-    const anyTupleName = `[${schemas.map(() => "any").join(", ")}]`;
-    return wrap((target, path, seen) => {
-        if (!Array.isArray(target)) {
-            throw validationError(path, "any[]", typeof target);
-        }
-        if (seen.has(target)) {
-            return target;
-        }
-        seen.add(target);
-        if (target.length < schemas.length) {
-            const actualTypeName = 5 < target.length
-                ? "any[]"
-                : `[${target.map(() => "any").join(", ")}]`;
-            throw validationError(path, anyTupleName, actualTypeName);
-        }
-        for (let i = 0; i < schemas.length; i++) {
-            const elementSchema = schemas[i];
-            const element = target[i];
-            path.push(i);
-            try {
-                elementSchema._validate(element, path, seen);
-            }
-            finally {
-                path.pop();
-            }
-        }
-        return target;
-    });
-}
-function array(elementSchema) {
-    return wrap((target, path, seen) => {
-        if (!Array.isArray(target)) {
-            throw validationError(path, "any[]", typeof target);
-        }
-        if (seen.has(target)) {
-            return target;
-        }
-        seen.add(target);
-        for (let i = 0; i < target.length; i++) {
-            const element = target[i];
-            try {
-                path.push(i);
-                elementSchema._validate(element, path, seen);
-            }
-            finally {
-                path.pop();
-            }
-        }
-        return target;
-    });
-}
-const errorsCache = [];
-function union(schemas) {
-    return wrap((target, path, seen) => {
-        var _a;
-        const errors = (_a = errorsCache.pop()) !== null && _a !== void 0 ? _a : [];
-        try {
-            for (const schema of schemas) {
-                try {
-                    schema._validate(target, path, seen);
-                    return target;
-                }
-                catch (e) {
-                    if (e instanceof ValidationError) {
-                        errors.push(e);
-                    }
-                }
-            }
-            if (errors[0] !== undefined && errors.length === 1) {
-                throw errors[0];
-            }
-            throw new ValidationError(JSON.stringify({
-                path,
-                errors: errors.map((e) => JSON.parse(e.message)),
-            }), path, `Union<[${errors.map((e) => e.expected).join(", ")}}]>`, typeof target);
-        }
-        finally {
-            errors.length = 0;
-            errorsCache.push(errors);
-        }
-    });
-}
-let nullSchemaCache;
-function null_() {
-    return (nullSchemaCache !== null && nullSchemaCache !== void 0 ? nullSchemaCache : (nullSchemaCache = wrap((target, path) => {
-        if (target === null) {
-            return target;
-        }
-        throw validationError(path, "null", typeof target);
-    })));
-}
-
-let neverSchemaCache;
-function never() {
-    return (neverSchemaCache !== null && neverSchemaCache !== void 0 ? neverSchemaCache : (neverSchemaCache = wrap((target, path) => {
-        throw validationError(path, "never", typeof target);
-    })));
-}
-let anySchemaCache;
-function any() {
-    return (anySchemaCache !== null && anySchemaCache !== void 0 ? anySchemaCache : (anySchemaCache = wrap((target) => target)));
-}
-function optional(schema) {
-    return new Schema(schema._validate, true);
-}
-function regexp(pattern) {
-    return wrap((target, path) => {
-        if (typeof target !== "string") {
-            throw validationError(path, pattern.toString(), typeof target);
-        }
-        if (!pattern.test(target)) {
-            throw validationError(path, pattern.toString(), target);
-        }
-        return target;
-    });
-}
-function createJsonSchema() {
-    const json = wrap((target, path, seen) => {
-        if (target === null) {
-            return target;
-        }
-        switch (typeof target) {
-            case "boolean":
-            case "number":
-            case "string":
-                return target;
-            case "object":
-                return Array.isArray(target)
-                    ? jsonArray._validate(target, path, seen)
-                    : jsonObject._validate(target, path, seen);
-        }
-        throw validationError(path, "Json", typeof target);
-    });
-    const jsonArray = array(json);
-    const jsonObject = record(string(), json);
-    return json;
-}
-let jsonSchemaCache;
-function json() {
-    return (jsonSchemaCache !== null && jsonSchemaCache !== void 0 ? jsonSchemaCache : (jsonSchemaCache = createJsonSchema()));
-}
-function delayed(createSchema) {
-    let schema;
-    return wrap((target, path, seen) => {
-        return (schema !== null && schema !== void 0 ? schema : (schema = createSchema()))._validate(target, path, seen);
-    });
-}
-function function_() {
-    return wrap((target, path, seen) => {
-        if (typeof target === "function") {
-            return target;
-        }
-        throw validationError(path, "Function", typeof target);
-    });
-}
 
 ;// CONCATENATED MODULE: ./package.json
 const package_namespaceObject = {};
@@ -781,37 +466,360 @@ function includesIn(bounds, route) {
 }
 
 ;// CONCATENATED MODULE: ./source/styles.module.css
-const cssText = ".import-text-input-ed6c584df855f5930917cab1f8269c9e8c1916e8 {\r\n    position: fixed;\r\n    top: 0;\r\n    left: 0;\r\n    width: 100%;\r\n    height: 100%;\r\n    z-index: 10000;\r\n\r\n    display: flex;\r\n    justify-content: center;\r\n    align-items: center;\r\n}\r\n\r\n.hidden-dcc1c54415ad7be0ab599778ed2f74a8b16cb564 {\r\n    display: none;\r\n}\r\n.ellipsis-text-b0a58bd974ef27fa4206a60a1a2cde63f82605ee {\r\n    white-space: nowrap;\r\n    overflow: hidden;\r\n    text-overflow: ellipsis;\r\n}\r\n.ellipsis-text-b0a58bd974ef27fa4206a60a1a2cde63f82605ee br {\r\n    display: none;\r\n}\r\n\r\ninput.editable-text-c6dfb1e51225459184650cb24475cdb508eaf81b {\r\n    border: none;\r\n    background: none;\r\n    font-size: 16px;\r\n    color: black;\r\n}\r\n\r\n.spot-label-707ab04af5937fd294aed16adad4e1232b42a0b1 {\r\n    color: #FFFFBB;\r\n    font-size: 11px;\r\n    line-height: 12px;\r\n    text-align: center;\r\n    padding: 2px;\r\n    overflow: hidden;\r\n    white-space: nowrap;\r\n    text-overflow: ellipsis;\r\n    text-shadow: 1px 1px #000, 1px -1px #000, -1px 1px #000, -1px -1px #000, 0 0 5px #000;\r\n    pointer-events: none;\r\n}\r\n.spot-handle-ae32e3610080b739174b76c404145c4988e0e156 {\r\n    --background-hue-585738f4482e2df39529b70e4ab358499e50ea7e: 152deg;\r\n    --background-opacity-b42870653cb49112dc4ccadaf7c4118ad1f4618d: 40%;\r\n    --border-width-b76b14b31515b8a01ffd2581976a50ff617adefb: 2px;\r\n    --border-saturation-228d53eac5682d1ac3a269287ae1cd4e642de8a0: 0%;\r\n    --border-opacity-9572af3613c18605255e803f1d1c8b2cbe433d73: 80%;\r\n\r\n    transition: all 0.5s, transform 0s;\r\n    box-sizing: border-box;\r\n    background-color: hsla(var(--background-hue-585738f4482e2df39529b70e4ab358499e50ea7e), 84%, 56%, var(--background-opacity-b42870653cb49112dc4ccadaf7c4118ad1f4618d));\r\n    border: solid var(--border-width-b76b14b31515b8a01ffd2581976a50ff617adefb) hsla(56, var(--border-saturation-228d53eac5682d1ac3a269287ae1cd4e642de8a0), 39%, var(--border-opacity-9572af3613c18605255e803f1d1c8b2cbe433d73));\r\n    border-radius: 100%;\r\n}\r\n.spot-handle-ae32e3610080b739174b76c404145c4988e0e156.draggable-948a72fb556cce5808f3f71ca30e875cd205b8d1 {\r\n    --background-opacity-b42870653cb49112dc4ccadaf7c4118ad1f4618d: 100%;\r\n    --border-opacity-9572af3613c18605255e803f1d1c8b2cbe433d73: 100%;\r\n    border-radius: 0;\r\n}\r\n.spot-handle-ae32e3610080b739174b76c404145c4988e0e156.highlighted-e6e4cfd2950557eac9d903f30826cf59843dc898 {\r\n    --border-width-b76b14b31515b8a01ffd2581976a50ff617adefb: 4px;\r\n    --border-saturation-228d53eac5682d1ac3a269287ae1cd4e642de8a0: 100%;\r\n}\r\n\r\n.properties-editor-e90cf6c617e53a9c59683c9c8150aef14895aaae {\r\n    display: flex;\r\n    flex-direction: column;\r\n    height: 100%;\r\n}\r\n\r\n.properties-editor-e90cf6c617e53a9c59683c9c8150aef14895aaae textarea,\r\n.properties-editor-e90cf6c617e53a9c59683c9c8150aef14895aaae input {\r\n    box-sizing: border-box;\r\n    width: 100%;\r\n    resize: vertical;\r\n}\r\n.properties-editor-e90cf6c617e53a9c59683c9c8150aef14895aaae input.title-f25918f001924f5c8de77d52c1aef5efc983892b {\r\n    width: auto;\r\n}\r\n\r\n.properties-editor-e90cf6c617e53a9c59683c9c8150aef14895aaae textarea.invalid-1b6f34912cbd632b0885c4e1199579ca4bdec1b2 {\r\n    border: solid 1px red;\r\n    background-color: lightgoldenrodyellow;\r\n}\r\n\r\n.route-list-08c84f1169709f8f9e3469d56006a0646670fe70 .selecting-a735b162066f932227c9d8333031f113ba1054d0 {\r\n    background: #FECA40;\r\n}\r\n\r\n.route-list-08c84f1169709f8f9e3469d56006a0646670fe70 .selected-e52f4d093c053017df9cb9a1d0228f1a0bb097af {\r\n    background: #F39814;\r\n    color: white;\r\n}\r\n\r\n.route-list-08c84f1169709f8f9e3469d56006a0646670fe70 {\r\n    flex-grow: 1;\r\n    overflow: hidden;\r\n\r\n    list-style-type: none;\r\n    margin: 0;\r\n    padding: 0;\r\n}\r\n\r\n.route-list-08c84f1169709f8f9e3469d56006a0646670fe70 .route-list-item-7fc93ef1fbbf99305d9a48d77889097d719eb7f5 {\r\n    margin: var(--route-list-item-margin-6c74dc8d2ba1fcccb386c63bf25f24196aaff2cb);\r\n    padding: var(--route-list-item-padding-9117414f70e8720298b1a81d8c3cfa11723f9876);\r\n    cursor: pointer;\r\n    user-select: none;\r\n}\r\n.route-list-08c84f1169709f8f9e3469d56006a0646670fe70 .note-7043e128c08da5952b748866eb0a335b9e894ee4 {\r\n    font-size: 75%;\r\n    padding-left: 0.5em;\r\n    color: #ffffffab;\r\n}\r\n\r\n.auto-complete-list-26d9d45c81ecc25875c663a3f4276dcdf9b3d59a {\r\n    position: absolute;\r\n    background-color: #f9f9f9;\r\n    min-width: 160px;\r\n    box-shadow: 0px 8px 16px 0px rgba(0, 0, 0, 0.2);\r\n    padding: 12px 16px;\r\n    z-index: 1;\r\n}\r\n\r\n.auto-complete-list-26d9d45c81ecc25875c663a3f4276dcdf9b3d59a .auto-complete-list-item-751a4e8106915335407a1cf81650ef47d84e4179 {\r\n    color: black;\r\n    padding: 12px 16px;\r\n    text-decoration: none;\r\n    display: block;\r\n}\r\n\r\n.auto-complete-list-26d9d45c81ecc25875c663a3f4276dcdf9b3d59a .auto-complete-list-item-751a4e8106915335407a1cf81650ef47d84e4179:hover {\r\n    background-color: #ddd;\r\n}\r\n\r\n\r\n/* アコーディオン */\r\n/* マーカー */\r\n.accordion-9d803004d1df14de9a91623042c4b41b9529eafb>summary::-webkit-details-marker {\r\n    display: none;\r\n}\r\n\r\n.accordion-9d803004d1df14de9a91623042c4b41b9529eafb>summary::before {\r\n    content: \"\";\r\n    position: absolute;\r\n    width: 6px;\r\n    height: 6px;\r\n    border-top: 2px solid #fff;\r\n    border-right: 2px solid #fff;\r\n\r\n    transform: rotate(225deg);\r\n    top: calc(50% - 3px);\r\n    right: 1em;\r\n}\r\n\r\n/* 閉じているとき */\r\n.accordion-9d803004d1df14de9a91623042c4b41b9529eafb>summary {\r\n    cursor: grab;\r\n    display: block;\r\n    height: auto;\r\n    padding: 3px;\r\n    width: auto;\r\n    height: auto;\r\n\r\n    background: #019bc656;\r\n    border: solid 1px #00000000\r\n}\r\n\r\n.accordion-9d803004d1df14de9a91623042c4b41b9529eafb>* {\r\n    backface-visibility: hidden;\r\n    transform: translateZ(0);\r\n    transition: all 0.3s;\r\n}\r\n\r\n.accordion-9d803004d1df14de9a91623042c4b41b9529eafb> :not(summary) {\r\n    margin-bottom: 6px;\r\n    padding: 0 3px;\r\n    border: solid 1px #00000000;\r\n}\r\n\r\n/* 開いたとき */\r\n.accordion-9d803004d1df14de9a91623042c4b41b9529eafb[open]>summary {\r\n    background: #c6880156;\r\n}\r\n\r\n.accordion-9d803004d1df14de9a91623042c4b41b9529eafb[open]>summary::before {\r\n    transform: rotate(135deg);\r\n}\r\n\r\n.accordion-9d803004d1df14de9a91623042c4b41b9529eafb[open]> :not(summary) {\r\n    padding: 3px;\r\n    transition: all 0.3s;\r\n\r\n    border: solid 1px #c6880156;\r\n}\r\n";
+const cssText = ".import-text-input-19d4ba591bcca520a10caa3dc6d070634c09b6bb {\r\n    position: fixed;\r\n    top: 0;\r\n    left: 0;\r\n    width: 100%;\r\n    height: 100%;\r\n    z-index: 10000;\r\n\r\n    display: flex;\r\n    justify-content: center;\r\n    align-items: center;\r\n}\r\n\r\n.hidden-545b7c87fe067d95937637a4070769bbab45e078 {\r\n    display: none;\r\n}\r\n.ellipsis-text-995110e664574196e159fa5bcd50b12365923ab8 {\r\n    white-space: nowrap;\r\n    overflow: hidden;\r\n    text-overflow: ellipsis;\r\n}\r\n.ellipsis-text-995110e664574196e159fa5bcd50b12365923ab8 br {\r\n    display: none;\r\n}\r\n\r\ninput.editable-text-cbfab67dada7a654ac9ef8287857fe3163dd8a9b {\r\n    border: none;\r\n    background: none;\r\n    font-size: 16px;\r\n    color: black;\r\n}\r\n\r\n.spot-label-8a3cc3ad91237c2ba40cd6c8bc70e53b53c71eee {\r\n    color: #FFFFBB;\r\n    font-size: 11px;\r\n    line-height: 12px;\r\n    text-align: center;\r\n    padding: 2px;\r\n    overflow: hidden;\r\n    white-space: nowrap;\r\n    text-overflow: ellipsis;\r\n    text-shadow: 1px 1px #000, 1px -1px #000, -1px 1px #000, -1px -1px #000, 0 0 5px #000;\r\n    pointer-events: none;\r\n}\r\n.spot-handle-63849fdf5ccf7c0eff4c178ea11103835ed23f29 {\r\n    --background-hue-eb0109df7c4d5c17a138ab57ce31368a285bf811: 152deg;\r\n    --background-opacity-f5512beec248af0bc438cd108a169500f1a7f908: 40%;\r\n    --border-width-17feb6caf748d09a0fcf6781d14859ed8043e0e1: 2px;\r\n    --border-saturation-ddebdc34a90b2c05c7330495d8cb2622f6f7c6a4: 0%;\r\n    --border-opacity-b04052b9a1caeede6fa7ca67de1e473d61891c7a: 80%;\r\n\r\n    transition: all 0.5s, transform 0s;\r\n    box-sizing: border-box;\r\n    background-color: hsla(var(--background-hue-eb0109df7c4d5c17a138ab57ce31368a285bf811), 84%, 56%, var(--background-opacity-f5512beec248af0bc438cd108a169500f1a7f908));\r\n    border: solid var(--border-width-17feb6caf748d09a0fcf6781d14859ed8043e0e1) hsla(56, var(--border-saturation-ddebdc34a90b2c05c7330495d8cb2622f6f7c6a4), 39%, var(--border-opacity-b04052b9a1caeede6fa7ca67de1e473d61891c7a));\r\n    border-radius: 100%;\r\n}\r\n.spot-handle-63849fdf5ccf7c0eff4c178ea11103835ed23f29.draggable-d88639c5764a31ddae7fe120c66c1cd507da0eed {\r\n    --background-opacity-f5512beec248af0bc438cd108a169500f1a7f908: 100%;\r\n    --border-opacity-b04052b9a1caeede6fa7ca67de1e473d61891c7a: 100%;\r\n    border-radius: 0;\r\n}\r\n.spot-handle-63849fdf5ccf7c0eff4c178ea11103835ed23f29.highlighted-2032baf288d6040ceeb805d2b9d00c157a58f334 {\r\n    --border-width-17feb6caf748d09a0fcf6781d14859ed8043e0e1: 4px;\r\n    --border-saturation-ddebdc34a90b2c05c7330495d8cb2622f6f7c6a4: 100%;\r\n}\r\n\r\n.properties-editor-ef40e9ed3840df1aa2cdf410a8021003566caa87 {\r\n    display: flex;\r\n    flex-direction: column;\r\n    height: 100%;\r\n}\r\n\r\n.properties-editor-ef40e9ed3840df1aa2cdf410a8021003566caa87 textarea,\r\n.properties-editor-ef40e9ed3840df1aa2cdf410a8021003566caa87 input {\r\n    box-sizing: border-box;\r\n    width: 100%;\r\n    resize: vertical;\r\n}\r\n.properties-editor-ef40e9ed3840df1aa2cdf410a8021003566caa87 input.title-07929e36291ee315cb60cf3bf1b1693df342b34c {\r\n    width: auto;\r\n}\r\n\r\n.properties-editor-ef40e9ed3840df1aa2cdf410a8021003566caa87 textarea.invalid-b5f4ab08649d9561338d2c1c451b1c25125e943d {\r\n    border: solid 1px red;\r\n    background-color: lightgoldenrodyellow;\r\n}\r\n\r\n.without-report-container-cae247d6b19fea136c53819096a4b6a3972965e3 {\r\n    flex-grow: 1;\r\n    height: 0;\r\n    overflow: auto;\r\n}\r\n.without-report-container-cae247d6b19fea136c53819096a4b6a3972965e3 {\r\n    display: flex;\r\n    flex-direction: column;\r\n}\r\n.report-container-55f633fef050e887b20a94e55baeca8f2017de7b {\r\n    background: #00c2ff70;\r\n    color: #ffffff;\r\n    padding: 3px;\r\n}\r\n\r\n.route-list-9eb18dea6b29a41617fe2ae3f253c0139f23251a .selecting-5e05e7edb3ed5daeb9e0d052b77564e58c86e151 {\r\n    background: #FECA40;\r\n}\r\n\r\n.route-list-9eb18dea6b29a41617fe2ae3f253c0139f23251a .selected-011265ea07980436d679df19e9640a5d7f4e4d2e {\r\n    background: #F39814;\r\n    color: white;\r\n}\r\n\r\n.route-list-9eb18dea6b29a41617fe2ae3f253c0139f23251a {\r\n    flex-grow: 1;\r\n    overflow: hidden;\r\n\r\n    list-style-type: none;\r\n    margin: 0;\r\n    padding: 0;\r\n}\r\n\r\n.route-list-9eb18dea6b29a41617fe2ae3f253c0139f23251a .route-list-item-70a16a19e033889ad7b3a954b9590c4af4dd3abc {\r\n    margin: var(--route-list-item-margin-d26104b804dd3ff907c37bb7c568594b9b613010);\r\n    padding: var(--route-list-item-padding-7c1c0d148a9600733b74b808b50a76898f3e53c2);\r\n    cursor: pointer;\r\n    user-select: none;\r\n}\r\n.route-list-9eb18dea6b29a41617fe2ae3f253c0139f23251a .note-df83bdcf6400a7479b76ecb85b7664361e74abd0 {\r\n    font-size: 75%;\r\n    padding-left: 0.5em;\r\n    color: #ffffffab;\r\n}\r\n\r\n.auto-complete-list-3518a8add5e9054c151ff072f28ed877120ec855 {\r\n    position: absolute;\r\n    background-color: #f9f9f9;\r\n    min-width: 160px;\r\n    box-shadow: 0px 8px 16px 0px rgba(0, 0, 0, 0.2);\r\n    padding: 12px 16px;\r\n    z-index: 1;\r\n}\r\n\r\n.auto-complete-list-3518a8add5e9054c151ff072f28ed877120ec855 .auto-complete-list-item-4eb068142c47c56917125cc156fe1961517d77ae {\r\n    color: black;\r\n    padding: 12px 16px;\r\n    text-decoration: none;\r\n    display: block;\r\n}\r\n\r\n.auto-complete-list-3518a8add5e9054c151ff072f28ed877120ec855 .auto-complete-list-item-4eb068142c47c56917125cc156fe1961517d77ae:hover {\r\n    background-color: #ddd;\r\n}\r\n";
 const variables = {
-    "--background-hue": "--background-hue-585738f4482e2df39529b70e4ab358499e50ea7e",
-    "--background-opacity": "--background-opacity-b42870653cb49112dc4ccadaf7c4118ad1f4618d",
-    "--border-width": "--border-width-b76b14b31515b8a01ffd2581976a50ff617adefb",
-    "--border-saturation": "--border-saturation-228d53eac5682d1ac3a269287ae1cd4e642de8a0",
-    "--border-opacity": "--border-opacity-9572af3613c18605255e803f1d1c8b2cbe433d73",
-    "--route-list-item-margin": "--route-list-item-margin-6c74dc8d2ba1fcccb386c63bf25f24196aaff2cb",
-    "--route-list-item-padding": "--route-list-item-padding-9117414f70e8720298b1a81d8c3cfa11723f9876",
+    "--background-hue": "--background-hue-eb0109df7c4d5c17a138ab57ce31368a285bf811",
+    "--background-opacity": "--background-opacity-f5512beec248af0bc438cd108a169500f1a7f908",
+    "--border-width": "--border-width-17feb6caf748d09a0fcf6781d14859ed8043e0e1",
+    "--border-saturation": "--border-saturation-ddebdc34a90b2c05c7330495d8cb2622f6f7c6a4",
+    "--border-opacity": "--border-opacity-b04052b9a1caeede6fa7ca67de1e473d61891c7a",
+    "--route-list-item-margin": "--route-list-item-margin-d26104b804dd3ff907c37bb7c568594b9b613010",
+    "--route-list-item-padding": "--route-list-item-padding-7c1c0d148a9600733b74b808b50a76898f3e53c2",
 };
 /* harmony default export */ const styles_module = ({
-    "import-text-input": "import-text-input-ed6c584df855f5930917cab1f8269c9e8c1916e8",
-    hidden: "hidden-dcc1c54415ad7be0ab599778ed2f74a8b16cb564",
-    "ellipsis-text": "ellipsis-text-b0a58bd974ef27fa4206a60a1a2cde63f82605ee",
-    "editable-text": "editable-text-c6dfb1e51225459184650cb24475cdb508eaf81b",
-    "spot-label": "spot-label-707ab04af5937fd294aed16adad4e1232b42a0b1",
-    "spot-handle": "spot-handle-ae32e3610080b739174b76c404145c4988e0e156",
-    draggable: "draggable-948a72fb556cce5808f3f71ca30e875cd205b8d1",
-    highlighted: "highlighted-e6e4cfd2950557eac9d903f30826cf59843dc898",
-    "properties-editor": "properties-editor-e90cf6c617e53a9c59683c9c8150aef14895aaae",
-    title: "title-f25918f001924f5c8de77d52c1aef5efc983892b",
-    invalid: "invalid-1b6f34912cbd632b0885c4e1199579ca4bdec1b2",
-    "route-list": "route-list-08c84f1169709f8f9e3469d56006a0646670fe70",
-    selecting: "selecting-a735b162066f932227c9d8333031f113ba1054d0",
-    selected: "selected-e52f4d093c053017df9cb9a1d0228f1a0bb097af",
-    "route-list-item": "route-list-item-7fc93ef1fbbf99305d9a48d77889097d719eb7f5",
-    note: "note-7043e128c08da5952b748866eb0a335b9e894ee4",
-    "auto-complete-list": "auto-complete-list-26d9d45c81ecc25875c663a3f4276dcdf9b3d59a",
-    "auto-complete-list-item": "auto-complete-list-item-751a4e8106915335407a1cf81650ef47d84e4179",
-    accordion: "accordion-9d803004d1df14de9a91623042c4b41b9529eafb",
+    "import-text-input": "import-text-input-19d4ba591bcca520a10caa3dc6d070634c09b6bb",
+    hidden: "hidden-545b7c87fe067d95937637a4070769bbab45e078",
+    "ellipsis-text": "ellipsis-text-995110e664574196e159fa5bcd50b12365923ab8",
+    "editable-text": "editable-text-cbfab67dada7a654ac9ef8287857fe3163dd8a9b",
+    "spot-label": "spot-label-8a3cc3ad91237c2ba40cd6c8bc70e53b53c71eee",
+    "spot-handle": "spot-handle-63849fdf5ccf7c0eff4c178ea11103835ed23f29",
+    draggable: "draggable-d88639c5764a31ddae7fe120c66c1cd507da0eed",
+    highlighted: "highlighted-2032baf288d6040ceeb805d2b9d00c157a58f334",
+    "properties-editor": "properties-editor-ef40e9ed3840df1aa2cdf410a8021003566caa87",
+    title: "title-07929e36291ee315cb60cf3bf1b1693df342b34c",
+    invalid: "invalid-b5f4ab08649d9561338d2c1c451b1c25125e943d",
+    "without-report-container": "without-report-container-cae247d6b19fea136c53819096a4b6a3972965e3",
+    "report-container": "report-container-55f633fef050e887b20a94e55baeca8f2017de7b",
+    "route-list": "route-list-9eb18dea6b29a41617fe2ae3f253c0139f23251a",
+    selecting: "selecting-5e05e7edb3ed5daeb9e0d052b77564e58c86e151",
+    selected: "selected-011265ea07980436d679df19e9640a5d7f4e4d2e",
+    "route-list-item": "route-list-item-70a16a19e033889ad7b3a954b9590c4af4dd3abc",
+    note: "note-df83bdcf6400a7479b76ecb85b7664361e74abd0",
+    "auto-complete-list": "auto-complete-list-3518a8add5e9054c151ff072f28ed877120ec855",
+    "auto-complete-list-item": "auto-complete-list-item-4eb068142c47c56917125cc156fe1961517d77ae",
 });
+
+;// CONCATENATED MODULE: ./source/accordion.module.css
+const accordion_module_cssText = "\r\n/* アコーディオン */\r\n/* マーカー */\r\n.accordion-77af8f6cf196726c58c088fe88ab0b254fe950ec>summary::-webkit-details-marker {\r\n    display: none;\r\n}\r\n\r\n.accordion-77af8f6cf196726c58c088fe88ab0b254fe950ec>summary::before {\r\n    content: \"\";\r\n    position: absolute;\r\n    width: 6px;\r\n    height: 6px;\r\n    border-top: 2px solid #fff;\r\n    border-right: 2px solid #fff;\r\n\r\n    transform: rotate(225deg);\r\n    top: calc(50% - 3px);\r\n    right: 1em;\r\n}\r\n\r\n/* 閉じているとき */\r\n.accordion-77af8f6cf196726c58c088fe88ab0b254fe950ec>summary {\r\n    cursor: grab;\r\n    display: block;\r\n    height: auto;\r\n    padding: 3px;\r\n    width: auto;\r\n    height: auto;\r\n\r\n    background: #019bc656;\r\n    border: solid 1px #00000000\r\n}\r\n\r\n.accordion-77af8f6cf196726c58c088fe88ab0b254fe950ec>* {\r\n    backface-visibility: hidden;\r\n    transform: translateZ(0);\r\n    transition: all 0.3s;\r\n}\r\n\r\n.accordion-77af8f6cf196726c58c088fe88ab0b254fe950ec> :not(summary) {\r\n    margin-bottom: 6px;\r\n    padding: 0 3px;\r\n    border: solid 1px #00000000;\r\n}\r\n\r\n/* 開いたとき */\r\n.accordion-77af8f6cf196726c58c088fe88ab0b254fe950ec[open]>summary {\r\n    background: #c6880156;\r\n}\r\n\r\n.accordion-77af8f6cf196726c58c088fe88ab0b254fe950ec[open]>summary::before {\r\n    transform: rotate(135deg);\r\n}\r\n\r\n.accordion-77af8f6cf196726c58c088fe88ab0b254fe950ec[open]> :not(summary) {\r\n    padding: 3px;\r\n    transition: all 0.3s;\r\n\r\n    border: solid 1px #c6880156;\r\n}\r\n";
+const accordion_module_variables = {};
+/* harmony default export */ const accordion_module = ({
+    accordion: "accordion-77af8f6cf196726c58c088fe88ab0b254fe950ec",
+});
+
+;// CONCATENATED MODULE: ../gas-drivetunnel/source/json-schema-core.ts
+const pathCaches = [];
+const seenCaches = [];
+// eslint-disable-next-line @typescript-eslint/ban-types
+class Schema {
+    constructor(_validate, _isOptional = false) {
+        this._validate = _validate;
+        this._isOptional = _isOptional;
+    }
+    parse(target) {
+        var _a, _b;
+        const currentPath = (_a = pathCaches.pop()) !== null && _a !== void 0 ? _a : [];
+        const seen = (_b = seenCaches.pop()) !== null && _b !== void 0 ? _b : {
+            // TODO: ES5 または Rhino ランタイムは WeakMap が存在しない V8 はエラーが発生するので polyfill を使う
+            add() {
+                /* fake */
+            },
+            has() {
+                return false;
+            },
+        };
+        try {
+            return this._validate(target, currentPath, seen);
+        }
+        finally {
+            currentPath.length = 0;
+            pathCaches.push(currentPath);
+            seenCaches.push(seen);
+        }
+    }
+    optional() {
+        return optional(this);
+    }
+}
+function wrap(validate) {
+    return new Schema(validate);
+}
+class ValidationError extends Error {
+    constructor(message, path, expected, actual) {
+        super(message);
+        this.path = path;
+        this.expected = expected;
+        this.actual = actual;
+    }
+    get name() {
+        return "ValidationError";
+    }
+}
+function errorAsValidationDiagnostics(error) {
+    if (error instanceof ValidationError) {
+        return [
+            {
+                message: error.message,
+                path: error.path,
+                expected: error.expected,
+                actual: error.actual,
+            },
+        ];
+    }
+}
+function validationError(path, expected, actual) {
+    return new ValidationError(JSON.stringify({
+        path,
+        expected,
+        actual,
+    }), path, expected, actual);
+}
+function record(keySchema, valueSchema) {
+    return wrap((target, path, seen) => {
+        if (target == null || typeof target !== "object") {
+            throw validationError(path, "object", target === null ? "null" : typeof target);
+        }
+        if (seen.has(target)) {
+            return target;
+        }
+        seen.add(target);
+        for (const key of Object.keys(target)) {
+            const value = target[key];
+            keySchema.parse(key);
+            try {
+                path.push(key);
+                valueSchema._validate(value, path, seen);
+            }
+            finally {
+                path.pop();
+            }
+        }
+        return target;
+    });
+}
+function strictObject(shape) {
+    const props = [];
+    for (const key in shape) {
+        props.push([key, shape[key]]);
+    }
+    return wrap((target, path, seen) => {
+        if (target === null || typeof target !== "object") {
+            throw validationError(path, "object", target === null ? "null" : typeof target);
+        }
+        if (seen.has(target)) {
+            return target;
+        }
+        seen.add(target);
+        for (const [key, valueSchema] of props) {
+            if (!(key in target)) {
+                if (valueSchema._isOptional) {
+                    continue;
+                }
+                throw validationError(path, `{ '${key}': any }`, "object");
+            }
+            const value = target[key];
+            try {
+                path.push(key);
+                valueSchema._validate(value, path, seen);
+            }
+            finally {
+                path.pop();
+            }
+        }
+        return target;
+    });
+}
+function literal(value) {
+    const expected = typeof value === "string" ? JSON.stringify(value) : String(value);
+    return wrap((target, path) => {
+        if (target !== value) {
+            throw validationError(path, expected, typeof value === "object" ? "object" : String(target));
+        }
+        return target;
+    });
+}
+let stringSchema;
+function string() {
+    return (stringSchema !== null && stringSchema !== void 0 ? stringSchema : (stringSchema = wrap((target, path) => {
+        if (typeof target !== "string") {
+            throw validationError(path, "string", typeof target);
+        }
+        return target;
+    })));
+}
+let numberSchema;
+function number() {
+    return (numberSchema !== null && numberSchema !== void 0 ? numberSchema : (numberSchema = wrap((target, path) => {
+        if (typeof target !== "number") {
+            throw validationError(path, "number", typeof target);
+        }
+        return target;
+    })));
+}
+let booleanSchema;
+function json_schema_core_boolean() {
+    return (booleanSchema !== null && booleanSchema !== void 0 ? booleanSchema : (booleanSchema = wrap((target, path) => {
+        if (typeof target === "boolean") {
+            throw validationError(path, "boolean", typeof target);
+        }
+        return target;
+    })));
+}
+function tuple(schemas) {
+    const anyTupleName = `[${schemas.map(() => "any").join(", ")}]`;
+    return wrap((target, path, seen) => {
+        if (!Array.isArray(target)) {
+            throw validationError(path, "any[]", typeof target);
+        }
+        if (seen.has(target)) {
+            return target;
+        }
+        seen.add(target);
+        if (target.length < schemas.length) {
+            const actualTypeName = 5 < target.length
+                ? "any[]"
+                : `[${target.map(() => "any").join(", ")}]`;
+            throw validationError(path, anyTupleName, actualTypeName);
+        }
+        for (let i = 0; i < schemas.length; i++) {
+            const elementSchema = schemas[i];
+            const element = target[i];
+            path.push(i);
+            try {
+                elementSchema._validate(element, path, seen);
+            }
+            finally {
+                path.pop();
+            }
+        }
+        return target;
+    });
+}
+function array(elementSchema) {
+    return wrap((target, path, seen) => {
+        if (!Array.isArray(target)) {
+            throw validationError(path, "any[]", typeof target);
+        }
+        if (seen.has(target)) {
+            return target;
+        }
+        seen.add(target);
+        for (let i = 0; i < target.length; i++) {
+            const element = target[i];
+            try {
+                path.push(i);
+                elementSchema._validate(element, path, seen);
+            }
+            finally {
+                path.pop();
+            }
+        }
+        return target;
+    });
+}
+const errorsCache = [];
+function union(schemas) {
+    return wrap((target, path, seen) => {
+        var _a;
+        const errors = (_a = errorsCache.pop()) !== null && _a !== void 0 ? _a : [];
+        try {
+            for (const schema of schemas) {
+                try {
+                    schema._validate(target, path, seen);
+                    return target;
+                }
+                catch (e) {
+                    if (e instanceof ValidationError) {
+                        errors.push(e);
+                    }
+                }
+            }
+            if (errors[0] !== undefined && errors.length === 1) {
+                throw errors[0];
+            }
+            throw new ValidationError(JSON.stringify({
+                path,
+                errors: errors.map((e) => JSON.parse(e.message)),
+            }), path, `Union<[${errors.map((e) => e.expected).join(", ")}}]>`, typeof target);
+        }
+        finally {
+            errors.length = 0;
+            errorsCache.push(errors);
+        }
+    });
+}
+let nullSchemaCache;
+function null_() {
+    return (nullSchemaCache !== null && nullSchemaCache !== void 0 ? nullSchemaCache : (nullSchemaCache = wrap((target, path) => {
+        if (target === null) {
+            return target;
+        }
+        throw validationError(path, "null", typeof target);
+    })));
+}
+
+let neverSchemaCache;
+function never() {
+    return (neverSchemaCache !== null && neverSchemaCache !== void 0 ? neverSchemaCache : (neverSchemaCache = wrap((target, path) => {
+        throw validationError(path, "never", typeof target);
+    })));
+}
+let anySchemaCache;
+function any() {
+    return (anySchemaCache !== null && anySchemaCache !== void 0 ? anySchemaCache : (anySchemaCache = wrap((target) => target)));
+}
+function optional(schema) {
+    return new Schema(schema._validate, true);
+}
+function regexp(pattern) {
+    return wrap((target, path) => {
+        if (typeof target !== "string") {
+            throw validationError(path, pattern.toString(), typeof target);
+        }
+        if (!pattern.test(target)) {
+            throw validationError(path, pattern.toString(), target);
+        }
+        return target;
+    });
+}
+function createJsonSchema() {
+    const json = wrap((target, path, seen) => {
+        if (target === null) {
+            return target;
+        }
+        switch (typeof target) {
+            case "boolean":
+            case "number":
+            case "string":
+                return target;
+            case "object":
+                return Array.isArray(target)
+                    ? jsonArray._validate(target, path, seen)
+                    : jsonObject._validate(target, path, seen);
+        }
+        throw validationError(path, "Json", typeof target);
+    });
+    const jsonArray = array(json);
+    const jsonObject = record(string(), json);
+    return json;
+}
+let jsonSchemaCache;
+function json() {
+    return (jsonSchemaCache !== null && jsonSchemaCache !== void 0 ? jsonSchemaCache : (jsonSchemaCache = createJsonSchema()));
+}
+function delayed(createSchema) {
+    let schema;
+    return wrap((target, path, seen) => {
+        return (schema !== null && schema !== void 0 ? schema : (schema = createSchema()))._validate(target, path, seen);
+    });
+}
+function function_() {
+    return wrap((target, path, seen) => {
+        if (typeof target === "function") {
+            return target;
+        }
+        throw validationError(path, "Function", typeof target);
+    });
+}
 
 ;// CONCATENATED MODULE: ../gas-drivetunnel/source/schemas.ts
 
@@ -2036,6 +2044,38 @@ function countByGyms(kind, searchValue) {
         },
     };
 }
+function stopsForNextGym(count) {
+    return {
+        *initialize(e) {
+            const resolve = yield* initializeRouteStatisticsResolver(e);
+            return {
+                *predicate(r) {
+                    var _a;
+                    const source = (_a = resolve(r)) === null || _a === void 0 ? void 0 : _a.potentialPokestopsForNextGym;
+                    // 判定に必要な情報が足りないか古すぎるので再取得が必要
+                    if (source === undefined ||
+                        source.isNotLoaded ||
+                        source.obsoleteDate != null) {
+                        return true;
+                    }
+                    return source.value === count;
+                },
+                *getNote(r) {
+                    var _a;
+                    const source = (_a = resolve(r)) === null || _a === void 0 ? void 0 : _a.potentialPokestopsForNextGym;
+                    if (source === undefined || source.isNotLoaded) {
+                        return `SG?,${r.note}`;
+                    }
+                    if (source.obsoleteDate != null) {
+                        const dateString = timeToLocalISODateString(source.obsoleteDate);
+                        return `SG${source.value}@${dateString},${r.note}`;
+                    }
+                    return `SG${source.value},${r.note}`;
+                },
+            };
+        },
+    };
+}
 
 ;// CONCATENATED MODULE: ./source/query/parser.ts
 
@@ -2811,6 +2851,9 @@ const library = {
     *potentialStops(count) {
         return countByGyms("potentialStops", count);
     },
+    *stopsForNextGym(count) {
+        return stopsForNextGym(count);
+    },
     *cell14Portals(count) {
         return {
             *initialize(e) {
@@ -2932,254 +2975,6 @@ function createQuery(expression) {
     }
 }
 
-;// CONCATENATED MODULE: ./source/query-editor.module.css
-const query_editor_module_cssText = "\r\n.highlighting-eb1bdb9ef1ff8ad9f5382501d53fd07c69b329a0.invalid-a9b8c142de1ecbf0628f905169f747e43e9fa09a {\r\n    background-color: lightgoldenrodyellow;\r\n}\r\n.input-container-a055e2bbdf088977f2cd7bd39b0f9af72f444075 {\r\n    position: relative;\r\n    width: auto;\r\n    height: auto;\r\n}\r\n.input-7a4263bdf0d43219e5cebd4956b85f64e1b1020e {\r\n    color: transparent;\r\n    background-color: transparent;\r\n    caret-color: gray;\r\n}\r\n.highlighting-eb1bdb9ef1ff8ad9f5382501d53fd07c69b329a0 {\r\n    background: white;\r\n    color: rgb(54, 54, 54)\r\n}\r\n.input-7a4263bdf0d43219e5cebd4956b85f64e1b1020e, .highlighting-eb1bdb9ef1ff8ad9f5382501d53fd07c69b329a0 {\r\n    --input-line-height-ratio-6e32f6633f95524076f6971ff716a61a9e2d22c5: 1.5;\r\n\r\n    margin: 0;\r\n    padding: 1px;\r\n    border: 0;\r\n    width: calc(100% - 32px);\r\n    height: calc(1em * var(--input-line-height-ratio-6e32f6633f95524076f6971ff716a61a9e2d22c5) + 1px);\r\n}\r\n.input-7a4263bdf0d43219e5cebd4956b85f64e1b1020e, .highlighting-eb1bdb9ef1ff8ad9f5382501d53fd07c69b329a0 * {\r\n    font-size: 9pt;\r\n    font-family: 'fira code', Consolas, Menlo, Monaco, 'Courier New', Courier, monospace;\r\n    line-height: var(--input-line-height-ratio-6e32f6633f95524076f6971ff716a61a9e2d22c5);\r\n    tab-size: 2;\r\n}\r\n.input-7a4263bdf0d43219e5cebd4956b85f64e1b1020e {\r\n    position: relative;\r\n    overflow: auto;\r\n}\r\n.highlighting-eb1bdb9ef1ff8ad9f5382501d53fd07c69b329a0 {\r\n    position: absolute;\r\n    top: 0;\r\n    left: 0;\r\n    overflow: hidden;\r\n}\r\n.input-7a4263bdf0d43219e5cebd4956b85f64e1b1020e, .highlighting-eb1bdb9ef1ff8ad9f5382501d53fd07c69b329a0 {\r\n    white-space: pre;\r\n    text-wrap: wrap;\r\n    word-break: break-all;\r\n    hyphens: none;\r\n}\r\n.input-7a4263bdf0d43219e5cebd4956b85f64e1b1020e {\r\n    z-index: 1;\r\n}\r\n.highlighting-eb1bdb9ef1ff8ad9f5382501d53fd07c69b329a0 {\r\n    z-index: 0;\r\n}\r\n\r\n.token-5298f0aed99f259a64648db7e712ad470f49185a {\r\n    border-radius: 1em;\r\n    background: hsl(var(--token-hue-642cdf41128196f80b17fc44b845d211ea645127), 29%, 90%);\r\n}\r\n.token-5298f0aed99f259a64648db7e712ad470f49185a[class~=space] {\r\n    border-radius: 0;\r\n    background: radial-gradient(circle farthest-side, lightgray, lightgray 1px, transparent 1px, transparent);\r\n    background-size: 4px 100%;\r\n}\r\n.token-5298f0aed99f259a64648db7e712ad470f49185a[class~=undefined-type], .token-5298f0aed99f259a64648db7e712ad470f49185a[class~=keyword] {\r\n    background: none;\r\n}\r\n.token-5298f0aed99f259a64648db7e712ad470f49185a[class~=comment] {\r\n    --token-hue-642cdf41128196f80b17fc44b845d211ea645127: 120;\r\n}\r\n.token-5298f0aed99f259a64648db7e712ad470f49185a[class~=string] {\r\n    --token-hue-642cdf41128196f80b17fc44b845d211ea645127: 0;\r\n}\r\n.token-5298f0aed99f259a64648db7e712ad470f49185a[class~=number] {\r\n    --token-hue-642cdf41128196f80b17fc44b845d211ea645127: 182;\r\n}\r\n.token-5298f0aed99f259a64648db7e712ad470f49185a[class~=operator] {\r\n    --token-hue-642cdf41128196f80b17fc44b845d211ea645127: 43;\r\n}\r\n.token-5298f0aed99f259a64648db7e712ad470f49185a.invalid-a9b8c142de1ecbf0628f905169f747e43e9fa09a {\r\n    text-decoration: underline wavy red;\r\n}\r\n";
-const query_editor_module_variables = {
-    "--input-line-height-ratio": "--input-line-height-ratio-6e32f6633f95524076f6971ff716a61a9e2d22c5",
-    "--token-hue": "--token-hue-642cdf41128196f80b17fc44b845d211ea645127",
-};
-/* harmony default export */ const query_editor_module = ({
-    highlighting: "highlighting-eb1bdb9ef1ff8ad9f5382501d53fd07c69b329a0",
-    invalid: "invalid-a9b8c142de1ecbf0628f905169f747e43e9fa09a",
-    "input-container": "input-container-a055e2bbdf088977f2cd7bd39b0f9af72f444075",
-    input: "input-7a4263bdf0d43219e5cebd4956b85f64e1b1020e",
-    token: "token-5298f0aed99f259a64648db7e712ad470f49185a",
-});
-
-;// CONCATENATED MODULE: ./source/query-editor.tsx
-
-
-
-
-function getMonospaceWidth(text) {
-    // TODO:
-    return text.length;
-}
-function addClassName(element, className) {
-    if (className != null) {
-        element.classList.add(className);
-    }
-}
-function createQueryEditor(options) {
-    var _a, _b, _c, _d, _e, _f;
-    const invalidClassNames = [
-        query_editor_module.invalid,
-        (_a = options === null || options === void 0 ? void 0 : options.classNames) === null || _a === void 0 ? void 0 : _a.invalid,
-    ].filter((x) => x != null);
-    const highlightingContent = jsx("code", {});
-    const highlightingContainer = (jsx("pre", { "aria-hidden": "true", class: query_editor_module.highlighting, children: highlightingContent }));
-    addClassName(highlightingContainer, (_b = options === null || options === void 0 ? void 0 : options.classNames) === null || _b === void 0 ? void 0 : _b.highlighting);
-    const startSymbol = Symbol("start");
-    const endSymbol = Symbol("end");
-    const tokens = [];
-    function getTokenElementIndex(position) {
-        let low = 0;
-        let high = tokens.length - 1;
-        while (low <= high) {
-            const mid = Math.floor((low + high) / 2);
-            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-            const tokenElement = tokens[mid];
-            if (position < tokenElement[startSymbol]) {
-                high = mid - 1;
-            }
-            else if (position > tokenElement[endSymbol]) {
-                low = mid + 1;
-            }
-            else {
-                return mid;
-            }
-        }
-        return;
-    }
-    const tokenClassName = (_c = options === null || options === void 0 ? void 0 : options.classNames) === null || _c === void 0 ? void 0 : _c.token;
-    function createSpan(source, start, end, tokenType, tokenModifier) {
-        const span = (jsx("span", { children: source.slice(start, end) }));
-        span.classList.add(query_editor_module.token);
-        addClassName(span, tokenClassName);
-        span.classList.add(tokenType !== null && tokenType !== void 0 ? tokenType : "undefined-type");
-        span.classList.add(tokenModifier !== null && tokenModifier !== void 0 ? tokenModifier : "undefined-modifier");
-        span[startSymbol] = start;
-        span[endSymbol] = end;
-        return span;
-    }
-    function updateScroll(input) {
-        highlightingContainer.scrollTop = input.scrollTop;
-        highlightingContainer.scrollLeft = input.scrollLeft;
-    }
-    const tokenDefinitions = options === null || options === void 0 ? void 0 : options.tokenDefinitions;
-    const tokenizer = tokenDefinitions
-        ? createTokenizer(tokenDefinitions)
-        : null;
-    function updateHighlightedElement(source) {
-        if (tokenizer == null) {
-            tokens.length = 0;
-            highlightingContent.innerText = source;
-            return;
-        }
-        tokenizer.initialize(source);
-        tokens.length = 0;
-        highlightingContent.innerHTML = "";
-        const fragment = document.createDocumentFragment();
-        let next = 0;
-        // eslint-disable-next-line no-constant-condition
-        while (true) {
-            const tokenStart = tokenizer.getPosition();
-            const token = tokenizer.next();
-            if (token === undefined)
-                break;
-            const tokenEnd = tokenizer.getPosition();
-            if (next < tokenStart) {
-                const span = createSpan(source, next, tokenStart, undefined, undefined);
-                tokens.push(span);
-                fragment.append(span);
-            }
-            const span = createSpan(source, tokenStart, tokenEnd, token === null || token === void 0 ? void 0 : token[0], token === null || token === void 0 ? void 0 : token[1]);
-            tokens.push(span);
-            fragment.append(span);
-            next = tokenEnd;
-        }
-        if (next < source.length) {
-            fragment.append(source.slice(next));
-        }
-        highlightingContent.append(fragment);
-    }
-    function onValueChange(element) {
-        var _a;
-        (_a = options === null || options === void 0 ? void 0 : options.onValueChange) === null || _a === void 0 ? void 0 : _a.call(options, element);
-        updateHighlightedElement(element.value);
-    }
-    function insertText(element, createText) {
-        const code = element.value;
-        const beforeSelection = code.slice(0, element.selectionStart);
-        const afterSelection = code.slice(element.selectionEnd, code.length);
-        const text = createText(beforeSelection, afterSelection);
-        const nextCursorPosition = element.selectionEnd + text.length;
-        element.value = beforeSelection + text + afterSelection;
-        element.selectionStart = nextCursorPosition;
-        element.selectionEnd = nextCursorPosition;
-    }
-    function detectIndent(text) {
-        var _a, _b;
-        let minIndent;
-        for (const [, headSpaces] of text.matchAll(/(?:^|\n)( +)/g)) {
-            if (((_a = headSpaces === null || headSpaces === void 0 ? void 0 : headSpaces.length) !== null && _a !== void 0 ? _a : Infinity) <
-                ((_b = minIndent === null || minIndent === void 0 ? void 0 : minIndent.length) !== null && _b !== void 0 ? _b : Infinity)) {
-                minIndent = headSpaces;
-            }
-        }
-        return minIndent;
-    }
-    function getNextWidth(lineWidth, indentSize) {
-        return (Math.floor(lineWidth / indentSize) + 1) * indentSize;
-    }
-    function getPreviousWidth(lineWidth, indentSize) {
-        return (Math.ceil(lineWidth / indentSize) - 1) * indentSize;
-    }
-    const errorMessageKey = "errorMessage";
-    function clearDiagnostics() {
-        highlightingContainer.classList.remove(...invalidClassNames);
-        for (const t of tokens) {
-            t.classList.remove(...invalidClassNames);
-            t.dataset[errorMessageKey] = undefined;
-        }
-    }
-    function addDiagnostic(diagnostic) {
-        var _a;
-        highlightingContainer.classList.add(...invalidClassNames);
-        // diagnostic.message;
-        const startIndex = getTokenElementIndex(diagnostic.range.start);
-        if (startIndex) {
-            const endIndex = (_a = getTokenElementIndex(diagnostic.range.end)) !== null && _a !== void 0 ? _a : startIndex;
-            for (let i = startIndex; i < endIndex + 1; i++) {
-                const token = tokens[i];
-                if (!token)
-                    continue;
-                token.classList.add(...invalidClassNames);
-                const dataset = token.dataset;
-                dataset[errorMessageKey] = diagnostic.message;
-                token.title = diagnostic.message;
-            }
-        }
-    }
-    const defaultIndent = "  ";
-    const inputField = addListeners((jsx("textarea", { spellcheck: false, class: query_editor_module.input, placeholder: (_d = options === null || options === void 0 ? void 0 : options.placeholder) !== null && _d !== void 0 ? _d : "", children: (_e = options === null || options === void 0 ? void 0 : options.initialText) !== null && _e !== void 0 ? _e : "" })), {
-        input() {
-            onValueChange(this);
-            updateScroll(this);
-        },
-        scroll() {
-            updateScroll(this);
-        },
-        keydown(e) {
-            var _a, _b, _c, _d;
-            if (e.key === "Tab") {
-                e.preventDefault();
-                insertText(this, (beforeSelection) => {
-                    var _a, _b, _c;
-                    const indent = (_a = detectIndent(this.value)) !== null && _a !== void 0 ? _a : defaultIndent;
-                    const line = (_c = (_b = /(?:^|\n)(.*)$/.exec(beforeSelection)) === null || _b === void 0 ? void 0 : _b[1]) !== null && _c !== void 0 ? _c : "";
-                    const lineWidth = getMonospaceWidth(line);
-                    const insertionSpaceCount = getNextWidth(lineWidth, indent.length) - lineWidth;
-                    return " ".repeat(insertionSpaceCount);
-                });
-                onValueChange(this);
-            }
-            if (e.key === "Enter") {
-                e.preventDefault();
-                insertText(this, (beforeSelection) => {
-                    var _a, _b;
-                    const indent = (_b = (_a = /([\t ]*).*$/.exec(beforeSelection)) === null || _a === void 0 ? void 0 : _a[1]) !== null && _b !== void 0 ? _b : "";
-                    return "\n" + indent;
-                });
-                onValueChange(this);
-            }
-            if (e.key === "Backspace") {
-                // eslint-disable-next-line @typescript-eslint/no-this-alias
-                const element = this;
-                if (element.selectionStart === element.selectionEnd) {
-                    const code = element.value;
-                    const beforeSelection = code.slice(0, element.selectionStart);
-                    const afterSelection = code.slice(element.selectionEnd, code.length);
-                    const m = /(?:^|\n)( +)$/.exec(beforeSelection);
-                    if (m) {
-                        e.preventDefault();
-                        const lineWidth = (_b = (_a = m[1]) === null || _a === void 0 ? void 0 : _a.length) !== null && _b !== void 0 ? _b : 0;
-                        const indentWidth = (_d = (_c = detectIndent(this.value)) === null || _c === void 0 ? void 0 : _c.length) !== null && _d !== void 0 ? _d : defaultIndent.length;
-                        const deleteCount = lineWidth -
-                            getPreviousWidth(lineWidth, indentWidth);
-                        const nextCursorPosition = element.selectionStart - deleteCount;
-                        element.value =
-                            beforeSelection.slice(0, beforeSelection.length - deleteCount) + afterSelection;
-                        element.selectionStart = nextCursorPosition;
-                        element.selectionEnd = nextCursorPosition;
-                        onValueChange(this);
-                    }
-                }
-            }
-        },
-    });
-    addClassName(inputField, (_f = options === null || options === void 0 ? void 0 : options.classNames) === null || _f === void 0 ? void 0 : _f.inputField);
-    new ResizeObserver((entries) => {
-        for (const entry of entries) {
-            if (entry.target !== inputField)
-                continue;
-            const { contentRect } = entry;
-            highlightingContainer.style.width = contentRect.width + "px";
-            highlightingContainer.style.height = contentRect.height + "px";
-        }
-    }).observe(inputField);
-    onValueChange(inputField);
-    return {
-        cssText: query_editor_module_cssText,
-        element: (jsxs("div", { class: query_editor_module["input-container"], children: [inputField, highlightingContainer] })),
-        setValue(value) {
-            inputField.value = value;
-        },
-        clearDiagnostics,
-        addDiagnostic,
-    };
-}
-
 ;// CONCATENATED MODULE: ./source/template.ts
 function pad2(value) {
     return ("00" + value).slice(-2);
@@ -3222,77 +3017,6 @@ function applyTemplate(template, resolve) {
         var _a, _b;
         return (_b = (_a = resolve === null || resolve === void 0 ? void 0 : resolve(variableName)) !== null && _a !== void 0 ? _a : resolveStandardVariable(variableName)) !== null && _b !== void 0 ? _b : interpolation;
     });
-}
-
-;// CONCATENATED MODULE: ./source/query/service.ts
-
-var SemanticTokenTypes;
-(function (SemanticTokenTypes) {
-    SemanticTokenTypes["variable"] = "variable";
-    SemanticTokenTypes["keyword"] = "keyword";
-    SemanticTokenTypes["number"] = "number";
-    SemanticTokenTypes["string"] = "string";
-    SemanticTokenTypes["comment"] = "comment";
-    SemanticTokenTypes["operator"] = "operator";
-    SemanticTokenTypes["space"] = "space";
-})(SemanticTokenTypes || (SemanticTokenTypes = {}));
-var SemanticTokenModifiers;
-(function (SemanticTokenModifiers) {
-    SemanticTokenModifiers["declaration"] = "declaration";
-    SemanticTokenModifiers["static"] = "static";
-    SemanticTokenModifiers["definition"] = "definition";
-    SemanticTokenModifiers["defaultLibrary"] = "defaultLibrary";
-})(SemanticTokenModifiers || (SemanticTokenModifiers = {}));
-function getTokenCategory(tokenKind) {
-    switch (tokenKind) {
-        case "Unknown":
-            return null;
-        case "$":
-        case "@":
-        case "(":
-        case ")":
-        case "{":
-        case "}":
-        case ",":
-        case ":":
-            return [SemanticTokenTypes.keyword, SemanticTokenModifiers.static];
-        case "Number":
-            return [
-                SemanticTokenTypes.number,
-                SemanticTokenModifiers.definition,
-            ];
-        case "Name":
-        case "String":
-            return [
-                SemanticTokenTypes.string,
-                SemanticTokenModifiers.defaultLibrary,
-            ];
-        case "Comment":
-            return [SemanticTokenTypes.comment, SemanticTokenModifiers.static];
-        case "WhiteSpace":
-            return [
-                SemanticTokenTypes.space,
-                SemanticTokenModifiers.defaultLibrary,
-            ];
-        case "EndOfSource":
-            return;
-        default:
-            return standard_extensions_error `Invalid token kind: "${tokenKind}"`;
-    }
-}
-function mapTokenDefinitions({ tokens, getEos, getDefault, getTokenKind }, mapping) {
-    return {
-        tokens,
-        getEos() {
-            return mapping(getEos());
-        },
-        getDefault() {
-            return mapping(getDefault());
-        },
-        getTokenKind(token, start, end) {
-            return mapping(getTokenKind(token, start, end));
-        },
-    };
 }
 
 ;// CONCATENATED MODULE: ./source/virtual-list.module.css
@@ -3596,8 +3320,346 @@ function createSearchEventHandler(options) {
     return (query) => cancelScope((signal) => search_routes_awaiter(this, void 0, void 0, function* () { return handleQuery(query, signal); }));
 }
 
-;// CONCATENATED MODULE: ./source/iitc-plugin-pgo-route-helper.tsx
-var iitc_plugin_pgo_route_helper_awaiter = (undefined && undefined.__awaiter) || function (thisArg, _arguments, P, generator) {
+;// CONCATENATED MODULE: ./source/query-editor.module.css
+const query_editor_module_cssText = "\r\n.highlighting-eb1bdb9ef1ff8ad9f5382501d53fd07c69b329a0.invalid-a9b8c142de1ecbf0628f905169f747e43e9fa09a {\r\n    background-color: lightgoldenrodyellow;\r\n}\r\n.input-container-a055e2bbdf088977f2cd7bd39b0f9af72f444075 {\r\n    position: relative;\r\n    width: auto;\r\n    height: auto;\r\n}\r\n.input-7a4263bdf0d43219e5cebd4956b85f64e1b1020e {\r\n    color: transparent;\r\n    background-color: transparent;\r\n    caret-color: gray;\r\n}\r\n.highlighting-eb1bdb9ef1ff8ad9f5382501d53fd07c69b329a0 {\r\n    background: white;\r\n    color: rgb(54, 54, 54)\r\n}\r\n.input-7a4263bdf0d43219e5cebd4956b85f64e1b1020e, .highlighting-eb1bdb9ef1ff8ad9f5382501d53fd07c69b329a0 {\r\n    --input-line-height-ratio-6e32f6633f95524076f6971ff716a61a9e2d22c5: 1.5;\r\n\r\n    margin: 0;\r\n    padding: 1px;\r\n    border: 0;\r\n    width: calc(100% - 32px);\r\n    height: calc(1em * var(--input-line-height-ratio-6e32f6633f95524076f6971ff716a61a9e2d22c5) + 1px);\r\n}\r\n.input-7a4263bdf0d43219e5cebd4956b85f64e1b1020e, .highlighting-eb1bdb9ef1ff8ad9f5382501d53fd07c69b329a0 * {\r\n    font-size: 9pt;\r\n    font-family: 'fira code', Consolas, Menlo, Monaco, 'Courier New', Courier, monospace;\r\n    line-height: var(--input-line-height-ratio-6e32f6633f95524076f6971ff716a61a9e2d22c5);\r\n    tab-size: 2;\r\n}\r\n.input-7a4263bdf0d43219e5cebd4956b85f64e1b1020e {\r\n    position: relative;\r\n    overflow: auto;\r\n}\r\n.highlighting-eb1bdb9ef1ff8ad9f5382501d53fd07c69b329a0 {\r\n    position: absolute;\r\n    top: 0;\r\n    left: 0;\r\n    overflow: hidden;\r\n}\r\n.input-7a4263bdf0d43219e5cebd4956b85f64e1b1020e, .highlighting-eb1bdb9ef1ff8ad9f5382501d53fd07c69b329a0 {\r\n    white-space: pre;\r\n    text-wrap: wrap;\r\n    word-break: break-all;\r\n    hyphens: none;\r\n}\r\n.input-7a4263bdf0d43219e5cebd4956b85f64e1b1020e {\r\n    z-index: 1;\r\n}\r\n.highlighting-eb1bdb9ef1ff8ad9f5382501d53fd07c69b329a0 {\r\n    z-index: 0;\r\n}\r\n\r\n.token-5298f0aed99f259a64648db7e712ad470f49185a {\r\n    border-radius: 1em;\r\n    background: hsl(var(--token-hue-642cdf41128196f80b17fc44b845d211ea645127), 29%, 90%);\r\n}\r\n.token-5298f0aed99f259a64648db7e712ad470f49185a[class~=space] {\r\n    border-radius: 0;\r\n    background: radial-gradient(circle farthest-side, lightgray, lightgray 1px, transparent 1px, transparent);\r\n    background-size: 4px 100%;\r\n}\r\n.token-5298f0aed99f259a64648db7e712ad470f49185a[class~=undefined-type], .token-5298f0aed99f259a64648db7e712ad470f49185a[class~=keyword] {\r\n    background: none;\r\n}\r\n.token-5298f0aed99f259a64648db7e712ad470f49185a[class~=comment] {\r\n    --token-hue-642cdf41128196f80b17fc44b845d211ea645127: 120;\r\n}\r\n.token-5298f0aed99f259a64648db7e712ad470f49185a[class~=string] {\r\n    --token-hue-642cdf41128196f80b17fc44b845d211ea645127: 0;\r\n}\r\n.token-5298f0aed99f259a64648db7e712ad470f49185a[class~=number] {\r\n    --token-hue-642cdf41128196f80b17fc44b845d211ea645127: 182;\r\n}\r\n.token-5298f0aed99f259a64648db7e712ad470f49185a[class~=operator] {\r\n    --token-hue-642cdf41128196f80b17fc44b845d211ea645127: 43;\r\n}\r\n.token-5298f0aed99f259a64648db7e712ad470f49185a.invalid-a9b8c142de1ecbf0628f905169f747e43e9fa09a {\r\n    text-decoration: underline wavy red;\r\n}\r\n";
+const query_editor_module_variables = {
+    "--input-line-height-ratio": "--input-line-height-ratio-6e32f6633f95524076f6971ff716a61a9e2d22c5",
+    "--token-hue": "--token-hue-642cdf41128196f80b17fc44b845d211ea645127",
+};
+/* harmony default export */ const query_editor_module = ({
+    highlighting: "highlighting-eb1bdb9ef1ff8ad9f5382501d53fd07c69b329a0",
+    invalid: "invalid-a9b8c142de1ecbf0628f905169f747e43e9fa09a",
+    "input-container": "input-container-a055e2bbdf088977f2cd7bd39b0f9af72f444075",
+    input: "input-7a4263bdf0d43219e5cebd4956b85f64e1b1020e",
+    token: "token-5298f0aed99f259a64648db7e712ad470f49185a",
+});
+
+;// CONCATENATED MODULE: ./source/query-editor.tsx
+
+
+
+
+function getMonospaceWidth(text) {
+    // TODO:
+    return text.length;
+}
+function addClassName(element, className) {
+    if (className != null) {
+        element.classList.add(className);
+    }
+}
+function createQueryEditor(options) {
+    var _a, _b, _c, _d, _e, _f;
+    const invalidClassNames = [
+        query_editor_module.invalid,
+        (_a = options === null || options === void 0 ? void 0 : options.classNames) === null || _a === void 0 ? void 0 : _a.invalid,
+    ].filter((x) => x != null);
+    const highlightingContent = jsx("code", {});
+    const highlightingContainer = (jsx("pre", { "aria-hidden": "true", class: query_editor_module.highlighting, children: highlightingContent }));
+    addClassName(highlightingContainer, (_b = options === null || options === void 0 ? void 0 : options.classNames) === null || _b === void 0 ? void 0 : _b.highlighting);
+    const startSymbol = Symbol("start");
+    const endSymbol = Symbol("end");
+    const tokens = [];
+    function getTokenElementIndex(position) {
+        let low = 0;
+        let high = tokens.length - 1;
+        while (low <= high) {
+            const mid = Math.floor((low + high) / 2);
+            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+            const tokenElement = tokens[mid];
+            if (position < tokenElement[startSymbol]) {
+                high = mid - 1;
+            }
+            else if (position > tokenElement[endSymbol]) {
+                low = mid + 1;
+            }
+            else {
+                return mid;
+            }
+        }
+        return;
+    }
+    const tokenClassName = (_c = options === null || options === void 0 ? void 0 : options.classNames) === null || _c === void 0 ? void 0 : _c.token;
+    function createSpan(source, start, end, tokenType, tokenModifier) {
+        const span = (jsx("span", { children: source.slice(start, end) }));
+        span.classList.add(query_editor_module.token);
+        addClassName(span, tokenClassName);
+        span.classList.add(tokenType !== null && tokenType !== void 0 ? tokenType : "undefined-type");
+        span.classList.add(tokenModifier !== null && tokenModifier !== void 0 ? tokenModifier : "undefined-modifier");
+        span[startSymbol] = start;
+        span[endSymbol] = end;
+        return span;
+    }
+    function updateScroll(input) {
+        highlightingContainer.scrollTop = input.scrollTop;
+        highlightingContainer.scrollLeft = input.scrollLeft;
+    }
+    const tokenDefinitions = options === null || options === void 0 ? void 0 : options.tokenDefinitions;
+    const tokenizer = tokenDefinitions
+        ? createTokenizer(tokenDefinitions)
+        : null;
+    function updateHighlightedElement(source) {
+        if (tokenizer == null) {
+            tokens.length = 0;
+            highlightingContent.innerText = source;
+            return;
+        }
+        tokenizer.initialize(source);
+        tokens.length = 0;
+        highlightingContent.innerHTML = "";
+        const fragment = document.createDocumentFragment();
+        let next = 0;
+        // eslint-disable-next-line no-constant-condition
+        while (true) {
+            const tokenStart = tokenizer.getPosition();
+            const token = tokenizer.next();
+            if (token === undefined)
+                break;
+            const tokenEnd = tokenizer.getPosition();
+            if (next < tokenStart) {
+                const span = createSpan(source, next, tokenStart, undefined, undefined);
+                tokens.push(span);
+                fragment.append(span);
+            }
+            const span = createSpan(source, tokenStart, tokenEnd, token === null || token === void 0 ? void 0 : token[0], token === null || token === void 0 ? void 0 : token[1]);
+            tokens.push(span);
+            fragment.append(span);
+            next = tokenEnd;
+        }
+        if (next < source.length) {
+            fragment.append(source.slice(next));
+        }
+        highlightingContent.append(fragment);
+    }
+    function onValueChange(element) {
+        var _a;
+        updateScroll(element);
+        (_a = options === null || options === void 0 ? void 0 : options.onValueChange) === null || _a === void 0 ? void 0 : _a.call(options, element);
+        updateHighlightedElement(element.value);
+    }
+    function insertText(element, createText) {
+        const code = element.value;
+        const beforeSelection = code.slice(0, element.selectionStart);
+        const afterSelection = code.slice(element.selectionEnd, code.length);
+        const text = createText(beforeSelection, afterSelection);
+        const nextCursorPosition = element.selectionEnd + text.length;
+        element.value = beforeSelection + text + afterSelection;
+        element.selectionStart = nextCursorPosition;
+        element.selectionEnd = nextCursorPosition;
+    }
+    function detectIndent(text) {
+        var _a, _b;
+        let minIndent;
+        for (const [, headSpaces] of text.matchAll(/(?:^|\n)( +)/g)) {
+            if (((_a = headSpaces === null || headSpaces === void 0 ? void 0 : headSpaces.length) !== null && _a !== void 0 ? _a : Infinity) <
+                ((_b = minIndent === null || minIndent === void 0 ? void 0 : minIndent.length) !== null && _b !== void 0 ? _b : Infinity)) {
+                minIndent = headSpaces;
+            }
+        }
+        return minIndent;
+    }
+    function getNextWidth(lineWidth, indentSize) {
+        return (Math.floor(lineWidth / indentSize) + 1) * indentSize;
+    }
+    function getPreviousWidth(lineWidth, indentSize) {
+        return (Math.ceil(lineWidth / indentSize) - 1) * indentSize;
+    }
+    const errorMessageKey = "errorMessage";
+    function clearDiagnostics() {
+        highlightingContainer.classList.remove(...invalidClassNames);
+        for (const t of tokens) {
+            t.classList.remove(...invalidClassNames);
+            t.dataset[errorMessageKey] = undefined;
+        }
+    }
+    function addDiagnostic(diagnostic) {
+        var _a;
+        highlightingContainer.classList.add(...invalidClassNames);
+        // diagnostic.message;
+        const startIndex = getTokenElementIndex(diagnostic.range.start);
+        if (startIndex) {
+            const endIndex = (_a = getTokenElementIndex(diagnostic.range.end)) !== null && _a !== void 0 ? _a : startIndex;
+            for (let i = startIndex; i < endIndex + 1; i++) {
+                const token = tokens[i];
+                if (!token)
+                    continue;
+                token.classList.add(...invalidClassNames);
+                const dataset = token.dataset;
+                dataset[errorMessageKey] = diagnostic.message;
+                token.title = diagnostic.message;
+            }
+        }
+    }
+    const defaultIndent = "  ";
+    const inputField = addListeners((jsx("textarea", { spellcheck: false, class: query_editor_module.input, placeholder: (_d = options === null || options === void 0 ? void 0 : options.placeholder) !== null && _d !== void 0 ? _d : "", children: (_e = options === null || options === void 0 ? void 0 : options.initialText) !== null && _e !== void 0 ? _e : "" })), {
+        input() {
+            onValueChange(this);
+        },
+        scroll() {
+            updateScroll(this);
+        },
+        keydown(e) {
+            var _a, _b, _c, _d;
+            if (e.key === "Tab") {
+                e.preventDefault();
+                insertText(this, (beforeSelection) => {
+                    var _a, _b, _c;
+                    const indent = (_a = detectIndent(this.value)) !== null && _a !== void 0 ? _a : defaultIndent;
+                    const line = (_c = (_b = /(?:^|\n)(.*)$/.exec(beforeSelection)) === null || _b === void 0 ? void 0 : _b[1]) !== null && _c !== void 0 ? _c : "";
+                    const lineWidth = getMonospaceWidth(line);
+                    const insertionSpaceCount = getNextWidth(lineWidth, indent.length) - lineWidth;
+                    return " ".repeat(insertionSpaceCount);
+                });
+                onValueChange(this);
+            }
+            if (e.key === "Enter") {
+                e.preventDefault();
+                insertText(this, (beforeSelection) => {
+                    var _a, _b;
+                    const indent = (_b = (_a = /([\t ]*).*$/.exec(beforeSelection)) === null || _a === void 0 ? void 0 : _a[1]) !== null && _b !== void 0 ? _b : "";
+                    return "\n" + indent;
+                });
+                onValueChange(this);
+            }
+            if (e.key === "Backspace") {
+                // eslint-disable-next-line @typescript-eslint/no-this-alias
+                const element = this;
+                if (element.selectionStart === element.selectionEnd) {
+                    const code = element.value;
+                    const beforeSelection = code.slice(0, element.selectionStart);
+                    const afterSelection = code.slice(element.selectionEnd, code.length);
+                    const m = /(?:^|\n)( +)$/.exec(beforeSelection);
+                    if (m) {
+                        e.preventDefault();
+                        const lineWidth = (_b = (_a = m[1]) === null || _a === void 0 ? void 0 : _a.length) !== null && _b !== void 0 ? _b : 0;
+                        const indentWidth = (_d = (_c = detectIndent(this.value)) === null || _c === void 0 ? void 0 : _c.length) !== null && _d !== void 0 ? _d : defaultIndent.length;
+                        const deleteCount = lineWidth -
+                            getPreviousWidth(lineWidth, indentWidth);
+                        const nextCursorPosition = element.selectionStart - deleteCount;
+                        element.value =
+                            beforeSelection.slice(0, beforeSelection.length - deleteCount) + afterSelection;
+                        element.selectionStart = nextCursorPosition;
+                        element.selectionEnd = nextCursorPosition;
+                        onValueChange(this);
+                    }
+                }
+            }
+        },
+    });
+    addClassName(inputField, (_f = options === null || options === void 0 ? void 0 : options.classNames) === null || _f === void 0 ? void 0 : _f.inputField);
+    new ResizeObserver((entries) => {
+        for (const entry of entries) {
+            if (entry.target !== inputField)
+                continue;
+            const { contentRect } = entry;
+            highlightingContainer.style.width = contentRect.width + "px";
+            highlightingContainer.style.height = contentRect.height + "px";
+        }
+    }).observe(inputField);
+    onValueChange(inputField);
+    return {
+        cssText: query_editor_module_cssText,
+        element: (jsxs("div", { class: query_editor_module["input-container"], children: [inputField, highlightingContainer] })),
+        setValue(value) {
+            inputField.value = value;
+            onValueChange(inputField);
+        },
+        clearDiagnostics,
+        addDiagnostic,
+    };
+}
+
+;// CONCATENATED MODULE: ./source/query-launcher.module.css
+const query_launcher_module_cssText = ".ellipsis-text-92a6642e52618a2001e42e20b9ed4d6fd0d10946 {\r\n    overflow: hidden;\r\n    white-space: nowrap;\r\n    text-overflow: ellipsis;\r\n}\r\n\r\n/* スクロールバー非表示 */\r\n.select-list-a7fb8c6ec5632ee96d5f7d6775eaa37e0698cd48::-webkit-scrollbar {\r\n    display: none;\r\n}\r\n.select-list-a7fb8c6ec5632ee96d5f7d6775eaa37e0698cd48 {\r\n    scrollbar-width: none;\r\n}\r\n\r\n/* クエリリスト */\r\n.select-list-a7fb8c6ec5632ee96d5f7d6775eaa37e0698cd48 {\r\n    display: flex;\r\n    flex-direction: row;\r\n    flex-wrap: nowrap;\r\n    overflow-x: auto;\r\n    padding: 0;\r\n    margin: 0;\r\n    width: calc(100% - 2em);\r\n}\r\n\r\n.select-list-item-11d559fbf9ada2c8da6db5a5d430b731dc5f605d {\r\n    display: inline-block;\r\n    position: relative;\r\n}\r\n\r\n.select-button-1e1e74b364e3426eefcd5d03fcbd222d39e7fd29 {\r\n    max-width: 10em;\r\n    min-height: 2em;\r\n\r\n    border: none;\r\n    border-top: solid 3px gray;\r\n    background-color: #ffffffaa;\r\n}\r\n\r\n.selected-fac1ff092d6ab7d6bb44b4d35dbf9dff4708723d.select-list-item-11d559fbf9ada2c8da6db5a5d430b731dc5f605d > .select-button-1e1e74b364e3426eefcd5d03fcbd222d39e7fd29 {\r\n    border-top-color: lightblue;\r\n    background-color: white;\r\n}\r\n\r\n.select-list-item-11d559fbf9ada2c8da6db5a5d430b731dc5f605d:not(.selected-fac1ff092d6ab7d6bb44b4d35dbf9dff4708723d) + .select-list-item-11d559fbf9ada2c8da6db5a5d430b731dc5f605d:not(.selected-fac1ff092d6ab7d6bb44b4d35dbf9dff4708723d)::before {\r\n    content: \"\";\r\n    height: 1.2em;\r\n    border-left: 1px solid darkgray;\r\n    position: absolute;\r\n    top: 3px;\r\n    bottom: 0;\r\n    margin: auto;\r\n}\r\n\r\n/* タブコントロールっぽい見た目にする */\r\ndetails.tab-5f4c8971bfd97c3672a8665878d5902128f26219 > summary {\r\n    border-bottom-width: 0;\r\n    padding-bottom: 0;\r\n}\r\ndetails.tab-5f4c8971bfd97c3672a8665878d5902128f26219 > .tab-contents-90f5c8c34eed17b7243a347b0deae94f7eb68207:not(summary) {\r\n    padding-top: 0;\r\n    border-top-width: 0;\r\n}\r\n\r\n\r\n/* ドラッグ中の見た目を変更 */\r\n.draggable-8b0b6596aef3cf745848dedb4c237acab55394fc {\r\n    cursor: grab;\r\n}\r\n\r\n.dragging-9fb0f200853e3e7b531079782597e2578e5ab166 {\r\n    opacity: 0.5;\r\n}\r\n\r\n.drag-over-79ef7583f4dafc294f8e2a2fad56051bb1d342de {\r\n    border: 2px dashed #000;\r\n}\r\n\r\n/* コマンドボタンの整列用 */\r\n.commands-container-5cd613777ec77d6c3d53d15a63750f7ad7961527 {\r\n    display: flex;\r\n    flex-direction: row;\r\n    flex-wrap: wrap;\r\n}\r\n.name-input-b9209aaffa4cc77ef779ba033399687e13d9a019 {\r\n    flex: 0 0 content;\r\n}\r\n";
+const query_launcher_module_variables = {};
+/* harmony default export */ const query_launcher_module = ({
+    "ellipsis-text": "ellipsis-text-92a6642e52618a2001e42e20b9ed4d6fd0d10946",
+    "select-list": "select-list-a7fb8c6ec5632ee96d5f7d6775eaa37e0698cd48",
+    "select-list-item": "select-list-item-11d559fbf9ada2c8da6db5a5d430b731dc5f605d",
+    "select-button": "select-button-1e1e74b364e3426eefcd5d03fcbd222d39e7fd29",
+    selected: "selected-fac1ff092d6ab7d6bb44b4d35dbf9dff4708723d",
+    tab: "tab-5f4c8971bfd97c3672a8665878d5902128f26219",
+    "tab-contents": "tab-contents-90f5c8c34eed17b7243a347b0deae94f7eb68207",
+    draggable: "draggable-8b0b6596aef3cf745848dedb4c237acab55394fc",
+    dragging: "dragging-9fb0f200853e3e7b531079782597e2578e5ab166",
+    "drag-over": "drag-over-79ef7583f4dafc294f8e2a2fad56051bb1d342de",
+    "commands-container": "commands-container-5cd613777ec77d6c3d53d15a63750f7ad7961527",
+    "name-input": "name-input-b9209aaffa4cc77ef779ba033399687e13d9a019",
+});
+
+;// CONCATENATED MODULE: ./source/query/service.ts
+
+var SemanticTokenTypes;
+(function (SemanticTokenTypes) {
+    SemanticTokenTypes["variable"] = "variable";
+    SemanticTokenTypes["keyword"] = "keyword";
+    SemanticTokenTypes["number"] = "number";
+    SemanticTokenTypes["string"] = "string";
+    SemanticTokenTypes["comment"] = "comment";
+    SemanticTokenTypes["operator"] = "operator";
+    SemanticTokenTypes["space"] = "space";
+})(SemanticTokenTypes || (SemanticTokenTypes = {}));
+var SemanticTokenModifiers;
+(function (SemanticTokenModifiers) {
+    SemanticTokenModifiers["declaration"] = "declaration";
+    SemanticTokenModifiers["static"] = "static";
+    SemanticTokenModifiers["definition"] = "definition";
+    SemanticTokenModifiers["defaultLibrary"] = "defaultLibrary";
+})(SemanticTokenModifiers || (SemanticTokenModifiers = {}));
+function getTokenCategory(tokenKind) {
+    switch (tokenKind) {
+        case "Unknown":
+            return null;
+        case "$":
+        case "@":
+        case "(":
+        case ")":
+        case "{":
+        case "}":
+        case ",":
+        case ":":
+            return [SemanticTokenTypes.keyword, SemanticTokenModifiers.static];
+        case "Number":
+            return [
+                SemanticTokenTypes.number,
+                SemanticTokenModifiers.definition,
+            ];
+        case "Name":
+        case "String":
+            return [
+                SemanticTokenTypes.string,
+                SemanticTokenModifiers.defaultLibrary,
+            ];
+        case "Comment":
+            return [SemanticTokenTypes.comment, SemanticTokenModifiers.static];
+        case "WhiteSpace":
+            return [
+                SemanticTokenTypes.space,
+                SemanticTokenModifiers.defaultLibrary,
+            ];
+        case "EndOfSource":
+            return;
+        default:
+            return standard_extensions_error `Invalid token kind: "${tokenKind}"`;
+    }
+}
+function mapTokenDefinitions({ tokens, getEos, getDefault, getTokenKind }, mapping) {
+    return {
+        tokens,
+        getEos() {
+            return mapping(getEos());
+        },
+        getDefault() {
+            return mapping(getDefault());
+        },
+        getTokenKind(token, start, end) {
+            return mapping(getTokenKind(token, start, end));
+        },
+    };
+}
+
+;// CONCATENATED MODULE: ./source/query-launcher.tsx
+var query_launcher_awaiter = (undefined && undefined.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
         function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
@@ -3607,8 +3669,6 @@ var iitc_plugin_pgo_route_helper_awaiter = (undefined && undefined.__awaiter) ||
     });
 };
 
-/* eslint-disable require-yield */
-// spell-checker: ignore layeradd drivetunnel latlngschanged lngs latlng buttonset moveend zoomend
 
 
 
@@ -3618,31 +3678,278 @@ var iitc_plugin_pgo_route_helper_awaiter = (undefined && undefined.__awaiter) ||
 
 
 
-
-
-
-
-
-
-
-
-
-
-function reportError(error) {
-    console.error(error);
-    if (error != null &&
-        typeof error === "object" &&
-        "stack" in error &&
-        typeof error.stack === "string") {
-        console.error(error.stack);
-    }
+function createQueryLauncher({ signal, handleAsyncError, progress, onCurrentQueryChanged, loadSources, saveSources, }) {
+    var _a, _b, _c;
+    return query_launcher_awaiter(this, void 0, void 0, function* () {
+        const checkDelayMilliseconds = 500;
+        const saveDelayMilliseconds = 5000;
+        function createState() {
+            return query_launcher_awaiter(this, void 0, void 0, function* () {
+                const { sources, selectedSourceIndex } = yield loadSources({ signal });
+                return {
+                    sources: sources.slice(),
+                    selectedSourceIndex,
+                };
+            });
+        }
+        const state = yield createState();
+        function setQueryExpression(signal) {
+            return query_launcher_awaiter(this, void 0, void 0, function* () {
+                yield sleep(checkDelayMilliseconds, { signal });
+                const currentSource = getCurrentSource();
+                if (currentSource == null)
+                    return;
+                const queryText = currentSource.text;
+                if (queryText.trim() === "") {
+                    const source = Object.assign(Object.assign({}, currentSource), { text: queryText, summary: queryText });
+                    setCurrentSource(source);
+                    updateQueryList();
+                    progress === null || progress === void 0 ? void 0 : progress({
+                        type: "query-parse-completed",
+                        hasFilter: false,
+                    });
+                    onCurrentQueryChanged === null || onCurrentQueryChanged === void 0 ? void 0 : onCurrentQueryChanged(Object.assign({}, source), "simple-query");
+                }
+                else {
+                    queryEditor.clearDiagnostics();
+                    const { getQuery, diagnostics } = createQuery(queryText);
+                    for (const diagnostic of diagnostics) {
+                        queryEditor.addDiagnostic(diagnostic);
+                    }
+                    if (0 !== diagnostics.length) {
+                        progress === null || progress === void 0 ? void 0 : progress({
+                            type: "query-parse-error-occurred",
+                            messages: diagnostics.map((d) => d.message),
+                        });
+                    }
+                    else {
+                        progress === null || progress === void 0 ? void 0 : progress({
+                            type: "query-parse-completed",
+                            hasFilter: true,
+                        });
+                    }
+                    const source = Object.assign(Object.assign({}, currentSource), { text: queryText, summary: queryText });
+                    setCurrentSource(source);
+                    updateQueryList();
+                    onCurrentQueryChanged === null || onCurrentQueryChanged === void 0 ? void 0 : onCurrentQueryChanged(source, getQuery);
+                }
+            });
+        }
+        function saveQueries(signal) {
+            return query_launcher_awaiter(this, void 0, void 0, function* () {
+                yield sleep(saveDelayMilliseconds, { signal });
+                progress === null || progress === void 0 ? void 0 : progress({
+                    type: "queries-save-started",
+                });
+                yield saveSources({
+                    sources: state.sources,
+                    selectedSourceIndex: state.selectedSourceIndex,
+                }, { signal });
+                progress === null || progress === void 0 ? void 0 : progress({
+                    type: "queries-save-completed",
+                });
+            });
+        }
+        const setQueryExpressionCancelScope = createAsyncCancelScope(handleAsyncError);
+        function setQueryExpressionDelayed() {
+            setQueryExpressionCancelScope((signal) => query_launcher_awaiter(this, void 0, void 0, function* () {
+                yield Promise.all([
+                    setQueryExpression(signal),
+                    saveQueries(signal),
+                ]);
+            }));
+        }
+        const saveButtonElement = addListeners(jsx("button", { children: "\u2795\u8FFD\u52A0" }), {
+            click: saveQuery,
+        });
+        const deleteButtonElement = addListeners(jsx("button", { children: "\uD83D\uDDD1\uFE0F\u524A\u9664" }), {
+            click: deleteQuery,
+        });
+        const moveLeftButtonElement = addListeners(jsx("button", { children: "\u2B05\uFE0F" }), {
+            click: moveQueryLeft,
+        });
+        const moveRightButtonElement = addListeners(jsx("button", { children: "\u27A1\uFE0F" }), {
+            click: moveQueryRight,
+        });
+        const queryListElement = jsx("ul", { class: query_launcher_module["select-list"] });
+        const nameInputElement = addListeners((jsx("input", { type: "text", placeholder: "\u30AF\u30A8\u30EA\u540D", value: (_b = (_a = getCurrentSource()) === null || _a === void 0 ? void 0 : _a.name) !== null && _b !== void 0 ? _b : "", class: query_launcher_module["name-input"] })), {
+            input(e) {
+                const currentSource = getCurrentSource();
+                if (currentSource == null)
+                    return;
+                const newName = e.target.value;
+                if (currentSource.name === newName)
+                    return;
+                if (newName.trim() === "")
+                    return;
+                if (getSourceOfName(newName)) {
+                    progress === null || progress === void 0 ? void 0 : progress({
+                        type: "query-name-duplicated",
+                        name: newName,
+                    });
+                    return;
+                }
+                setCurrentSource(Object.assign(Object.assign({}, currentSource), { name: newName }));
+                updateQueryList();
+            },
+        });
+        const queryEditor = createQueryEditor({
+            initialText: (_c = getCurrentSource()) === null || _c === void 0 ? void 0 : _c.text,
+            placeholder: "🔍ルート検索",
+            tokenDefinitions: mapTokenDefinitions(tokenDefinitions, getTokenCategory),
+            onValueChange(e) {
+                setCurrentSourceText(e.value);
+                setQueryExpressionDelayed();
+            },
+        });
+        function setCurrentSourceText(text) {
+            const currentSource = getCurrentSource();
+            if (currentSource == null) {
+                insertNewQuery("", text, 0);
+                return;
+            }
+            setCurrentSource(Object.assign(Object.assign({}, currentSource), { text }));
+        }
+        function getSourceOfName(name) {
+            return state.sources.find((source) => source.name === name);
+        }
+        function getCurrentSource() {
+            var _a;
+            return state.sources[(_a = state.selectedSourceIndex) !== null && _a !== void 0 ? _a : -1];
+        }
+        function setCurrentSource(source) {
+            const { sources, selectedSourceIndex: index } = state;
+            if (index == null || index < 0 || sources.length <= index)
+                return;
+            state.sources.splice(index, 1, source);
+            nameInputElement.value = source.name;
+        }
+        function uniqueName(baseName, startIndex = 2, naming = (n, i) => `${n}${i}`) {
+            if (!getSourceOfName(baseName))
+                return baseName;
+            for (let i = Math.floor(Math.max(startIndex, 0));; i++) {
+                const newName = naming(baseName, i);
+                if (!getSourceOfName(newName))
+                    return newName;
+            }
+        }
+        function insertNewQuery(summary, text, index) {
+            const newSource = {
+                name: uniqueName("module"),
+                summary,
+                text,
+            };
+            index = Math.min(Math.max(index, 0), state.sources.length);
+            state.sources.splice(index, 0, newSource);
+            state.selectedSourceIndex = index;
+        }
+        function saveQuery() {
+            var _a;
+            const currentSource = getCurrentSource();
+            if (currentSource == null)
+                return;
+            insertNewQuery(currentSource.summary, currentSource.text, Math.min(((_a = state.selectedSourceIndex) !== null && _a !== void 0 ? _a : 0) + 1, state.sources.length));
+            updateQueryList();
+        }
+        function deleteQuery() {
+            const index = state.selectedSourceIndex;
+            if (index == null || index < 0 || state.sources.length <= index)
+                return;
+            state.sources.splice(index, 1);
+            state.selectedSourceIndex =
+                state.sources.length <= index ? state.sources.length - 1 : index;
+            updateQueryList();
+        }
+        function selectQuery(index) {
+            const selectedSource = state.sources[index];
+            if (selectedSource == null)
+                return;
+            state.selectedSourceIndex = index;
+            queryEditor.setValue(selectedSource.text);
+            nameInputElement.value = selectedSource.name;
+            updateQueryList();
+        }
+        function moveQueryLeft() {
+            const index = state.selectedSourceIndex;
+            if (index == null || index < 1 || state.sources.length <= index)
+                return;
+            const [movedSource] = state.sources.splice(index, 1);
+            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+            state.sources.splice(index - 1, 0, movedSource);
+            state.selectedSourceIndex = index - 1;
+            updateQueryList();
+        }
+        function moveQueryRight() {
+            const index = state.selectedSourceIndex;
+            if (index == null || index < 0 || state.sources.length - 1 <= index)
+                return;
+            const [movedSource] = state.sources.splice(index, 1);
+            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+            state.sources.splice(index + 1, 0, movedSource);
+            state.selectedSourceIndex = index + 1;
+            updateQueryList();
+        }
+        function updateQueryList() {
+            var _a, _b;
+            queryListElement.innerHTML = "";
+            state.sources.map((source, index) => {
+                const listButton = addListeners(jsx("button", { class: `${query_launcher_module["ellipsis-text"]} ${query_launcher_module["select-button"]} ${query_launcher_module["draggable"]}`, draggable: true, children: source.summary }), {
+                    click() {
+                        selectQuery(index);
+                    },
+                    dragstart(e) {
+                        var _a;
+                        (_a = e.dataTransfer) === null || _a === void 0 ? void 0 : _a.setData("text/plain", index.toString());
+                        e.currentTarget.classList.add(query_launcher_module["dragging"]);
+                    },
+                    dragend(e) {
+                        e.currentTarget.classList.remove(query_launcher_module["dragging"]);
+                    },
+                    dragover(e) {
+                        e.preventDefault();
+                        e.currentTarget.classList.add(query_launcher_module["drag-over"]);
+                    },
+                    dragleave(e) {
+                        e.currentTarget.classList.remove(query_launcher_module["drag-over"]);
+                    },
+                    drop(e) {
+                        var _a, _b;
+                        e.preventDefault();
+                        const fromIndex = parseInt((_b = (_a = e.dataTransfer) === null || _a === void 0 ? void 0 : _a.getData("text/plain")) !== null && _b !== void 0 ? _b : "-1", 10);
+                        const toIndex = index;
+                        if (fromIndex >= 0 &&
+                            toIndex >= 0 &&
+                            fromIndex !== toIndex) {
+                            const [movedSource] = state.sources.splice(fromIndex, 1);
+                            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+                            state.sources.splice(toIndex, 0, movedSource);
+                            updateQueryList();
+                        }
+                        e.currentTarget.classList.remove(query_launcher_module["drag-over"]);
+                    },
+                });
+                const listItem = (jsx("li", { class: `${query_launcher_module["select-list-item"]} ${index === state.selectedSourceIndex
+                        ? query_launcher_module.selected
+                        : ""}`, children: listButton }));
+                queryListElement.appendChild(listItem);
+            });
+            nameInputElement.value = (_b = (_a = getCurrentSource()) === null || _a === void 0 ? void 0 : _a.name) !== null && _b !== void 0 ? _b : "";
+        }
+        const element = (jsxs("details", { open: true, class: `${accordion_module.accordion} ${query_launcher_module.tab}`, children: [jsx("summary", { children: queryListElement }), jsxs("div", { class: query_launcher_module["tab-contents"], children: [queryEditor.element, jsxs("div", { class: query_launcher_module["commands-container"], children: [saveButtonElement, deleteButtonElement, moveLeftButtonElement, moveRightButtonElement, nameInputElement] })] })] }));
+        updateQueryList();
+        return {
+            element,
+            cssText: [query_launcher_module_cssText, accordion_module_cssText, queryEditor.cssText].join("\n"),
+            addDiagnostic(d) {
+                queryEditor.addDiagnostic(d);
+            },
+        };
+    });
 }
-function handleAsyncError(promise) {
-    promise.catch(reportError);
-}
-function main() {
-    handleAsyncError(asyncMain());
-}
+
+;// CONCATENATED MODULE: ./source/config.ts
+
+const storageConfigKey = "pgo-route-helper-config";
 function getConfigureSchemas() {
     const configV1Properties = {
         version: literal("1"),
@@ -3653,19 +3960,41 @@ function getConfigureSchemas() {
     const configV2Schema = strictObject(configV2Properties);
     const configV3Properties = Object.assign(Object.assign({}, configV2Properties), { version: literal("3"), routeQueries: array(string()).optional() });
     const configV3Schema = strictObject(configV3Properties);
-    return [configV1Schema, configV2Schema, configV3Schema];
+    const sourceSchema = strictObject({
+        name: string(),
+        summary: string(),
+        text: string(),
+    });
+    const sourcesSchema = strictObject({
+        sources: array(sourceSchema),
+        selectedSourceIndex: union([number(), null_()]),
+    });
+    const configV4Properties = Object.assign(Object.assign({}, configV3Properties), { routeQueries: null_().optional(), version: literal("4"), querySources: sourcesSchema.optional() });
+    const configV4Schema = strictObject(configV4Properties);
+    return [
+        configV1Schema,
+        configV2Schema,
+        configV3Schema,
+        configV4Schema,
+    ];
 }
 const configSchemas = getConfigureSchemas();
 const configVAnySchema = union(configSchemas);
-const apiRoot = "https://script.google.com/macros/s/AKfycbx-BeayFoyAro3uwYbuG9C12M3ODyuZ6GDwbhW3ifq76DWBAvzMskn9tc4dTuvLmohW/exec";
-const storageConfigKey = "pgo-route-helper-config";
 function upgradeConfig(config) {
+    var _a;
     switch (config.version) {
         case "1":
             return upgradeConfig(Object.assign(Object.assign({}, config), { version: "2", apiRoot: undefined }));
         case "2":
             return upgradeConfig(Object.assign(Object.assign({}, config), { version: "3", routeQueries: undefined }));
-        case "3":
+        case "3": {
+            const sourceText = (_a = config.routeQueries) === null || _a === void 0 ? void 0 : _a.at(-1);
+            const sources = sourceText
+                ? [{ name: "source1", summary: sourceText, text: sourceText }]
+                : [];
+            return upgradeConfig(Object.assign(Object.assign({}, config), { version: "4", routeQueries: null, querySources: { sources, selectedSourceIndex: null } }));
+        }
+        case "4":
             return config;
     }
 }
@@ -3680,12 +4009,160 @@ function loadConfig() {
         console.error(e);
     }
     return {
-        version: "3",
+        version: "4",
     };
 }
 function saveConfig(config) {
     localStorage.setItem(storageConfigKey, JSON.stringify(config));
 }
+
+;// CONCATENATED MODULE: ./source/progress-element.tsx
+
+function createProgress({ routeLayerGroupName, }) {
+    const reportElement = (jsx("div", { children: `ルートは読み込まれていません。レイヤー '${routeLayerGroupName}' を有効にすると読み込まれます。` }));
+    const progress = (message) => {
+        const { type } = message;
+        switch (type) {
+            case "waiting-until-routes-layer-loading": {
+                reportElement.innerText = `${routeLayerGroupName} レイヤーを有効にするとルート一覧が表示されます。`;
+                break;
+            }
+            case "upload-waiting": {
+                const remainingMessage = message.queueCount <= 1
+                    ? ""
+                    : `, 残り${message.queueCount}個`;
+                reportElement.innerText = `ルート ${JSON.stringify(message.routeName)} の送信待機中 ( ${message.milliseconds} ms${remainingMessage} )`;
+                break;
+            }
+            case "uploading": {
+                reportElement.innerText = `ルート ${JSON.stringify(message.routeName)} の変更を送信中。`;
+                break;
+            }
+            case "uploaded": {
+                const remainingMessage = message.queueCount <= 1
+                    ? ""
+                    : `( 残り ${message.queueCount}個 )`;
+                reportElement.innerText = `ルート ${JSON.stringify(message.routeName)} の変更を送信しました。${remainingMessage}`;
+                break;
+            }
+            case "downloading": {
+                reportElement.innerText = `ルートを受信中`;
+                break;
+            }
+            case "downloaded": {
+                reportElement.innerText = `${message.routeCount} 個のルートを受信しました。`;
+                break;
+            }
+            case "adding": {
+                reportElement.innerText = `ルート: '${message.routeName}' ( ${message.routeId} ) を読み込みました`;
+                break;
+            }
+            case "routes-added": {
+                reportElement.innerText = `${message.count} 個のルートを追加しました ( ${message.durationMilliseconds}ミリ秒 )`;
+                break;
+            }
+            case "query-parse-completed": {
+                if (message.hasFilter) {
+                    reportElement.innerText = "式検索";
+                }
+                else {
+                    reportElement.innerText = "全件";
+                }
+                break;
+            }
+            case "query-evaluation-completed": {
+                reportElement.innerText = `検索完了 (表示 ${message.hitCount} 件 / 全体 ${message.allCount} 件)`;
+                break;
+            }
+            case "query-parse-error-occurred": {
+                reportElement.innerText = `クエリ構文エラー: ${(message.messages).join(", ")}`;
+                break;
+            }
+            case "query-evaluation-error": {
+                reportElement.innerText = String(message.error);
+                reportError(message.error);
+                break;
+            }
+            case "user-location-fetched":
+                break;
+            case "search-query-errors-occurred": {
+                const { diagnostics } = message;
+                const [diagnostic, ...tail] = diagnostics;
+                if (!diagnostic)
+                    break;
+                reportElement.innerText = `クエリ構文エラー: (${diagnostic.range.start}, ${diagnostic.range.end}): ${diagnostic.message} と 他${tail.length}件のエラー`;
+                break;
+            }
+            case "queries-save-started": {
+                reportElement.innerText = "クエリを保存しています。";
+                break;
+            }
+            case "queries-save-completed": {
+                reportElement.innerText = "クエリを保存しました。";
+                break;
+            }
+            case "query-name-duplicated": {
+                reportElement.innerText = `クエリ '${message.name}' は既に存在します。別の名前を指定してください。`;
+                break;
+            }
+            default:
+                throw new Error(`Unknown message type ${type}`);
+        }
+    };
+    return {
+        element: reportElement,
+        progress,
+    };
+}
+
+;// CONCATENATED MODULE: ./source/iitc-plugin-pgo-route-helper.tsx
+var iitc_plugin_pgo_route_helper_awaiter = (undefined && undefined.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+
+/* eslint-disable require-yield */
+// spell-checker: ignore layeradd latlngschanged lngs latlng buttonset moveend zoomend
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function iitc_plugin_pgo_route_helper_reportError(error) {
+    console.error(error);
+    if (error != null &&
+        typeof error === "object" &&
+        "stack" in error &&
+        typeof error.stack === "string") {
+        console.error(error.stack);
+    }
+}
+function handleAsyncError(promise) {
+    promise.catch(iitc_plugin_pgo_route_helper_reportError);
+}
+function main() {
+    handleAsyncError(asyncMain());
+}
+const apiRoot = "https://script.google.com/macros/s/AKfycbx-BeayFoyAro3uwYbuG9C12M3ODyuZ6GDwbhW3ifq76DWBAvzMskn9tc4dTuvLmohW/exec";
 function waitLayerAdded(map, layer) {
     if (map.hasLayer(layer)) {
         return Promise.resolve();
@@ -3719,7 +4196,7 @@ function createScheduler() {
     };
 }
 function asyncMain() {
-    var _a, _b, _c;
+    var _a, _b;
     return iitc_plugin_pgo_route_helper_awaiter(this, void 0, void 0, function* () {
         const window = (isIITCMobile ? globalThis : unsafeWindow);
         const { L = standard_extensions_error `leaflet を先に読み込んでください`, map = standard_extensions_error `デフォルトマップがありません`, document, $ = standard_extensions_error `JQuery を先に読み込んでください`, } = window;
@@ -3731,6 +4208,7 @@ function asyncMain() {
             L.Icon.Default.imagePath = `https://unpkg.com/leaflet@${L.version}/dist/images/`;
         }
         addStyle(cssText);
+        addStyle(accordion_module_cssText);
         const config = loadConfig();
         if (config.userId == null) {
             config.userId = `user${Math.floor(Math.random() * 999999) + 1}`;
@@ -3739,87 +4217,18 @@ function asyncMain() {
         console.debug(`'${config.userId}' としてログインしています。`);
         const state = {
             selectedRouteId: null,
+            tooCloseLayer: L.circle([0, 0], 20, {
+                opacity: 0.5,
+                clickable: false,
+                color: "orange",
+                fill: false,
+                stroke: true,
+                weight: 2,
+            }),
             deleteRouteId: null,
             templateCandidateRouteId: null,
             routes: "routes-unloaded",
-            routeListQuery: { queryText: "", query: undefined },
-        };
-        const progress = (message) => {
-            const { type } = message;
-            switch (type) {
-                case "waiting-until-routes-layer-loading": {
-                    reportElement.innerText = `${routeLayerGroupName} レイヤーを有効にするとルート一覧が表示されます。`;
-                    break;
-                }
-                case "upload-waiting": {
-                    const remainingMessage = message.queueCount <= 1
-                        ? ""
-                        : `, 残り${message.queueCount}個`;
-                    reportElement.innerText = `ルート ${JSON.stringify(message.routeName)} の送信待機中 ( ${message.milliseconds} ms${remainingMessage} )`;
-                    break;
-                }
-                case "uploading": {
-                    reportElement.innerText = `ルート ${JSON.stringify(message.routeName)} の変更を送信中。`;
-                    break;
-                }
-                case "uploaded": {
-                    const remainingMessage = message.queueCount <= 1
-                        ? ""
-                        : `( 残り ${message.queueCount}個 )`;
-                    reportElement.innerText = `ルート ${JSON.stringify(message.routeName)} の変更を送信しました。${remainingMessage}`;
-                    break;
-                }
-                case "downloading": {
-                    reportElement.innerText = `ルートを受信中`;
-                    break;
-                }
-                case "downloaded": {
-                    reportElement.innerText = `${message.routeCount} 個のルートを受信しました。`;
-                    break;
-                }
-                case "adding": {
-                    reportElement.innerText = `ルート: '${message.routeName}' ( ${message.routeId} ) を読み込みました`;
-                    break;
-                }
-                case "routes-added": {
-                    reportElement.innerText = `${message.count} 個のルートを追加しました ( ${message.durationMilliseconds}ミリ秒 )`;
-                    break;
-                }
-                case "query-parse-completed": {
-                    if (message.hasFilter) {
-                        reportElement.innerText = "式検索";
-                    }
-                    else {
-                        reportElement.innerText = "全件";
-                    }
-                    break;
-                }
-                case "query-evaluation-completed": {
-                    reportElement.innerText = `検索完了 (表示 ${message.hitCount} 件 / 全体 ${message.allCount} 件)`;
-                    break;
-                }
-                case "query-parse-error-occurred": {
-                    reportElement.innerText = `クエリ構文エラー: ${(message.messages).join(", ")}`;
-                    break;
-                }
-                case "query-evaluation-error": {
-                    reportElement.innerText = String(message.error);
-                    reportError(message.error);
-                    break;
-                }
-                case "user-location-fetched":
-                    break;
-                case "search-query-errors-occurred": {
-                    const { diagnostics } = message;
-                    const [diagnostic, ...tail] = diagnostics;
-                    if (!diagnostic)
-                        break;
-                    reportElement.innerText = `クエリ構文エラー: (${diagnostic.range.start}, ${diagnostic.range.end}): ${diagnostic.message} と 他${tail.length}件のエラー`;
-                    break;
-                }
-                default:
-                    throw new Error(`Unknown message type ${type}`);
-            }
+            routeListQuery: { query: undefined },
         };
         const remoteCommandCancelScope = createAsyncCancelScope(handleAsyncError);
         let nextCommandId = 0;
@@ -3971,7 +4380,10 @@ function asyncMain() {
         }
         setEditorElements(undefined);
         const routeLayerGroupName = "Routes";
-        const reportElement = (jsx("div", { children: `ルートは読み込まれていません。レイヤー '${routeLayerGroupName}' を有効にすると読み込まれます。` }));
+        const { progress, element: reportElement } = createProgress({
+            routeLayerGroupName,
+        });
+        reportElement.classList.add(styles_module["ellipsis-text"]);
         function onAddRouteButtonClick(kind) {
             const { routes } = state;
             if (config.userId == null || routes == "routes-unloaded")
@@ -4160,21 +4572,6 @@ function asyncMain() {
             state.selectedRouteId = (_a = selectedRouteIds[0]) !== null && _a !== void 0 ? _a : null;
             updateSelectedRouteInfo();
         }
-        function saveQueryHistory(queryText) {
-            var _a;
-            const maxHistoryCount = 10;
-            let history = (_a = config.routeQueries) !== null && _a !== void 0 ? _a : [];
-            history = history.filter((q) => q.trim() !== queryText.trim());
-            history.push(queryText);
-            if (!history.includes(queryText.trim())) {
-                history.push(queryText);
-            }
-            if (maxHistoryCount < history.length) {
-                history = history.slice(-maxHistoryCount);
-            }
-            config.routeQueries = history;
-            saveConfig(config);
-        }
         const tempLatLng1 = L.latLng(0, 0);
         const tempLatLng2 = L.latLng(0, 0);
         const defaultEnvironment = {
@@ -4208,7 +4605,7 @@ function asyncMain() {
                 }
                 catch (error) {
                     progress({ type: "query-evaluation-error", error });
-                    queryEditor.addDiagnostic({
+                    queryLauncher.addDiagnostic({
                         message: String(error),
                         range: {
                             start: 1,
@@ -4224,7 +4621,7 @@ function asyncMain() {
             return iitc_plugin_pgo_route_helper_awaiter(this, void 0, void 0, function* () {
                 if (state.routes === "routes-unloaded")
                     return;
-                const { query, queryText } = state.routeListQuery;
+                const { query } = state.routeListQuery;
                 const views = [...state.routes.values()];
                 const routes = views.map((r) => r.route);
                 const isQueryUndefined = query === undefined;
@@ -4316,7 +4713,6 @@ function asyncMain() {
                         allCount: views.length,
                     });
                 }
-                saveQueryHistory(queryText);
             });
         }
         function updateRoutesListElement() {
@@ -4377,84 +4773,47 @@ function asyncMain() {
         routeListElement.element.style.setProperty(variables["--route-list-item-padding"], routeListItemPadding + "px");
         routeListElement.element.style.setProperty(variables["--route-list-item-margin"], routeListItemMargin + "px");
         routeListElement.element.classList.add(styles_module["route-list"]);
-        const setQueryExpressionCancelScope = createAsyncCancelScope(handleAsyncError);
-        function setQueryExpressionDelayed(delayMilliseconds, queryText) {
-            setQueryExpressionCancelScope((signal) => iitc_plugin_pgo_route_helper_awaiter(this, void 0, void 0, function* () {
-                if (state.routeListQuery.queryText.trim() === queryText.trim())
-                    return;
-                yield sleep(delayMilliseconds, { signal });
-                if (queryText.trim() === "") {
-                    state.routeListQuery = {
-                        queryText,
-                        query: undefined,
-                    };
-                    progress({
-                        type: "query-parse-completed",
-                        hasFilter: false,
-                    });
-                }
-                else {
-                    queryEditor.clearDiagnostics();
-                    const { getQuery, diagnostics } = createQuery(queryText);
-                    for (const diagnostic of diagnostics) {
-                        queryEditor.addDiagnostic(diagnostic);
-                    }
-                    if (0 !== diagnostics.length) {
-                        progress({
-                            type: "query-parse-error-occurred",
-                            messages: diagnostics.map((d) => d.message),
-                        });
-                    }
-                    else {
-                        progress({
-                            type: "query-parse-completed",
-                            hasFilter: true,
-                        });
-                    }
-                    state.routeListQuery = {
-                        queryText,
-                        query: getQuery,
-                    };
-                }
+        const queryLauncher = yield createQueryLauncher({
+            handleAsyncError,
+            onCurrentQueryChanged(source, query) {
+                state.routeListQuery = {
+                    query: query === "simple-query" ? undefined : query,
+                };
                 updateRoutesListElement();
-            }));
-        }
-        const queryEditor = createQueryEditor({
-            classNames: {
-                autoCompleteList: styles_module["auto-complete-list"],
-                autoCompleteListItem: styles_module["auto-complete-list-item"],
             },
-            initialText: (_a = config.routeQueries) === null || _a === void 0 ? void 0 : _a.at(-1),
-            placeholder: "🔍ルート検索",
-            tokenDefinitions: mapTokenDefinitions(tokenDefinitions, getTokenCategory),
-            getCompletions() {
-                var _a, _b;
-                return (_b = (_a = config.routeQueries) === null || _a === void 0 ? void 0 : _a.reverse()) === null || _b === void 0 ? void 0 : _b.map((queryText) => {
-                    return {
-                        displayText: queryText,
-                        complete: () => queryText,
-                    };
+            loadSources() {
+                var _a;
+                return iitc_plugin_pgo_route_helper_awaiter(this, void 0, void 0, function* () {
+                    return ((_a = config.querySources) !== null && _a !== void 0 ? _a : {
+                        sources: [],
+                        selectedSourceIndex: null,
+                    });
                 });
             },
-            onValueChange(e) {
-                setQueryExpressionDelayed(500, e.value);
+            saveSources(sources) {
+                return iitc_plugin_pgo_route_helper_awaiter(this, void 0, void 0, function* () {
+                    config.querySources = Object.assign(Object.assign({}, sources), { sources: sources.sources.slice() });
+                    saveConfig(config);
+                });
             },
+            progress,
+            signal: new AbortController().signal,
         });
-        addStyle(queryEditor.cssText);
+        addStyle(queryLauncher.cssText);
         const selectedRouteButtonContainer = (jsxs("span", { children: [addRouteElement, addSpotElement, deleteSelectedRouteElement, moveToRouteElement, setAsTemplateElement] }));
-        const selectedRouteEditorContainer = (jsxs("details", { open: true, class: styles_module.accordion, children: [jsx("summary", { children: titleElement }), jsxs("div", { children: [jsx("div", { children: descriptionElement }), jsx("div", { children: notesElement }), jsx("div", { children: coordinatesElement }), jsx("div", { children: lengthElement }), jsx("div", { children: addListeners(jsx("input", { class: styles_module["editable-text"], type: "text", placeholder: "\u30E6\u30FC\u30B6\u30FC\u540D", value: config.userId }), {
+        const selectedRouteEditorContainer = (jsxs("details", { open: true, class: accordion_module.accordion, children: [jsx("summary", { children: titleElement }), jsxs("div", { children: [jsx("div", { children: descriptionElement }), jsx("div", { children: notesElement }), jsx("div", { children: coordinatesElement }), jsx("div", { children: lengthElement }), jsx("div", { children: addListeners(jsx("input", { class: styles_module["editable-text"], type: "text", placeholder: "\u30E6\u30FC\u30B6\u30FC\u540D", value: config.userId }), {
                                 change() {
                                     // TODO:
                                     console.log("user name changed");
                                 },
                             }) }), selectedRouteButtonContainer] })] }));
-        const editorElement = (jsxs("div", { id: "pgo-route-helper-editor", class: styles_module["properties-editor"], children: [selectedRouteEditorContainer, queryEditor.element, routeListElement.element, reportElement] }));
+        const editorElement = (jsxs("div", { id: "pgo-route-helper-editor", class: styles_module["properties-editor"], children: [jsxs("div", { class: styles_module["without-report-container"], children: [selectedRouteEditorContainer, queryLauncher.element, routeListElement.element] }), jsx("div", { class: styles_module["report-container"], children: reportElement })] }));
         document.body.append(editorElement);
         $(selectedRouteButtonContainer).buttonset();
         const editor = createDialog(editorElement, { title: "Routes" });
         editor.setForegroundColor("#FFCE00");
         editor.setBackgroundColor("rgba(8, 48, 78, 0.9)");
-        (_b = document.querySelector("#toolbox")) === null || _b === void 0 ? void 0 : _b.append(addListeners(jsx("a", { children: "Route Helper" }), {
+        (_a = document.querySelector("#toolbox")) === null || _a === void 0 ? void 0 : _a.append(addListeners(jsx("a", { children: "Route Helper" }), {
             click() {
                 editor.show();
                 return false;
@@ -4478,11 +4837,19 @@ function asyncMain() {
             if (((_b = (_a = getSelectedRoute()) === null || _a === void 0 ? void 0 : _a.route) === null || _b === void 0 ? void 0 : _b.routeId) === routeId) {
                 setEditorElements(route.route);
             }
+            if (getRouteKind(route.route) === "spot") {
+                state.tooCloseLayer.setLatLng(coordinateToLatLng(route.route.coordinates[0]));
+                routeLayerGroup.addLayer(state.tooCloseLayer);
+            }
+            else {
+                routeLayerGroup.removeLayer(state.tooCloseLayer);
+            }
         }
         function updateSelectedRouteInfo() {
             const routeId = state.selectedRouteId;
             if (routeId == null) {
                 setEditorElements(undefined);
+                routeLayerGroup.removeLayer(state.tooCloseLayer);
                 return;
             }
             updateRouteView(routeId);
@@ -4656,7 +5023,7 @@ function asyncMain() {
             });
             const { routes: routeList } = yield getRoutes({
                 "user-id": config.userId,
-            }, { rootUrl: (_c = config.apiRoot) !== null && _c !== void 0 ? _c : apiRoot });
+            }, { rootUrl: (_b = config.apiRoot) !== null && _b !== void 0 ? _b : apiRoot });
             progress({
                 type: "downloaded",
                 routeCount: routeList.length,
