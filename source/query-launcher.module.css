@@ -25,6 +25,7 @@
 
 .select-list-item {
     display: inline-block;
+    position: relative;
 }
 
 .select-button {
@@ -43,11 +44,10 @@
 
 .select-list-item:not(.selected) + .select-list-item:not(.selected)::before {
     content: "";
-    display: block;
     height: 1.2em;
     border-left: 1px solid darkgray;
     position: absolute;
-    top: 6px;
+    top: 3px;
     bottom: 0;
     margin: auto;
 }
