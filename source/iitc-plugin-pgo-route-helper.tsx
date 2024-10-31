@@ -168,6 +168,7 @@ async function asyncMain() {
     const state: {
         /** null: 選択されていない */
         selectedRouteId: null | string;
+        tooCloseLayer: L.Circle;
         deleteRouteId: null | string;
         templateCandidateRouteId: null | string;
         routes: "routes-unloaded" | Map<string, RouteWithView>;
@@ -176,6 +177,14 @@ async function asyncMain() {
         }>;
     } = {
         selectedRouteId: null,
+        tooCloseLayer: L.circle([0, 0], 20, {
+            opacity: 0.5,
+            clickable: false,
+            color: "orange",
+            fill: false,
+            stroke: true,
+            weight: 2,
+        }),
         deleteRouteId: null,
         templateCandidateRouteId: null,
         routes: "routes-unloaded",
@@ -1002,11 +1011,21 @@ async function asyncMain() {
         if (getSelectedRoute()?.route?.routeId === routeId) {
             setEditorElements(route.route);
         }
+
+        if (getRouteKind(route.route) === "spot") {
+            state.tooCloseLayer.setLatLng(
+                coordinateToLatLng(route.route.coordinates[0])
+            );
+            routeLayerGroup.addLayer(state.tooCloseLayer);
+        } else {
+            routeLayerGroup.removeLayer(state.tooCloseLayer);
+        }
     }
     function updateSelectedRouteInfo() {
         const routeId = state.selectedRouteId;
         if (routeId == null) {
             setEditorElements(undefined);
+            routeLayerGroup.removeLayer(state.tooCloseLayer);
             return;
         }
         updateRouteView(routeId);
