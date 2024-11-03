@@ -400,10 +400,15 @@ async function asyncMain() {
     setEditorElements(undefined);
 
     const routeLayerGroupName = "Routes";
-    const { progress, element: reportElement } = createProgress({
+    const {
+        progress,
+        element: reportElement,
+        cssText: reportCssText,
+    } = createProgress({
         routeLayerGroupName,
+        handleAsyncError,
     });
-    reportElement.classList.add(classNames["ellipsis-text"]);
+    addStyle(reportCssText);
 
     function onAddRouteButtonClick(kind: RouteKind) {
         const { routes } = state;
@@ -678,6 +683,9 @@ async function asyncMain() {
     async function updateRouteListElementAsync(signal: AbortSignal) {
         if (state.routes === "routes-unloaded") return;
 
+        progress({
+            type: "query-evaluation-starting",
+        });
         const { query } = state.routeListQuery;
         const views = [...state.routes.values()];
         const routes = views.map((r) => r.route);
@@ -801,13 +809,11 @@ async function asyncMain() {
         });
         restoreScrollPosition?.();
 
-        if (!isQueryUndefined) {
-            progress({
-                type: "query-evaluation-completed",
-                hitCount: visibleListItemCount,
-                allCount: views.length,
-            });
-        }
+        progress({
+            type: "query-evaluation-completed",
+            hitCount: visibleListItemCount,
+            allCount: views.length,
+        });
     }
     function updateRoutesListElement() {
         asyncUpdateRouteListElementScope(updateRouteListElementAsync);

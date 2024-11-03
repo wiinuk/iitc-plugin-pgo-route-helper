@@ -1,0 +1,107 @@
+.ellipsis-text {
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+.container {
+    display: flex;
+    flex-direction: row;
+    border-top: hidden 1px;
+    padding: 3px;
+
+    > :is(* + *) {
+        margin-left: 0.3em;
+    }
+
+    &:has(.waiting), &:has(.loading) {
+        border-top: solid 1px white;
+        animation: background-blinking 1s ease-in-out infinite alternate;
+    }
+}
+
+@keyframes background-blinking {
+    0% {
+        background-color: #ecd8ff4f;
+    }
+
+    100% {
+        background-color: transparent;
+    }
+}
+
+.generic-message {
+    flex-grow: 1;
+}
+
+.query-error-message {
+    color: lightpink;
+}
+
+.upload-indicator,
+.save-indicator,
+.search-indicator {
+    border-top: solid 3px rgba(255, 255, 255, 0.253);
+    height: auto;
+    width: 3px;
+    color: transparent;
+}
+
+.search-indicator {
+    background: blue;
+
+    &.waiting,
+    &.processing {
+        background: yellow;
+    }
+}
+
+.upload-indicator {
+    background: green;
+
+    &.waiting,
+    &.processing {
+        background: blueviolet;
+    }
+}
+
+.save-indicator {
+    background: lightgray;
+
+    &.waiting,
+    &.processing {
+        background: black;
+    }
+}
+
+.waiting {
+    animation: waiting var(--wait-interval) ease-in forwards;
+}
+
+@keyframes waiting {
+    0% {
+        opacity: 1;
+    }
+
+    5% {
+        opacity: 0.1;
+    }
+
+    100% {
+        opacity: 0.5;
+    }
+}
+
+.processing {
+    animation: blinking 1s ease-in-out infinite alternate;
+}
+
+@keyframes blinking {
+    0% {
+        opacity: 0;
+    }
+
+    100% {
+        opacity: 1;
+    }
+}

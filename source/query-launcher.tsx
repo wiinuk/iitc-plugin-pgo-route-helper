@@ -22,12 +22,20 @@ interface QuerySource {
 }
 export type LauncherProgress =
     | {
+          type: "query-parse-starting";
+          queryText: string;
+      }
+    | {
           type: "query-parse-completed";
           hasFilter: boolean;
       }
     | {
           type: "query-parse-error-occurred";
           messages: readonly string[];
+      }
+    | {
+          type: "queries-save-waited";
+          delayMilliseconds: number;
       }
     | {
           type: "queries-save-started";
@@ -82,6 +90,11 @@ export async function createQueryLauncher({
         if (currentSource == null) return;
 
         const queryText = currentSource.text;
+        progress?.({
+            type: "query-parse-starting",
+            queryText,
+        });
+
         if (queryText.trim() === "") {
             const source = {
                 ...currentSource,
@@ -124,6 +137,10 @@ export async function createQueryLauncher({
         }
     }
     async function saveQueries(signal: AbortSignal) {
+        progress?.({
+            type: "queries-save-waited",
+            delayMilliseconds: saveDelayMilliseconds,
+        });
         await sleep(saveDelayMilliseconds, { signal });
 
         progress?.({
