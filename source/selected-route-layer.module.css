@@ -1,0 +1,5 @@
+path.selected-cell17 {
+    transition-property: d;
+    transition-timing-function: ease-out;
+    transition-duration: 0.1s;
+}
