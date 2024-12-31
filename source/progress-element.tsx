@@ -1,7 +1,6 @@
 import type { LauncherProgress } from "./query-launcher";
 import type { SearchHandlerProgress } from "./search-routes";
 import classNames, { cssText, variables } from "./progress-element.module.css";
-import waveSvgText from "../images/wave.svg";
 import { sleep } from "./standard-extensions";
 
 type MainProgressMessage =
@@ -38,7 +37,7 @@ type MainProgressMessage =
           center: Readonly<{ lat: number; lng: number }> | null;
       };
 
-type ProgressMessage =
+export type ProgressMessage =
     | SearchHandlerProgress
     | LauncherProgress
     | MainProgressMessage;

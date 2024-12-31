@@ -13,21 +13,6 @@
     > :is(* + *) {
         margin-left: 0.3em;
     }
-
-    &:has(.waiting), &:has(.loading) {
-        border-top: solid 1px white;
-        animation: background-blinking 1s ease-in-out infinite alternate;
-    }
-}
-
-@keyframes background-blinking {
-    0% {
-        background-color: #ecd8ff4f;
-    }
-
-    100% {
-        background-color: transparent;
-    }
 }
 
 .generic-message {
@@ -75,10 +60,10 @@
 }
 
 .waiting {
-    animation: waiting var(--wait-interval) ease-in forwards;
+    animation: --waiting var(--wait-interval) ease-in forwards;
 }
 
-@keyframes waiting {
+@keyframes --waiting {
     0% {
         opacity: 1;
     }
@@ -93,10 +78,10 @@
 }
 
 .processing {
-    animation: blinking 1s ease-in-out infinite alternate;
+    animation: --blinking 1s ease-in-out infinite alternate;
 }
 
-@keyframes blinking {
+@keyframes --blinking {
     0% {
         opacity: 0;
     }
