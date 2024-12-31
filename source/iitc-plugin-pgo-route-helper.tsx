@@ -162,6 +162,7 @@ async function asyncMain() {
         readonly coordinatesEditor: Readonly<{
             layer: L.ILayer;
             update: (route: Route) => void;
+            updateZoom: (zoom: number, map: L.Map) => void;
             highlight: (enabled: boolean) => void;
         }>;
         readonly listView: RouteListItemView;
@@ -1061,7 +1062,7 @@ async function asyncMain() {
             updateSelectedRouteInfo();
             queueSetRouteCommandDelayed(3000, route);
         });
-        return { layer, update: ignore, highlight: ignore };
+        return { layer, update: ignore, updateZoom: ignore, highlight: ignore };
     }
     const maxTitleWidth = 160;
     const maxTitleHeight = 46;
@@ -1134,6 +1135,17 @@ async function asyncMain() {
         });
         const group = L.featureGroup([circle, label]);
 
+        let lastZoom: number | null = null;
+        function updateZoom(zoom: number) {
+            if (lastZoom === zoom) return;
+            lastZoom = zoom;
+
+            if (zoom < 14) {
+                group.removeLayer(label);
+            } else {
+                group.addLayer(label);
+            }
+        }
         function update(route: Route) {
             label.setIcon(createSpotLabel(route.routeName));
             const coordinate0 = coordinateToLatLng(route.coordinates[0]);
@@ -1144,7 +1156,7 @@ async function asyncMain() {
             highlighted = enabled;
             changeStyle();
         }
-        return { layer: group, update, highlight };
+        return { layer: group, update, updateZoom, highlight };
     }
 
     function addRouteView(routeMap: Map<string, RouteWithView>, route: Route) {
@@ -1192,6 +1204,15 @@ async function asyncMain() {
                     view
                 );
             }
+        }
+
+        // 範囲内のスポットの表示を更新する
+        const zoom = map.getZoom();
+        for (const view of layerToRoutesRequiringAddition.values()) {
+            if (scheduler.yieldRequested()) {
+                await scheduler.yield({ signal });
+            }
+            view.coordinatesEditor.updateZoom(zoom, map);
         }
 
         // 現在追加されているレイヤーが範囲外なら削除する
