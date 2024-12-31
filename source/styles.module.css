@@ -78,7 +78,9 @@ input.editable-text {
     resize: vertical;
 }
 .properties-editor input.title {
-    width: auto;
+    /* 2em: アコーディオンハンドルの margin */
+    /* 10px: アコーディオンハンドルの幅 */
+    width: calc(100% - 2em - 10px);
 }
 
 .properties-editor textarea.invalid {
@@ -98,7 +100,6 @@ input.editable-text {
 .report-container {
     background: #00c2ff70;
     color: #ffffff;
-    padding: 3px;
 }
 
 .route-list .selecting {

@@ -6,7 +6,7 @@
 // @downloadURL  https://github.com/wiinuk/iitc-plugin-pgo-route-helper/raw/master/iitc-plugin-pgo-route-helper.user.js
 // @updateURL    https://github.com/wiinuk/iitc-plugin-pgo-route-helper/raw/master/iitc-plugin-pgo-route-helper.user.js
 // @homepageURL  https://github.com/wiinuk/iitc-plugin-pgo-route-helper
-// @version      0.11.3
+// @version      0.12.0
 // @description  IITC plugin to assist in Pokémon GO route creation.
 // @author       Wiinuk
 // @include      https://*.ingress.com/intel*
@@ -466,37 +466,37 @@ function includesIn(bounds, route) {
 }
 
 ;// CONCATENATED MODULE: ./source/styles.module.css
-const cssText = ".import-text-input-19d4ba591bcca520a10caa3dc6d070634c09b6bb {\r\n    position: fixed;\r\n    top: 0;\r\n    left: 0;\r\n    width: 100%;\r\n    height: 100%;\r\n    z-index: 10000;\r\n\r\n    display: flex;\r\n    justify-content: center;\r\n    align-items: center;\r\n}\r\n\r\n.hidden-545b7c87fe067d95937637a4070769bbab45e078 {\r\n    display: none;\r\n}\r\n.ellipsis-text-995110e664574196e159fa5bcd50b12365923ab8 {\r\n    white-space: nowrap;\r\n    overflow: hidden;\r\n    text-overflow: ellipsis;\r\n}\r\n.ellipsis-text-995110e664574196e159fa5bcd50b12365923ab8 br {\r\n    display: none;\r\n}\r\n\r\ninput.editable-text-cbfab67dada7a654ac9ef8287857fe3163dd8a9b {\r\n    border: none;\r\n    background: none;\r\n    font-size: 16px;\r\n    color: black;\r\n}\r\n\r\n.spot-label-8a3cc3ad91237c2ba40cd6c8bc70e53b53c71eee {\r\n    color: #FFFFBB;\r\n    font-size: 11px;\r\n    line-height: 12px;\r\n    text-align: center;\r\n    padding: 2px;\r\n    overflow: hidden;\r\n    white-space: nowrap;\r\n    text-overflow: ellipsis;\r\n    text-shadow: 1px 1px #000, 1px -1px #000, -1px 1px #000, -1px -1px #000, 0 0 5px #000;\r\n    pointer-events: none;\r\n}\r\n.spot-handle-63849fdf5ccf7c0eff4c178ea11103835ed23f29 {\r\n    --background-hue-eb0109df7c4d5c17a138ab57ce31368a285bf811: 152deg;\r\n    --background-opacity-f5512beec248af0bc438cd108a169500f1a7f908: 40%;\r\n    --border-width-17feb6caf748d09a0fcf6781d14859ed8043e0e1: 2px;\r\n    --border-saturation-ddebdc34a90b2c05c7330495d8cb2622f6f7c6a4: 0%;\r\n    --border-opacity-b04052b9a1caeede6fa7ca67de1e473d61891c7a: 80%;\r\n\r\n    transition: all 0.5s, transform 0s;\r\n    box-sizing: border-box;\r\n    background-color: hsla(var(--background-hue-eb0109df7c4d5c17a138ab57ce31368a285bf811), 84%, 56%, var(--background-opacity-f5512beec248af0bc438cd108a169500f1a7f908));\r\n    border: solid var(--border-width-17feb6caf748d09a0fcf6781d14859ed8043e0e1) hsla(56, var(--border-saturation-ddebdc34a90b2c05c7330495d8cb2622f6f7c6a4), 39%, var(--border-opacity-b04052b9a1caeede6fa7ca67de1e473d61891c7a));\r\n    border-radius: 100%;\r\n}\r\n.spot-handle-63849fdf5ccf7c0eff4c178ea11103835ed23f29.draggable-d88639c5764a31ddae7fe120c66c1cd507da0eed {\r\n    --background-opacity-f5512beec248af0bc438cd108a169500f1a7f908: 100%;\r\n    --border-opacity-b04052b9a1caeede6fa7ca67de1e473d61891c7a: 100%;\r\n    border-radius: 0;\r\n}\r\n.spot-handle-63849fdf5ccf7c0eff4c178ea11103835ed23f29.highlighted-2032baf288d6040ceeb805d2b9d00c157a58f334 {\r\n    --border-width-17feb6caf748d09a0fcf6781d14859ed8043e0e1: 4px;\r\n    --border-saturation-ddebdc34a90b2c05c7330495d8cb2622f6f7c6a4: 100%;\r\n}\r\n\r\n.properties-editor-ef40e9ed3840df1aa2cdf410a8021003566caa87 {\r\n    display: flex;\r\n    flex-direction: column;\r\n    height: 100%;\r\n}\r\n\r\n.properties-editor-ef40e9ed3840df1aa2cdf410a8021003566caa87 textarea,\r\n.properties-editor-ef40e9ed3840df1aa2cdf410a8021003566caa87 input {\r\n    box-sizing: border-box;\r\n    width: 100%;\r\n    resize: vertical;\r\n}\r\n.properties-editor-ef40e9ed3840df1aa2cdf410a8021003566caa87 input.title-07929e36291ee315cb60cf3bf1b1693df342b34c {\r\n    width: auto;\r\n}\r\n\r\n.properties-editor-ef40e9ed3840df1aa2cdf410a8021003566caa87 textarea.invalid-b5f4ab08649d9561338d2c1c451b1c25125e943d {\r\n    border: solid 1px red;\r\n    background-color: lightgoldenrodyellow;\r\n}\r\n\r\n.without-report-container-cae247d6b19fea136c53819096a4b6a3972965e3 {\r\n    flex-grow: 1;\r\n    height: 0;\r\n    overflow: auto;\r\n}\r\n.without-report-container-cae247d6b19fea136c53819096a4b6a3972965e3 {\r\n    display: flex;\r\n    flex-direction: column;\r\n}\r\n.report-container-55f633fef050e887b20a94e55baeca8f2017de7b {\r\n    background: #00c2ff70;\r\n    color: #ffffff;\r\n    padding: 3px;\r\n}\r\n\r\n.route-list-9eb18dea6b29a41617fe2ae3f253c0139f23251a .selecting-5e05e7edb3ed5daeb9e0d052b77564e58c86e151 {\r\n    background: #FECA40;\r\n}\r\n\r\n.route-list-9eb18dea6b29a41617fe2ae3f253c0139f23251a .selected-011265ea07980436d679df19e9640a5d7f4e4d2e {\r\n    background: #F39814;\r\n    color: white;\r\n}\r\n\r\n.route-list-9eb18dea6b29a41617fe2ae3f253c0139f23251a {\r\n    flex-grow: 1;\r\n    overflow: hidden;\r\n\r\n    list-style-type: none;\r\n    margin: 0;\r\n    padding: 0;\r\n}\r\n\r\n.route-list-9eb18dea6b29a41617fe2ae3f253c0139f23251a .route-list-item-70a16a19e033889ad7b3a954b9590c4af4dd3abc {\r\n    margin: var(--route-list-item-margin-d26104b804dd3ff907c37bb7c568594b9b613010);\r\n    padding: var(--route-list-item-padding-7c1c0d148a9600733b74b808b50a76898f3e53c2);\r\n    cursor: pointer;\r\n    user-select: none;\r\n}\r\n.route-list-9eb18dea6b29a41617fe2ae3f253c0139f23251a .note-df83bdcf6400a7479b76ecb85b7664361e74abd0 {\r\n    font-size: 75%;\r\n    padding-left: 0.5em;\r\n    color: #ffffffab;\r\n}\r\n\r\n.auto-complete-list-3518a8add5e9054c151ff072f28ed877120ec855 {\r\n    position: absolute;\r\n    background-color: #f9f9f9;\r\n    min-width: 160px;\r\n    box-shadow: 0px 8px 16px 0px rgba(0, 0, 0, 0.2);\r\n    padding: 12px 16px;\r\n    z-index: 1;\r\n}\r\n\r\n.auto-complete-list-3518a8add5e9054c151ff072f28ed877120ec855 .auto-complete-list-item-4eb068142c47c56917125cc156fe1961517d77ae {\r\n    color: black;\r\n    padding: 12px 16px;\r\n    text-decoration: none;\r\n    display: block;\r\n}\r\n\r\n.auto-complete-list-3518a8add5e9054c151ff072f28ed877120ec855 .auto-complete-list-item-4eb068142c47c56917125cc156fe1961517d77ae:hover {\r\n    background-color: #ddd;\r\n}\r\n";
+const cssText = ".import-text-input-8adb0f83f2751e93cebaa7948eaf20e8956b7705 {\r\n    position: fixed;\r\n    top: 0;\r\n    left: 0;\r\n    width: 100%;\r\n    height: 100%;\r\n    z-index: 10000;\r\n\r\n    display: flex;\r\n    justify-content: center;\r\n    align-items: center;\r\n}\r\n\r\n.hidden-11ad600df67ab79d9ba34435f93fa9d9be0c8116 {\r\n    display: none;\r\n}\r\n.ellipsis-text-6096861212b8b076fd1cc328e675995595739789 {\r\n    white-space: nowrap;\r\n    overflow: hidden;\r\n    text-overflow: ellipsis;\r\n}\r\n.ellipsis-text-6096861212b8b076fd1cc328e675995595739789 br {\r\n    display: none;\r\n}\r\n\r\ninput.editable-text-646860ac8417f8f4892cd4291e8eaee40f046989 {\r\n    border: none;\r\n    background: none;\r\n    font-size: 16px;\r\n    color: black;\r\n}\r\n\r\n.spot-label-a076abb95ad2e88f215c613874b2f18792b594af {\r\n    color: #FFFFBB;\r\n    font-size: 11px;\r\n    line-height: 12px;\r\n    text-align: center;\r\n    padding: 2px;\r\n    overflow: hidden;\r\n    white-space: nowrap;\r\n    text-overflow: ellipsis;\r\n    text-shadow: 1px 1px #000, 1px -1px #000, -1px 1px #000, -1px -1px #000, 0 0 5px #000;\r\n    pointer-events: none;\r\n}\r\n.spot-handle-3d9ee2c9cf5cb31699b69dba40ff9a765b2410f4 {\r\n    --background-hue-84bb0fa7068086ad4ac3a9522dfcfe29ecde611f: 152deg;\r\n    --background-opacity-dc78a3ef42663bc116505fa1f2b34b135e6082f9: 40%;\r\n    --border-width-03b2edcc74dce220baceefc9e27aa78fc7639a86: 2px;\r\n    --border-saturation-6c842ea396d948b3ce99f7122138ecf69d1eb66b: 0%;\r\n    --border-opacity-9a496cc23134a3cb21db3cb1cd7b601fc828b4e2: 80%;\r\n\r\n    transition: all 0.5s, transform 0s;\r\n    box-sizing: border-box;\r\n    background-color: hsla(var(--background-hue-84bb0fa7068086ad4ac3a9522dfcfe29ecde611f), 84%, 56%, var(--background-opacity-dc78a3ef42663bc116505fa1f2b34b135e6082f9));\r\n    border: solid var(--border-width-03b2edcc74dce220baceefc9e27aa78fc7639a86) hsla(56, var(--border-saturation-6c842ea396d948b3ce99f7122138ecf69d1eb66b), 39%, var(--border-opacity-9a496cc23134a3cb21db3cb1cd7b601fc828b4e2));\r\n    border-radius: 100%;\r\n}\r\n.spot-handle-3d9ee2c9cf5cb31699b69dba40ff9a765b2410f4.draggable-d80a05aba9639289409ed914275b6b423b07b06e {\r\n    --background-opacity-dc78a3ef42663bc116505fa1f2b34b135e6082f9: 100%;\r\n    --border-opacity-9a496cc23134a3cb21db3cb1cd7b601fc828b4e2: 100%;\r\n    border-radius: 0;\r\n}\r\n.spot-handle-3d9ee2c9cf5cb31699b69dba40ff9a765b2410f4.highlighted-01d99204027ffd8a9bcb4b5f85938115b8c9192a {\r\n    --border-width-03b2edcc74dce220baceefc9e27aa78fc7639a86: 4px;\r\n    --border-saturation-6c842ea396d948b3ce99f7122138ecf69d1eb66b: 100%;\r\n}\r\n\r\n.properties-editor-89d32821d601c013b1abbc893312b766e2be5f92 {\r\n    display: flex;\r\n    flex-direction: column;\r\n    height: 100%;\r\n}\r\n\r\n.properties-editor-89d32821d601c013b1abbc893312b766e2be5f92 textarea,\r\n.properties-editor-89d32821d601c013b1abbc893312b766e2be5f92 input {\r\n    box-sizing: border-box;\r\n    width: 100%;\r\n    resize: vertical;\r\n}\r\n.properties-editor-89d32821d601c013b1abbc893312b766e2be5f92 input.title-2810699c44d20485cef2324d886d7814e205faa7 {\r\n    /* 2em: アコーディオンハンドルの margin */\r\n    /* 10px: アコーディオンハンドルの幅 */\r\n    width: calc(100% - 2em - 10px);\r\n}\r\n\r\n.properties-editor-89d32821d601c013b1abbc893312b766e2be5f92 textarea.invalid-58d464c7773b074add182645b6b6bca2f20be1d6 {\r\n    border: solid 1px red;\r\n    background-color: lightgoldenrodyellow;\r\n}\r\n\r\n.without-report-container-00dfab527b8dabf847f8aea1b2eac841affabf65 {\r\n    flex-grow: 1;\r\n    height: 0;\r\n    overflow: auto;\r\n}\r\n.without-report-container-00dfab527b8dabf847f8aea1b2eac841affabf65 {\r\n    display: flex;\r\n    flex-direction: column;\r\n}\r\n.report-container-0f2420c1f5eb638fb4e01c85be2d7f4dcb38b3fc {\r\n    background: #00c2ff70;\r\n    color: #ffffff;\r\n}\r\n\r\n.route-list-b2cd6cb77391429007d8d4162b1783a1c16e4796 .selecting-45fd456dafd471714070d2104ee334992ae26b03 {\r\n    background: #FECA40;\r\n}\r\n\r\n.route-list-b2cd6cb77391429007d8d4162b1783a1c16e4796 .selected-7057343cfbb22c39477184781bb59c0b8fee0d42 {\r\n    background: #F39814;\r\n    color: white;\r\n}\r\n\r\n.route-list-b2cd6cb77391429007d8d4162b1783a1c16e4796 {\r\n    flex-grow: 1;\r\n    overflow: hidden;\r\n\r\n    list-style-type: none;\r\n    margin: 0;\r\n    padding: 0;\r\n}\r\n\r\n.route-list-b2cd6cb77391429007d8d4162b1783a1c16e4796 .route-list-item-bcbcc8c63e012e12eb370bd8aad46b1c37efc74f {\r\n    margin: var(--route-list-item-margin-b89b43737a5f177fc28b32260ccac401c7524537);\r\n    padding: var(--route-list-item-padding-6be1aa920350ac504abed7421e04fefacbcc37ee);\r\n    cursor: pointer;\r\n    user-select: none;\r\n}\r\n.route-list-b2cd6cb77391429007d8d4162b1783a1c16e4796 .note-81a6bb0f737a3bfe949fc137a8321175eed610bc {\r\n    font-size: 75%;\r\n    padding-left: 0.5em;\r\n    color: #ffffffab;\r\n}\r\n\r\n.auto-complete-list-eef72770eaad09c698d36ffac69ed2741669d432 {\r\n    position: absolute;\r\n    background-color: #f9f9f9;\r\n    min-width: 160px;\r\n    box-shadow: 0px 8px 16px 0px rgba(0, 0, 0, 0.2);\r\n    padding: 12px 16px;\r\n    z-index: 1;\r\n}\r\n\r\n.auto-complete-list-eef72770eaad09c698d36ffac69ed2741669d432 .auto-complete-list-item-8f2fadee7ec113774433dcbf13a30bf97a460dc3 {\r\n    color: black;\r\n    padding: 12px 16px;\r\n    text-decoration: none;\r\n    display: block;\r\n}\r\n\r\n.auto-complete-list-eef72770eaad09c698d36ffac69ed2741669d432 .auto-complete-list-item-8f2fadee7ec113774433dcbf13a30bf97a460dc3:hover {\r\n    background-color: #ddd;\r\n}\r\n";
 const variables = {
-    "--background-hue": "--background-hue-eb0109df7c4d5c17a138ab57ce31368a285bf811",
-    "--background-opacity": "--background-opacity-f5512beec248af0bc438cd108a169500f1a7f908",
-    "--border-width": "--border-width-17feb6caf748d09a0fcf6781d14859ed8043e0e1",
-    "--border-saturation": "--border-saturation-ddebdc34a90b2c05c7330495d8cb2622f6f7c6a4",
-    "--border-opacity": "--border-opacity-b04052b9a1caeede6fa7ca67de1e473d61891c7a",
-    "--route-list-item-margin": "--route-list-item-margin-d26104b804dd3ff907c37bb7c568594b9b613010",
-    "--route-list-item-padding": "--route-list-item-padding-7c1c0d148a9600733b74b808b50a76898f3e53c2",
+    "--background-hue": "--background-hue-84bb0fa7068086ad4ac3a9522dfcfe29ecde611f",
+    "--background-opacity": "--background-opacity-dc78a3ef42663bc116505fa1f2b34b135e6082f9",
+    "--border-width": "--border-width-03b2edcc74dce220baceefc9e27aa78fc7639a86",
+    "--border-saturation": "--border-saturation-6c842ea396d948b3ce99f7122138ecf69d1eb66b",
+    "--border-opacity": "--border-opacity-9a496cc23134a3cb21db3cb1cd7b601fc828b4e2",
+    "--route-list-item-margin": "--route-list-item-margin-b89b43737a5f177fc28b32260ccac401c7524537",
+    "--route-list-item-padding": "--route-list-item-padding-6be1aa920350ac504abed7421e04fefacbcc37ee",
 };
 /* harmony default export */ const styles_module = ({
-    "import-text-input": "import-text-input-19d4ba591bcca520a10caa3dc6d070634c09b6bb",
-    hidden: "hidden-545b7c87fe067d95937637a4070769bbab45e078",
-    "ellipsis-text": "ellipsis-text-995110e664574196e159fa5bcd50b12365923ab8",
-    "editable-text": "editable-text-cbfab67dada7a654ac9ef8287857fe3163dd8a9b",
-    "spot-label": "spot-label-8a3cc3ad91237c2ba40cd6c8bc70e53b53c71eee",
-    "spot-handle": "spot-handle-63849fdf5ccf7c0eff4c178ea11103835ed23f29",
-    draggable: "draggable-d88639c5764a31ddae7fe120c66c1cd507da0eed",
-    highlighted: "highlighted-2032baf288d6040ceeb805d2b9d00c157a58f334",
-    "properties-editor": "properties-editor-ef40e9ed3840df1aa2cdf410a8021003566caa87",
-    title: "title-07929e36291ee315cb60cf3bf1b1693df342b34c",
-    invalid: "invalid-b5f4ab08649d9561338d2c1c451b1c25125e943d",
-    "without-report-container": "without-report-container-cae247d6b19fea136c53819096a4b6a3972965e3",
-    "report-container": "report-container-55f633fef050e887b20a94e55baeca8f2017de7b",
-    "route-list": "route-list-9eb18dea6b29a41617fe2ae3f253c0139f23251a",
-    selecting: "selecting-5e05e7edb3ed5daeb9e0d052b77564e58c86e151",
-    selected: "selected-011265ea07980436d679df19e9640a5d7f4e4d2e",
-    "route-list-item": "route-list-item-70a16a19e033889ad7b3a954b9590c4af4dd3abc",
-    note: "note-df83bdcf6400a7479b76ecb85b7664361e74abd0",
-    "auto-complete-list": "auto-complete-list-3518a8add5e9054c151ff072f28ed877120ec855",
-    "auto-complete-list-item": "auto-complete-list-item-4eb068142c47c56917125cc156fe1961517d77ae",
+    "import-text-input": "import-text-input-8adb0f83f2751e93cebaa7948eaf20e8956b7705",
+    hidden: "hidden-11ad600df67ab79d9ba34435f93fa9d9be0c8116",
+    "ellipsis-text": "ellipsis-text-6096861212b8b076fd1cc328e675995595739789",
+    "editable-text": "editable-text-646860ac8417f8f4892cd4291e8eaee40f046989",
+    "spot-label": "spot-label-a076abb95ad2e88f215c613874b2f18792b594af",
+    "spot-handle": "spot-handle-3d9ee2c9cf5cb31699b69dba40ff9a765b2410f4",
+    draggable: "draggable-d80a05aba9639289409ed914275b6b423b07b06e",
+    highlighted: "highlighted-01d99204027ffd8a9bcb4b5f85938115b8c9192a",
+    "properties-editor": "properties-editor-89d32821d601c013b1abbc893312b766e2be5f92",
+    title: "title-2810699c44d20485cef2324d886d7814e205faa7",
+    invalid: "invalid-58d464c7773b074add182645b6b6bca2f20be1d6",
+    "without-report-container": "without-report-container-00dfab527b8dabf847f8aea1b2eac841affabf65",
+    "report-container": "report-container-0f2420c1f5eb638fb4e01c85be2d7f4dcb38b3fc",
+    "route-list": "route-list-b2cd6cb77391429007d8d4162b1783a1c16e4796",
+    selecting: "selecting-45fd456dafd471714070d2104ee334992ae26b03",
+    selected: "selected-7057343cfbb22c39477184781bb59c0b8fee0d42",
+    "route-list-item": "route-list-item-bcbcc8c63e012e12eb370bd8aad46b1c37efc74f",
+    note: "note-81a6bb0f737a3bfe949fc137a8321175eed610bc",
+    "auto-complete-list": "auto-complete-list-eef72770eaad09c698d36ffac69ed2741669d432",
+    "auto-complete-list-item": "auto-complete-list-item-8f2fadee7ec113774433dcbf13a30bf97a460dc3",
 });
 
 ;// CONCATENATED MODULE: ./source/accordion.module.css
@@ -3700,6 +3700,10 @@ function createQueryLauncher({ signal, handleAsyncError, progress, onCurrentQuer
                 if (currentSource == null)
                     return;
                 const queryText = currentSource.text;
+                progress === null || progress === void 0 ? void 0 : progress({
+                    type: "query-parse-starting",
+                    queryText,
+                });
                 if (queryText.trim() === "") {
                     const source = Object.assign(Object.assign({}, currentSource), { text: queryText, summary: queryText });
                     setCurrentSource(source);
@@ -3737,6 +3741,10 @@ function createQueryLauncher({ signal, handleAsyncError, progress, onCurrentQuer
         }
         function saveQueries(signal) {
             return query_launcher_awaiter(this, void 0, void 0, function* () {
+                progress === null || progress === void 0 ? void 0 : progress({
+                    type: "queries-save-waited",
+                    delayMilliseconds: saveDelayMilliseconds,
+                });
                 yield sleep(saveDelayMilliseconds, { signal });
                 progress === null || progress === void 0 ? void 0 : progress({
                     type: "queries-save-started",
@@ -4016,103 +4024,384 @@ function saveConfig(config) {
     localStorage.setItem(storageConfigKey, JSON.stringify(config));
 }
 
-;// CONCATENATED MODULE: ./source/progress-element.tsx
+;// CONCATENATED MODULE: ./source/progress-element.module.css
+const progress_element_module_cssText = ".ellipsis-text-51fedbac495cced9d9273fabb00e447b92b94828 {\r\n    overflow: hidden;\r\n    white-space: nowrap;\r\n    text-overflow: ellipsis;\r\n}\r\n\r\n.container-97af6396291d5e1904c8c36841dfb3fa9459be37 {\r\n    display: flex;\r\n    flex-direction: row;\r\n    border-top: hidden 1px;\r\n    padding: 3px;\r\n\r\n    > :is(* + *) {\r\n        margin-left: 0.3em;\r\n    }\r\n}\r\n\r\n.generic-message-bc92b4096193b965ccc878adb0fdf6c5c92cbae8 {\r\n    flex-grow: 1;\r\n}\r\n\r\n.query-error-message-d6f5ea2ffa84ed3b7f2d27125993a35adb6bbc14 {\r\n    color: lightpink;\r\n}\r\n\r\n.upload-indicator-01ab42f7f257f15ae4a7de15faaa5580c937d874,\r\n.save-indicator-cd6559c8872b33172c914b183eedf785e86c8325,\r\n.search-indicator-a15516228132acb8a3c7c095b8ce3f07df63fece {\r\n    border-top: solid 3px rgba(255, 255, 255, 0.253);\r\n    height: auto;\r\n    width: 3px;\r\n    color: transparent;\r\n}\r\n\r\n.search-indicator-a15516228132acb8a3c7c095b8ce3f07df63fece {\r\n    background: blue;\r\n\r\n    &.waiting-28931fd23457cbdf8c6ff076aa1bb007bb47b294,\r\n    &.processing-2b331cc4b5e01521f17ab424ca2b83384e62c7c6 {\r\n        background: yellow;\r\n    }\r\n}\r\n\r\n.upload-indicator-01ab42f7f257f15ae4a7de15faaa5580c937d874 {\r\n    background: green;\r\n\r\n    &.waiting-28931fd23457cbdf8c6ff076aa1bb007bb47b294,\r\n    &.processing-2b331cc4b5e01521f17ab424ca2b83384e62c7c6 {\r\n        background: blueviolet;\r\n    }\r\n}\r\n\r\n.save-indicator-cd6559c8872b33172c914b183eedf785e86c8325 {\r\n    background: lightgray;\r\n\r\n    &.waiting-28931fd23457cbdf8c6ff076aa1bb007bb47b294,\r\n    &.processing-2b331cc4b5e01521f17ab424ca2b83384e62c7c6 {\r\n        background: black;\r\n    }\r\n}\r\n\r\n.waiting-28931fd23457cbdf8c6ff076aa1bb007bb47b294 {\r\n    animation: --waiting-fc39d63c480fec60b5802b34fca97d3d09197fd5 var(--wait-interval-388556bd63ff04d03186eebdb49da69e92041915) ease-in forwards;\r\n}\r\n\r\n@keyframes --waiting-fc39d63c480fec60b5802b34fca97d3d09197fd5 {\r\n    0% {\r\n        opacity: 1;\r\n    }\r\n\r\n    5% {\r\n        opacity: 0.1;\r\n    }\r\n\r\n    100% {\r\n        opacity: 0.5;\r\n    }\r\n}\r\n\r\n.processing-2b331cc4b5e01521f17ab424ca2b83384e62c7c6 {\r\n    animation: --blinking-b1068e2d7835ca5e1b2d9549148b77b2020be912 1s ease-in-out infinite alternate;\r\n}\r\n\r\n@keyframes --blinking-b1068e2d7835ca5e1b2d9549148b77b2020be912 {\r\n    0% {\r\n        opacity: 0;\r\n    }\r\n\r\n    100% {\r\n        opacity: 1;\r\n    }\r\n}\r\n";
+const progress_element_module_variables = {
+    "--waiting": "--waiting-fc39d63c480fec60b5802b34fca97d3d09197fd5",
+    "--wait-interval": "--wait-interval-388556bd63ff04d03186eebdb49da69e92041915",
+    "--blinking": "--blinking-b1068e2d7835ca5e1b2d9549148b77b2020be912",
+};
+/* harmony default export */ const progress_element_module = ({
+    "ellipsis-text": "ellipsis-text-51fedbac495cced9d9273fabb00e447b92b94828",
+    container: "container-97af6396291d5e1904c8c36841dfb3fa9459be37",
+    "generic-message": "generic-message-bc92b4096193b965ccc878adb0fdf6c5c92cbae8",
+    "query-error-message": "query-error-message-d6f5ea2ffa84ed3b7f2d27125993a35adb6bbc14",
+    "upload-indicator": "upload-indicator-01ab42f7f257f15ae4a7de15faaa5580c937d874",
+    "save-indicator": "save-indicator-cd6559c8872b33172c914b183eedf785e86c8325",
+    "search-indicator": "search-indicator-a15516228132acb8a3c7c095b8ce3f07df63fece",
+    waiting: "waiting-28931fd23457cbdf8c6ff076aa1bb007bb47b294",
+    processing: "processing-2b331cc4b5e01521f17ab424ca2b83384e62c7c6",
+});
 
-function createProgress({ routeLayerGroupName, }) {
-    const reportElement = (jsx("div", { children: `ルートは読み込まれていません。レイヤー '${routeLayerGroupName}' を有効にすると読み込まれます。` }));
-    const progress = (message) => {
+;// CONCATENATED MODULE: ./source/progress-element.tsx
+var progress_element_awaiter = (undefined && undefined.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+
+
+
+function createProcessQueue(process, { handleAsyncError, }) {
+    const queue = [];
+    let isProcessing = false;
+    function processQueue() {
+        return progress_element_awaiter(this, void 0, void 0, function* () {
+            if (isProcessing)
+                return;
+            isProcessing = true;
+            try {
+                for (;;) {
+                    const message = queue.shift();
+                    if (message == null)
+                        break;
+                    yield process(message);
+                }
+            }
+            finally {
+                isProcessing = false;
+            }
+        });
+    }
+    function enqueue(message) {
+        queue.push(message);
+        handleAsyncError(processQueue());
+    }
+    return { enqueue };
+}
+function createProgress({ routeLayerGroupName, handleAsyncError, }) {
+    const genericMessageElement = (jsx("div", { class: `${progress_element_module["ellipsis-text"]} ${progress_element_module["generic-message"]}` }));
+    const genericProcessQueue = createProcessQueue(({ message, waitMilliseconds }) => progress_element_awaiter(this, void 0, void 0, function* () {
+        genericMessageElement.innerText = message;
+        yield sleep(waitMilliseconds);
+    }), { handleAsyncError });
+    function putMessage(message, waitMilliseconds = 2000) {
+        genericProcessQueue.enqueue({
+            message,
+            waitMilliseconds,
+        });
+    }
+    function put(template, ...substitutions) {
+        putMessage(String.raw(template, ...substitutions));
+    }
+    const searchModeElement = jsx("div", { class: progress_element_module["ellipsis-text"] });
+    const searchIndicatorElement = (jsx("div", { class: progress_element_module["search-indicator"] }));
+    const searchResultElement = jsx("div", { class: progress_element_module["ellipsis-text"] });
+    const queryErrorElement = (jsx("div", { class: `${progress_element_module["ellipsis-text"]} ${progress_element_module["query-error-message"]}` }));
+    const saveIndicatorElement = (jsx("div", { class: `${progress_element_module["save-indicator"]} ${progress_element_module["ellipsis-text"]}` }));
+    const uploadIndicatorElement = (jsx("div", { class: `${progress_element_module["upload-indicator"]} ${progress_element_module["ellipsis-text"]}` }));
+    const containerElement = (jsxs("div", { class: progress_element_module.container, children: [genericMessageElement, searchModeElement, searchIndicatorElement, searchResultElement, queryErrorElement, saveIndicatorElement, uploadIndicatorElement] }));
+    function setStatusClassName(element, className) {
+        element.classList.remove(progress_element_module.waiting);
+        element.classList.remove(progress_element_module.processing);
+        if (className != null) {
+            // NOTE: アニメーションをリセットするため再計算する
+            void element.offsetWidth;
+            element.classList.add(className);
+        }
+    }
+    function setUploadStatusClassName(className) {
+        setStatusClassName(uploadIndicatorElement, className);
+    }
+    function setSaveStatusClassName(className) {
+        setStatusClassName(saveIndicatorElement, className);
+    }
+    function dispatchProgressMessage(message) {
+        return progress_element_awaiter(this, void 0, void 0, function* () {
+            const { type } = message;
+            switch (type) {
+                case "waiting-until-routes-layer-loading": {
+                    put `${routeLayerGroupName} レイヤーを有効にするとルート一覧が表示されます。`;
+                    break;
+                }
+                case "upload-waiting": {
+                    uploadIndicatorElement.style.setProperty(progress_element_module_variables["--wait-interval"], `${message.milliseconds}ms`);
+                    setUploadStatusClassName(progress_element_module.waiting);
+                    const remainingMessage = message.queueCount <= 1
+                        ? ""
+                        : `, 残り${message.queueCount}個`;
+                    uploadIndicatorElement.innerText = `ルート ${JSON.stringify(message.routeName)} の送信待機中 ( ${message.milliseconds} ms${remainingMessage} )`;
+                    break;
+                }
+                case "uploading": {
+                    setUploadStatusClassName(progress_element_module.processing);
+                    uploadIndicatorElement.innerText = `ルート ${JSON.stringify(message.routeName)} の変更を送信中。`;
+                    break;
+                }
+                case "uploaded": {
+                    setUploadStatusClassName(null);
+                    const remainingMessage = message.queueCount <= 1
+                        ? ""
+                        : `( 残り ${message.queueCount}個 )`;
+                    uploadIndicatorElement.innerText = `ルート ${JSON.stringify(message.routeName)} の変更を送信しました。${remainingMessage}`;
+                    break;
+                }
+                case "downloading": {
+                    put `ルートを受信中`;
+                    break;
+                }
+                case "downloaded": {
+                    put `${message.routeCount} 個のルートを受信しました。`;
+                    break;
+                }
+                case "adding":
+                    break;
+                case "routes-added": {
+                    put `${message.count} 個のルートを追加しました ( ${Math.floor(message.durationMilliseconds)}ミリ秒 )`;
+                    break;
+                }
+                case "query-parse-starting": {
+                    searchModeElement.innerText = "";
+                    queryErrorElement.innerText = "";
+                    break;
+                }
+                case "query-parse-completed": {
+                    if (message.hasFilter) {
+                        searchModeElement.innerText = "式モード";
+                    }
+                    else {
+                        searchModeElement.innerText = "全件";
+                    }
+                    break;
+                }
+                case "query-evaluation-starting": {
+                    setStatusClassName(searchIndicatorElement, progress_element_module.processing);
+                    break;
+                }
+                case "query-evaluation-completed": {
+                    setStatusClassName(searchIndicatorElement, null);
+                    searchResultElement.innerText = `表示 ${message.hitCount} 件 / 全体 ${message.allCount} 件`;
+                    break;
+                }
+                case "query-parse-error-occurred": {
+                    queryErrorElement.innerText = `クエリ構文エラー: ${(message.messages).join(", ")}`;
+                    break;
+                }
+                case "query-evaluation-error": {
+                    queryErrorElement.innerText = String(message.error);
+                    reportError(message.error);
+                    break;
+                }
+                case "user-location-fetched":
+                    break;
+                case "search-query-errors-occurred": {
+                    const { diagnostics } = message;
+                    const [diagnostic, ...tail] = diagnostics;
+                    if (!diagnostic)
+                        break;
+                    queryErrorElement.innerText = `クエリ構文エラー: (${diagnostic.range.start}, ${diagnostic.range.end}): ${diagnostic.message} と 他${tail.length}件のエラー`;
+                    break;
+                }
+                case "queries-save-waited": {
+                    setSaveStatusClassName(progress_element_module.waiting);
+                    saveIndicatorElement.style.setProperty(progress_element_module_variables["--wait-interval"], `${message.delayMilliseconds}ms`);
+                    saveIndicatorElement.innerText = "クエリの保存を待機中。";
+                    break;
+                }
+                case "queries-save-started": {
+                    setSaveStatusClassName(progress_element_module.processing);
+                    saveIndicatorElement.innerText = "クエリを保存しています。";
+                    break;
+                }
+                case "queries-save-completed": {
+                    setSaveStatusClassName(null);
+                    saveIndicatorElement.innerText = "クエリを保存しました。";
+                    break;
+                }
+                case "query-name-duplicated": {
+                    put `クエリ '${message.name}' は既に存在します。別の名前を指定してください。`;
+                    break;
+                }
+                default:
+                    throw new Error(`Unknown message type ${type}`);
+            }
+        });
+    }
+    const progressQueue = createProcessQueue(dispatchProgressMessage, {
+        handleAsyncError,
+    });
+    return {
+        element: containerElement,
+        progress(message) {
+            progressQueue.enqueue(message);
+        },
+        cssText: progress_element_module_cssText,
+    };
+}
+
+;// CONCATENATED MODULE: ./source/selected-route-layer.module.css
+const selected_route_layer_module_cssText = "path.selected-cell17-c503fd1e25460bc37c8f183f52bf178dc26e18bb {\r\n    transition-property: d;\r\n    transition-timing-function: ease-out;\r\n    transition-duration: 0.1s;\r\n}\r\n";
+const selected_route_layer_module_variables = {};
+/* harmony default export */ const selected_route_layer_module = ({
+    "selected-cell17": "selected-cell17-c503fd1e25460bc37c8f183f52bf178dc26e18bb",
+});
+
+;// CONCATENATED MODULE: ./source/selected-route-layer.ts
+//spell-checker: ignore Lngs
+
+
+function createSelectedRouteLayer() {
+    const tooCloseCircle = L.circle([0, 0], 20, {
+        className: "iitc-plugin-pgo-route-helper-too-close-circle",
+        stroke: true,
+        color: "rgb(240, 252, 249)",
+        opacity: 1,
+        weight: 2,
+        dashArray: "12 6",
+        fill: false,
+        clickable: false,
+    });
+    const cellOptions = {
+        stroke: true,
+        color: "rgb(240, 252, 249)",
+        opacity: 0.5,
+        weight: 5,
+        dashArray: "20 10",
+        fill: false,
+        clickable: false,
+    };
+    const polyline14 = L.polyline([], Object.assign({}, cellOptions));
+    const polyline16 = L.polygon([], Object.assign(Object.assign({}, cellOptions), { 
+        // className: classNames["selected-cell16"],
+        fillOpacity: 0.2 }));
+    const polyline17 = L.polygon([], Object.assign(Object.assign({}, cellOptions), { className: selected_route_layer_module["selected-cell17"], stroke: false, fill: true, fillColor: "rgb(240, 252, 249)", fillOpacity: 0.3 }));
+    const layer = L.featureGroup([
+        tooCloseCircle,
+        polyline14,
+        polyline16,
+        polyline17,
+    ]);
+    function setLatLng(center) {
+        tooCloseCircle.setLatLng(center);
+        if (typeof S2 !== "undefined") {
+            const cell14 = getS2Cell(center, 14);
+            const corners14 = cell14.getCornerLatLngs();
+            polyline14.setLatLngs([...corners14, corners14[0]]);
+            const cell16 = getS2Cell(center, 16);
+            polyline16.setLatLngs(cell16.getCornerLatLngs());
+            const cell17 = getS2Cell(center, 17);
+            polyline17.setLatLngs(cell17.getCornerLatLngs());
+        }
+    }
+    return {
+        layer,
+        setLatLng,
+        cssText: selected_route_layer_module_cssText,
+    };
+}
+
+;// CONCATENATED MODULE: ./source/editor-title.module.css
+const editor_title_module_cssText = "\r\n.container-476d919aafa7c59422a20b804b7f9b18be2ebb20 {\r\n    text-align: center;\r\n    width: 100%;\r\n    position: relative;\r\n\r\n    border-top: solid 2px transparent;\r\n\r\n    &:has(.busy-52bc31ec3f51defb55ac2603d1ae9b5268a00cf9) {\r\n        border-top-color: #ecd8ff4f;\r\n        transition: border-top-color 0.2s ease-in-out;\r\n    }\r\n\r\n    .busy-indicator-6c02bee705dcc0d339e9c1d5e6a4db65cb54314b {\r\n        position: absolute;\r\n        top: 0;\r\n        width: 100%;\r\n        height: 100%;\r\n\r\n        opacity: 0;\r\n        background-color: #ecd8ff4f;\r\n\r\n        &.busy-52bc31ec3f51defb55ac2603d1ae9b5268a00cf9 {\r\n            animation: --background-blinking-a1d6a197d96e61b0ac0996bbdceedd71383e67c7 2s ease-in-out infinite;\r\n        }\r\n    }\r\n}\r\n\r\n@keyframes --background-blinking-a1d6a197d96e61b0ac0996bbdceedd71383e67c7 {\r\n    0% {\r\n        opacity: 0;\r\n    }\r\n    10% {\r\n        opacity: 1;\r\n    }\r\n    20% {\r\n        opacity: 0.4;\r\n    }\r\n    60% {\r\n        opacity: 0.2;\r\n    }\r\n    100% {\r\n        opacity: 0;\r\n    }\r\n}\r\n";
+const editor_title_module_variables = {
+    "--background-blinking": "--background-blinking-a1d6a197d96e61b0ac0996bbdceedd71383e67c7",
+};
+/* harmony default export */ const editor_title_module = ({
+    container: "container-476d919aafa7c59422a20b804b7f9b18be2ebb20",
+    busy: "busy-52bc31ec3f51defb55ac2603d1ae9b5268a00cf9",
+    "busy-indicator": "busy-indicator-6c02bee705dcc0d339e9c1d5e6a4db65cb54314b",
+});
+
+;// CONCATENATED MODULE: ./source/editor-title.tsx
+
+
+function createEditorTitle() {
+    const busyIndicator = jsx("div", { class: editor_title_module["busy-indicator"] });
+    const root = jsxs("div", { class: editor_title_module.container, children: ["Routes", busyIndicator] });
+    const busyProcessCategories = new Set();
+    function tryGetCategory(leaveType) {
+        switch (leaveType) {
+            case "upload-waiting":
+            case "uploading":
+            case "uploaded":
+                return "upload-waiting";
+            case "queries-save-waited":
+            case "queries-save-started":
+            case "queries-save-completed":
+                return "queries-save-waited";
+            case "downloading":
+            case "downloaded":
+                return "downloading";
+        }
+    }
+    function enterBusyProcess(type) {
+        const category = tryGetCategory(type);
+        if (category === undefined)
+            return;
+        busyProcessCategories.add(category);
+        busyIndicator.classList.add(editor_title_module.busy);
+    }
+    function leaveBusyProcess(type) {
+        const category = tryGetCategory(type);
+        if (category === undefined)
+            return;
+        busyProcessCategories.delete(category);
+        if (busyProcessCategories.size === 0) {
+            busyIndicator.classList.remove(editor_title_module.busy);
+        }
+    }
+    function progress(message) {
         const { type } = message;
         switch (type) {
-            case "waiting-until-routes-layer-loading": {
-                reportElement.innerText = `${routeLayerGroupName} レイヤーを有効にするとルート一覧が表示されます。`;
-                break;
-            }
             case "upload-waiting": {
-                const remainingMessage = message.queueCount <= 1
-                    ? ""
-                    : `, 残り${message.queueCount}個`;
-                reportElement.innerText = `ルート ${JSON.stringify(message.routeName)} の送信待機中 ( ${message.milliseconds} ms${remainingMessage} )`;
+                enterBusyProcess(type);
                 break;
             }
-            case "uploading": {
-                reportElement.innerText = `ルート ${JSON.stringify(message.routeName)} の変更を送信中。`;
+            case "uploading":
                 break;
-            }
             case "uploaded": {
-                const remainingMessage = message.queueCount <= 1
-                    ? ""
-                    : `( 残り ${message.queueCount}個 )`;
-                reportElement.innerText = `ルート ${JSON.stringify(message.routeName)} の変更を送信しました。${remainingMessage}`;
+                leaveBusyProcess(type);
+                break;
+            }
+            case "queries-save-waited": {
+                enterBusyProcess(type);
+                break;
+            }
+            case "queries-save-started":
+                break;
+            case "queries-save-completed": {
+                leaveBusyProcess(type);
                 break;
             }
             case "downloading": {
-                reportElement.innerText = `ルートを受信中`;
+                enterBusyProcess(type);
                 break;
             }
             case "downloaded": {
-                reportElement.innerText = `${message.routeCount} 個のルートを受信しました。`;
+                leaveBusyProcess(type);
                 break;
             }
-            case "adding": {
-                reportElement.innerText = `ルート: '${message.routeName}' ( ${message.routeId} ) を読み込みました`;
-                break;
-            }
-            case "routes-added": {
-                reportElement.innerText = `${message.count} 個のルートを追加しました ( ${message.durationMilliseconds}ミリ秒 )`;
-                break;
-            }
-            case "query-parse-completed": {
-                if (message.hasFilter) {
-                    reportElement.innerText = "式検索";
-                }
-                else {
-                    reportElement.innerText = "全件";
-                }
-                break;
-            }
-            case "query-evaluation-completed": {
-                reportElement.innerText = `検索完了 (表示 ${message.hitCount} 件 / 全体 ${message.allCount} 件)`;
-                break;
-            }
-            case "query-parse-error-occurred": {
-                reportElement.innerText = `クエリ構文エラー: ${(message.messages).join(", ")}`;
-                break;
-            }
-            case "query-evaluation-error": {
-                reportElement.innerText = String(message.error);
-                reportError(message.error);
-                break;
-            }
+            case "waiting-until-routes-layer-loading":
+            case "adding":
+            case "routes-added":
+            case "query-parse-starting":
+            case "query-parse-completed":
+            case "query-parse-error-occurred":
+            case "query-evaluation-starting":
+            case "query-evaluation-error":
+            case "query-evaluation-completed":
+            case "search-query-errors-occurred":
             case "user-location-fetched":
+            case "query-name-duplicated":
                 break;
-            case "search-query-errors-occurred": {
-                const { diagnostics } = message;
-                const [diagnostic, ...tail] = diagnostics;
-                if (!diagnostic)
-                    break;
-                reportElement.innerText = `クエリ構文エラー: (${diagnostic.range.start}, ${diagnostic.range.end}): ${diagnostic.message} と 他${tail.length}件のエラー`;
-                break;
-            }
-            case "queries-save-started": {
-                reportElement.innerText = "クエリを保存しています。";
-                break;
-            }
-            case "queries-save-completed": {
-                reportElement.innerText = "クエリを保存しました。";
-                break;
-            }
-            case "query-name-duplicated": {
-                reportElement.innerText = `クエリ '${message.name}' は既に存在します。別の名前を指定してください。`;
-                break;
-            }
             default:
                 throw new Error(`Unknown message type ${type}`);
         }
-    };
-    return {
-        element: reportElement,
-        progress,
-    };
+    }
+    return { element: root, cssText: editor_title_module_cssText, progress };
 }
 
 ;// CONCATENATED MODULE: ./source/iitc-plugin-pgo-route-helper.tsx
@@ -4128,6 +4417,8 @@ var iitc_plugin_pgo_route_helper_awaiter = (undefined && undefined.__awaiter) ||
 
 /* eslint-disable require-yield */
 // spell-checker: ignore layeradd latlngschanged lngs latlng buttonset moveend zoomend
+
+
 
 
 
@@ -4217,19 +4508,13 @@ function asyncMain() {
         console.debug(`'${config.userId}' としてログインしています。`);
         const state = {
             selectedRouteId: null,
-            tooCloseLayer: L.circle([0, 0], 20, {
-                opacity: 0.5,
-                clickable: false,
-                color: "orange",
-                fill: false,
-                stroke: true,
-                weight: 2,
-            }),
             deleteRouteId: null,
             templateCandidateRouteId: null,
             routes: "routes-unloaded",
             routeListQuery: { query: undefined },
         };
+        const selectedRouteLayer = createSelectedRouteLayer();
+        addStyle(selectedRouteLayer.cssText);
         const remoteCommandCancelScope = createAsyncCancelScope(handleAsyncError);
         let nextCommandId = 0;
         const routeIdToCommand = new Map();
@@ -4380,10 +4665,15 @@ function asyncMain() {
         }
         setEditorElements(undefined);
         const routeLayerGroupName = "Routes";
-        const { progress, element: reportElement } = createProgress({
+        const { progress: progressBarProgress, element: reportElement, cssText: reportCssText, } = createProgress({
             routeLayerGroupName,
+            handleAsyncError,
         });
-        reportElement.classList.add(styles_module["ellipsis-text"]);
+        function progress(message) {
+            editorTitleProgress(message);
+            progressBarProgress(message);
+        }
+        addStyle(reportCssText);
         function onAddRouteButtonClick(kind) {
             const { routes } = state;
             if (config.userId == null || routes == "routes-unloaded")
@@ -4464,6 +4754,7 @@ function asyncMain() {
                     state.deleteRouteId = null;
                     if (state.selectedRouteId === deleteRouteId) {
                         state.selectedRouteId = null;
+                        updateSelectedRouteInfo();
                     }
                     const view = routes.get(deleteRouteId);
                     if (view == null)
@@ -4621,6 +4912,9 @@ function asyncMain() {
             return iitc_plugin_pgo_route_helper_awaiter(this, void 0, void 0, function* () {
                 if (state.routes === "routes-unloaded")
                     return;
+                progress({
+                    type: "query-evaluation-starting",
+                });
                 const { query } = state.routeListQuery;
                 const views = [...state.routes.values()];
                 const routes = views.map((r) => r.route);
@@ -4706,13 +5000,11 @@ function asyncMain() {
                     },
                 });
                 restoreScrollPosition === null || restoreScrollPosition === void 0 ? void 0 : restoreScrollPosition();
-                if (!isQueryUndefined) {
-                    progress({
-                        type: "query-evaluation-completed",
-                        hitCount: visibleListItemCount,
-                        allCount: views.length,
-                    });
-                }
+                progress({
+                    type: "query-evaluation-completed",
+                    hitCount: visibleListItemCount,
+                    allCount: views.length,
+                });
             });
         }
         function updateRoutesListElement() {
@@ -4810,7 +5102,9 @@ function asyncMain() {
         const editorElement = (jsxs("div", { id: "pgo-route-helper-editor", class: styles_module["properties-editor"], children: [jsxs("div", { class: styles_module["without-report-container"], children: [selectedRouteEditorContainer, queryLauncher.element, routeListElement.element] }), jsx("div", { class: styles_module["report-container"], children: reportElement })] }));
         document.body.append(editorElement);
         $(selectedRouteButtonContainer).buttonset();
-        const editor = createDialog(editorElement, { title: "Routes" });
+        const { element: editorTitleElement, cssText: editorTitleCssText, progress: editorTitleProgress, } = createEditorTitle();
+        addStyle(editorTitleCssText);
+        const editor = createDialog(editorElement, { title: editorTitleElement });
         editor.setForegroundColor("#FFCE00");
         editor.setBackgroundColor("rgba(8, 48, 78, 0.9)");
         (_a = document.querySelector("#toolbox")) === null || _a === void 0 ? void 0 : _a.append(addListeners(jsx("a", { children: "Route Helper" }), {
@@ -4836,20 +5130,20 @@ function asyncMain() {
             updateRouteListView(route.route, route.listView);
             if (((_b = (_a = getSelectedRoute()) === null || _a === void 0 ? void 0 : _a.route) === null || _b === void 0 ? void 0 : _b.routeId) === routeId) {
                 setEditorElements(route.route);
-            }
-            if (getRouteKind(route.route) === "spot") {
-                state.tooCloseLayer.setLatLng(coordinateToLatLng(route.route.coordinates[0]));
-                routeLayerGroup.addLayer(state.tooCloseLayer);
-            }
-            else {
-                routeLayerGroup.removeLayer(state.tooCloseLayer);
+                if (getRouteKind(route.route) === "spot") {
+                    selectedRouteLayer.setLatLng(coordinateToLatLng(route.route.coordinates[0]));
+                    routeLayerGroup.addLayer(selectedRouteLayer.layer);
+                }
+                else {
+                    routeLayerGroup.removeLayer(selectedRouteLayer.layer);
+                }
             }
         }
         function updateSelectedRouteInfo() {
             const routeId = state.selectedRouteId;
             if (routeId == null) {
                 setEditorElements(undefined);
-                routeLayerGroup.removeLayer(state.tooCloseLayer);
+                routeLayerGroup.removeLayer(selectedRouteLayer.layer);
                 return;
             }
             updateRouteView(routeId);
@@ -4900,6 +5194,9 @@ function asyncMain() {
             circle.on("drag", () => {
                 const position = circle.getLatLng();
                 label.setLatLng(position);
+                if (routeId === state.selectedRouteId) {
+                    selectedRouteLayer.setLatLng(position);
+                }
             });
             function changeStyle() {
                 const e = document.getElementsByClassName(circleId).item(0);
@@ -4988,6 +5285,8 @@ function asyncMain() {
                 }
                 // 現在追加されているレイヤーが範囲外なら削除する
                 for (const oldLayer of routeLayerGroup.getLayers()) {
+                    if (!isRouteLayer(oldLayer))
+                        continue;
                     if (scheduler.yieldRequested())
                         yield scheduler.yield({ signal });
                     const route = layerToRoutesRequiringAddition.get(oldLayer);
@@ -5011,6 +5310,9 @@ function asyncMain() {
             syncVisibleRoutesInMapScope(syncVisibleRoutesInMap);
         }
         // routeLayerGroup.addLayer(view.layer);
+        function isRouteLayer(layer) {
+            return layer !== selectedRouteLayer.layer;
+        }
         const routeLayerGroup = L.layerGroup();
         window.addLayerGroup(routeLayerGroupName, routeLayerGroup, true);
         // Routes レイヤーが表示されるまで読み込みを中止
@@ -5062,6 +5364,7 @@ function asyncMain() {
                 handleAsyncError,
                 onSelected(routeId) {
                     state.selectedRouteId = routeId;
+                    updateSelectedRouteInfo();
                     onMoveToSelectedElement(true);
                 },
             }));

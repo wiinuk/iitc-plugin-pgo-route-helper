@@ -57,7 +57,9 @@ import { createDialog } from "./dialog";
 import { createSearchEventHandler } from "./search-routes";
 import { createQueryLauncher } from "./query-launcher";
 import { loadConfig, saveConfig } from "./config";
-import { createProgress } from "./progress-element";
+import { createProgress, type ProgressMessage } from "./progress-element";
+import { createSelectedRouteLayer } from "./selected-route-layer";
+import { createEditorTitle } from "./editor-title";
 
 function reportError(error: unknown) {
     console.error(error);
@@ -168,7 +170,6 @@ async function asyncMain() {
     const state: {
         /** null: 選択されていない */
         selectedRouteId: null | string;
-        tooCloseLayer: L.Circle;
         deleteRouteId: null | string;
         templateCandidateRouteId: null | string;
         routes: "routes-unloaded" | Map<string, RouteWithView>;
@@ -177,19 +178,13 @@ async function asyncMain() {
         }>;
     } = {
         selectedRouteId: null,
-        tooCloseLayer: L.circle([0, 0], 20, {
-            opacity: 0.5,
-            clickable: false,
-            color: "orange",
-            fill: false,
-            stroke: true,
-            weight: 2,
-        }),
         deleteRouteId: null,
         templateCandidateRouteId: null,
         routes: "routes-unloaded",
         routeListQuery: { query: undefined },
     };
+    const selectedRouteLayer = createSelectedRouteLayer();
+    addStyle(selectedRouteLayer.cssText);
 
     type RemoteCommand = Readonly<{
         routeId: string;
@@ -400,10 +395,19 @@ async function asyncMain() {
     setEditorElements(undefined);
 
     const routeLayerGroupName = "Routes";
-    const { progress, element: reportElement } = createProgress({
+    const {
+        progress: progressBarProgress,
+        element: reportElement,
+        cssText: reportCssText,
+    } = createProgress({
         routeLayerGroupName,
+        handleAsyncError,
     });
-    reportElement.classList.add(classNames["ellipsis-text"]);
+    function progress(message: ProgressMessage) {
+        editorTitleProgress(message);
+        progressBarProgress(message);
+    }
+    addStyle(reportCssText);
 
     function onAddRouteButtonClick(kind: RouteKind) {
         const { routes } = state;
@@ -500,6 +504,7 @@ async function asyncMain() {
                 state.deleteRouteId = null;
                 if (state.selectedRouteId === deleteRouteId) {
                     state.selectedRouteId = null;
+                    updateSelectedRouteInfo();
                 }
 
                 const view = routes.get(deleteRouteId);
@@ -678,6 +683,9 @@ async function asyncMain() {
     async function updateRouteListElementAsync(signal: AbortSignal) {
         if (state.routes === "routes-unloaded") return;
 
+        progress({
+            type: "query-evaluation-starting",
+        });
         const { query } = state.routeListQuery;
         const views = [...state.routes.values()];
         const routes = views.map((r) => r.route);
@@ -801,13 +809,11 @@ async function asyncMain() {
         });
         restoreScrollPosition?.();
 
-        if (!isQueryUndefined) {
-            progress({
-                type: "query-evaluation-completed",
-                hitCount: visibleListItemCount,
-                allCount: views.length,
-            });
-        }
+        progress({
+            type: "query-evaluation-completed",
+            hitCount: visibleListItemCount,
+            allCount: views.length,
+        });
     }
     function updateRoutesListElement() {
         asyncUpdateRouteListElementScope(updateRouteListElementAsync);
@@ -978,7 +984,14 @@ async function asyncMain() {
 
     $(selectedRouteButtonContainer).buttonset();
 
-    const editor = createDialog(editorElement, { title: "Routes" });
+    const {
+        element: editorTitleElement,
+        cssText: editorTitleCssText,
+        progress: editorTitleProgress,
+    } = createEditorTitle();
+    addStyle(editorTitleCssText);
+
+    const editor = createDialog(editorElement, { title: editorTitleElement });
     editor.setForegroundColor("#FFCE00");
     editor.setBackgroundColor("rgba(8, 48, 78, 0.9)");
 
@@ -1010,22 +1023,21 @@ async function asyncMain() {
 
         if (getSelectedRoute()?.route?.routeId === routeId) {
             setEditorElements(route.route);
-        }
-
-        if (getRouteKind(route.route) === "spot") {
-            state.tooCloseLayer.setLatLng(
-                coordinateToLatLng(route.route.coordinates[0])
-            );
-            routeLayerGroup.addLayer(state.tooCloseLayer);
-        } else {
-            routeLayerGroup.removeLayer(state.tooCloseLayer);
+            if (getRouteKind(route.route) === "spot") {
+                selectedRouteLayer.setLatLng(
+                    coordinateToLatLng(route.route.coordinates[0])
+                );
+                routeLayerGroup.addLayer(selectedRouteLayer.layer);
+            } else {
+                routeLayerGroup.removeLayer(selectedRouteLayer.layer);
+            }
         }
     }
     function updateSelectedRouteInfo() {
         const routeId = state.selectedRouteId;
         if (routeId == null) {
             setEditorElements(undefined);
-            routeLayerGroup.removeLayer(state.tooCloseLayer);
+            routeLayerGroup.removeLayer(selectedRouteLayer.layer);
             return;
         }
         updateRouteView(routeId);
@@ -1085,6 +1097,9 @@ async function asyncMain() {
         circle.on("drag", () => {
             const position = circle.getLatLng();
             label.setLatLng(position);
+            if (routeId === state.selectedRouteId) {
+                selectedRouteLayer.setLatLng(position);
+            }
         });
         function changeStyle() {
             const e = document.getElementsByClassName(circleId).item(0);
@@ -1181,6 +1196,8 @@ async function asyncMain() {
 
         // 現在追加されているレイヤーが範囲外なら削除する
         for (const oldLayer of routeLayerGroup.getLayers()) {
+            if (!isRouteLayer(oldLayer)) continue;
+
             if (scheduler.yieldRequested()) await scheduler.yield({ signal });
 
             const route = layerToRoutesRequiringAddition.get(oldLayer);
@@ -1205,6 +1222,9 @@ async function asyncMain() {
     }
     // routeLayerGroup.addLayer(view.layer);
 
+    function isRouteLayer(layer: L.ILayer) {
+        return layer !== selectedRouteLayer.layer;
+    }
     const routeLayerGroup = L.layerGroup();
     window.addLayerGroup(routeLayerGroupName, routeLayerGroup, true);
 
@@ -1266,6 +1286,7 @@ async function asyncMain() {
                 handleAsyncError,
                 onSelected(routeId) {
                     state.selectedRouteId = routeId;
+                    updateSelectedRouteInfo();
                     onMoveToSelectedElement(true);
                 },
             })
