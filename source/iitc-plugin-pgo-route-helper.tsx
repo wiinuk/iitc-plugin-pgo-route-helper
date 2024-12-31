@@ -184,7 +184,25 @@ async function asyncMain() {
         routes: "routes-unloaded",
         routeListQuery: { query: undefined },
     };
-    const selectedRouteLayer = createSelectedRouteLayer();
+    const selectedRouteLayer = createSelectedRouteLayer({
+        onDrag(coordinate) {
+            const view = getSelectedRoute();
+            if (view == null) return;
+
+            const { route } = view;
+            route.coordinates = [latLngToCoordinate(coordinate)];
+            updateSelectedRouteInfo();
+        },
+        onDragEnd(coordinate) {
+            const view = getSelectedRoute();
+            if (view == null) return;
+
+            const { route } = view;
+            route.coordinates = [latLngToCoordinate(coordinate)];
+            updateSelectedRouteInfo();
+            queueSetRouteCommandDelayed(3000, route);
+        },
+    });
     addStyle(selectedRouteLayer.cssText);
 
     type RemoteCommand = Readonly<{
@@ -1074,60 +1092,41 @@ async function asyncMain() {
             iconSize: [maxTitleWidth, maxTitleHeight],
         });
     }
-    const classNameSeparatorPattern = /\s/g;
-    function createSpotView(
-        route: Route,
-        routeMap: Map<string, RouteWithView>
-    ) {
+    const circleSize = 20;
+    const spotViewCircleStyle = {
+        radius: circleSize * 0.5,
+
+        // border
+        opacity: 1,
+        color: "hsla(56, 0%, 39%, 80%)",
+        weight: 2,
+
+        // background
+        fillOpacity: 1,
+        fillColor: "hsla(152deg, 84%, 56%, 40%)",
+    } as const satisfies L.PathOptions;
+    const spotViewCircleStyleHighlighted = {
+        ...spotViewCircleStyle,
+
+        // border
+        weight: spotViewCircleStyle.weight * 2,
+        color: "hsla(56, 100%, 39%, 80%)",
+    } as const satisfies L.PathOptions;
+    function createSpotView(route: Route, _routeMap: unknown) {
         const { routeId } = route;
         const initialCoordinate = coordinateToLatLng(route.coordinates[0]);
-        const circleId = `spot-circle-${routeId.replace(
-            classNameSeparatorPattern,
-            "_"
-        )}`;
-        const circleSize = 20;
-        const circle = L.marker(initialCoordinate, {
-            icon: L.divIcon({
-                className: `${classNames["spot-handle"]} ${circleId}`,
-                iconSize: [circleSize, circleSize],
-                iconAnchor: [circleSize * 0.5, circleSize * 0.5],
-            }),
-        });
+        const circle = L.circleMarker(initialCoordinate, spotViewCircleStyle);
         let highlighted = false;
-        let draggable = false;
-        circle.on("drag", () => {
-            const position = circle.getLatLng();
-            label.setLatLng(position);
-            if (routeId === state.selectedRouteId) {
-                selectedRouteLayer.setLatLng(position);
-            }
-        });
         function changeStyle() {
-            const e = document.getElementsByClassName(circleId).item(0);
-            if (!e) return;
-
-            e.classList.toggle(classNames.highlighted, highlighted);
-            e.classList.toggle(classNames.draggable, draggable);
+            circle.setStyle(
+                highlighted
+                    ? spotViewCircleStyleHighlighted
+                    : spotViewCircleStyle
+            );
         }
-        circle.on("dblclick", () => {
-            draggable = !draggable;
-            if (draggable) {
-                circle.dragging.enable();
-            } else {
-                circle.dragging.disable();
-            }
-            changeStyle();
-        });
         circle.on("click", () => {
             state.selectedRouteId = routeId;
             updateSelectedRouteInfo();
-        });
-        circle.on("dragend", () => {
-            const view = routeMap.get(routeId);
-            if (!view) return;
-            const { route } = view;
-            route.coordinates = [latLngToCoordinate(circle.getLatLng())];
-            queueSetRouteCommandDelayed(3000, route);
         });
         circle.on("add", changeStyle);
         const label = L.marker(circle.getLatLng(), {

@@ -3,3 +3,8 @@ path.selected-cell17 {
     transition-timing-function: ease-out;
     transition-duration: 0.1s;
 }
+
+.drag-handle {
+    background-color: #FFFFFF01;
+    border-radius: 100%;
+}

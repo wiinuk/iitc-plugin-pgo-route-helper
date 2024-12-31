@@ -42,28 +42,6 @@ input.editable-text {
     text-shadow: 1px 1px #000, 1px -1px #000, -1px 1px #000, -1px -1px #000, 0 0 5px #000;
     pointer-events: none;
 }
-.spot-handle {
-    --background-hue: 152deg;
-    --background-opacity: 40%;
-    --border-width: 2px;
-    --border-saturation: 0%;
-    --border-opacity: 80%;
-
-    transition: all 0.5s, transform 0s;
-    box-sizing: border-box;
-    background-color: hsla(var(--background-hue), 84%, 56%, var(--background-opacity));
-    border: solid var(--border-width) hsla(56, var(--border-saturation), 39%, var(--border-opacity));
-    border-radius: 100%;
-}
-.spot-handle.draggable {
-    --background-opacity: 100%;
-    --border-opacity: 100%;
-    border-radius: 0;
-}
-.spot-handle.highlighted {
-    --border-width: 4px;
-    --border-saturation: 100%;
-}
 
 .properties-editor {
     display: flex;
