@@ -1129,15 +1129,15 @@ async function asyncMain() {
                     : spotViewCircleStyle
             );
         }
-        circle.on("click", () => {
-            state.selectedRouteId = routeId;
-            updateSelectedRouteInfo();
-        });
         circle.on("add", changeStyle);
         const label = L.marker(circle.getLatLng(), {
             icon: createSpotLabel(route.routeName),
         });
         const group = L.featureGroup([circle, label]);
+        group.on("click", () => {
+            state.selectedRouteId = routeId;
+            updateSelectedRouteInfo();
+        });
 
         let lastZoom: number | null = null;
         function updateZoom(zoom: number) {
