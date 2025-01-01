@@ -1112,6 +1112,11 @@ async function asyncMain() {
         weight: spotViewCircleStyle.weight * 2,
         color: "hsla(56, 100%, 39%, 80%)",
     } as const satisfies L.PathOptions;
+
+    function inMap(path: L.Path) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        return (path as any)._map != null;
+    }
     function createSpotView(route: Route, _routeMap: unknown) {
         const { routeId } = route;
         const initialCoordinate = coordinateToLatLng(route.coordinates[0]);
@@ -1136,13 +1141,16 @@ async function asyncMain() {
 
         let lastZoom: number | null = null;
         function updateZoom(zoom: number) {
-            if (lastZoom === zoom) return;
-            lastZoom = zoom;
+            if (inMap(circle)) circle.bringToFront();
 
-            if (zoom < 14) {
-                group.removeLayer(label);
-            } else {
-                group.addLayer(label);
+            if (lastZoom !== zoom) {
+                lastZoom = zoom;
+
+                if (zoom < 14) {
+                    group.removeLayer(label);
+                } else {
+                    group.addLayer(label);
+                }
             }
         }
         function update(route: Route) {
