@@ -28,6 +28,7 @@ import {
     getCell14,
     getCell17,
     getNearCellsForBounds,
+    getS2Cell,
     type Cell14,
     type Cell17PortalRecord,
 } from "../cells";
@@ -620,6 +621,26 @@ const library = {
         return hasNearbyPortalWith(options);
     },
     portalNearby: hasNearbyPortalWith(),
+    *inCell(coordinate: Coordinate, level: number): Effective<Query<Route>> {
+        return {
+            *initialize() {
+                const targetCell = getS2Cell(
+                    coordinateToLatLng(coordinate),
+                    level
+                );
+                return {
+                    *predicate(r) {
+                        if (getRouteKind(r) !== "spot") return false;
+                        const spotCell = getS2Cell(
+                            coordinateToLatLng(r.coordinates[0]),
+                            level
+                        );
+                        return targetCell.toString() === spotCell.toString();
+                    },
+                };
+            },
+        };
+    },
     any: anyQuery,
     *["_add_"](x: number, y: number) {
         return x + y;
