@@ -1092,26 +1092,22 @@ async function asyncMain() {
             iconSize: [maxTitleWidth, maxTitleHeight],
         });
     }
-    const circleSize = 20;
-    const spotViewCircleStyle = {
-        radius: circleSize * 0.5,
+    const minNamedZoom = 15;
+    const circleSize = 16;
+    const circleSizeNonNamed = 8;
+    function setSpotViewCircleStyle(options: L.PathOptions) {
+        options.radius = circleSize * 0.5;
 
         // border
-        opacity: 1,
-        color: "hsla(56, 0%, 39%, 80%)",
-        weight: 2,
+        options.opacity = 1;
+        options.color = "hsla(56, 0%, 39%, 80%)";
+        options.weight = 2;
 
         // background
-        fillOpacity: 1,
-        fillColor: "hsla(152deg, 84%, 56%, 40%)",
-    } as const satisfies L.PathOptions;
-    const spotViewCircleStyleHighlighted = {
-        ...spotViewCircleStyle,
-
-        // border
-        weight: spotViewCircleStyle.weight * 2,
-        color: "hsla(56, 100%, 39%, 80%)",
-    } as const satisfies L.PathOptions;
+        options.fillOpacity = 1;
+        options.fillColor = "hsla(152deg, 84%, 56%, 40%)";
+        return options;
+    }
 
     function inMap(path: L.Path) {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -1120,19 +1116,30 @@ async function asyncMain() {
     function createSpotView(route: Route, _routeMap: unknown) {
         const { routeId } = route;
         const initialCoordinate = coordinateToLatLng(route.coordinates[0]);
-        const circle = L.circleMarker(initialCoordinate, spotViewCircleStyle);
+        const style = setSpotViewCircleStyle({});
+        const circle = L.circleMarker(initialCoordinate, style);
         let highlighted = false;
-        function changeStyle() {
-            circle.setStyle(
-                highlighted
-                    ? spotViewCircleStyleHighlighted
-                    : spotViewCircleStyle
-            );
+
+        function changeStyle(zoom: number) {
+            const showName = minNamedZoom <= zoom;
+
+            setSpotViewCircleStyle(style);
+            if (highlighted) {
+                // border
+                style.weight = 4;
+                style.color = "hsla(56, 100%, 39%, 80%)";
+            }
+            if (!showName) {
+                style.radius = circleSizeNonNamed * 0.5;
+            }
+            circle.setStyle(style);
         }
-        circle.on("add", changeStyle);
-        const label = L.marker(circle.getLatLng(), {
+        circle.on("add", () => changeStyle(map.getZoom()));
+        const labelOptions = {
             icon: createSpotLabel(route.routeName),
-        });
+            pane: routePane,
+        } as const;
+        const label = L.marker(circle.getLatLng(), labelOptions);
         const group = L.featureGroup([circle, label]);
         group.on("click", () => {
             state.selectedRouteId = routeId;
@@ -1144,13 +1151,13 @@ async function asyncMain() {
             if (inMap(circle)) circle.bringToFront();
 
             if (lastZoom !== zoom) {
-                lastZoom = zoom;
-
-                if (zoom < 14) {
-                    group.removeLayer(label);
-                } else {
+                changeStyle(zoom);
+                if (minNamedZoom <= zoom) {
                     group.addLayer(label);
+                } else {
+                    group.removeLayer(label);
                 }
+                lastZoom = zoom;
             }
         }
         function update(route: Route) {
@@ -1161,7 +1168,7 @@ async function asyncMain() {
         }
         function highlight(enabled: boolean) {
             highlighted = enabled;
-            changeStyle();
+            changeStyle(map.getZoom());
         }
         return { layer: group, update, updateZoom, highlight };
     }
@@ -1254,6 +1261,7 @@ async function asyncMain() {
         return layer !== selectedRouteLayer.layer;
     }
     const routeLayerGroup = L.layerGroup();
+    const routePane = map.getPanes().popupPane;
     window.addLayerGroup(routeLayerGroupName, routeLayerGroup, true);
 
     // Routes レイヤーが表示されるまで読み込みを中止
