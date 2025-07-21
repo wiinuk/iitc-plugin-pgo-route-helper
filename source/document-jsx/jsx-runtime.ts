@@ -52,7 +52,10 @@ type ElementProperties<TName extends keyof KnownElementTagNameMap> = {
         TName,
         k
     >["name"]]?: KnownAttributeNameAndType<TName, k>["type"];
-} & KnownExtendedAttributes<TName> & { readonly classList?: readonly string[] };
+} & KnownExtendedAttributes<TName> & {
+        readonly classList?: readonly string[];
+        readonly children?: ChildrenProperty;
+    };
 
 type falsy = false | null | undefined | 0 | "" | void;
 interface JsxOption {
@@ -67,11 +70,7 @@ type ChildrenProperty =
 
 export function jsxs<TName extends keyof KnownElementTagNameMap>(
     name: TName,
-    properties: Readonly<
-        ElementProperties<TName> & {
-            children?: ChildrenProperty;
-        }
-    > | null,
+    properties: Readonly<ElementProperties<TName>> | null,
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     _option?: JsxOption
 ): KnownElementTagNameMap[TName] {
