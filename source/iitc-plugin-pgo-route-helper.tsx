@@ -60,6 +60,7 @@ import { loadConfig, saveConfig } from "./config";
 import { createProgress, type ProgressMessage } from "./progress-element";
 import { createSelectedRouteLayer } from "./selected-route-layer";
 import { createEditorTitle } from "./editor-title";
+import { setupPortalsModifier } from "./portals-modifier";
 
 function reportError(error: unknown) {
     console.error(error);
@@ -1283,6 +1284,15 @@ async function asyncMain() {
             type: "downloaded",
             routeCount: routeList.length,
         });
+
+        setupPortalsModifier(handleAsyncError, [
+            {
+                id: "pgo-route-helper",
+                async modifyEntitiesInBounds() {
+                    return;
+                },
+            },
+        ]);
 
         const beforeTime = performance.now();
         for (const route of routeList) {
