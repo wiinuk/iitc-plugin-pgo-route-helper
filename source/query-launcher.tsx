@@ -19,6 +19,7 @@ interface QuerySource {
     readonly name: string;
     readonly summary: string;
     readonly text: string;
+    readonly isPortalQuery?: boolean;
 }
 export type LauncherProgress =
     | {
@@ -55,6 +56,7 @@ interface CreateLauncherOptions {
         source: QuerySource,
         query: EffectiveFunction<[], UnitQueryFactory<Route>> | "simple-query"
     ) => void;
+    onPortalQueryChanged?: (query: EffectiveFunction<[Route], boolean>) => void;
     loadSources(options?: { signal?: AbortSignal }): Promise<QuerySources>;
     saveSources(
         sources: QuerySources,
@@ -68,6 +70,7 @@ export async function createQueryLauncher({
     handleAsyncError,
     progress,
     onCurrentQueryChanged,
+    onPortalQueryChanged,
     loadSources,
     saveSources,
 }: CreateLauncherOptions) {
