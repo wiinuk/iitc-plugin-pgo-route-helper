@@ -127,6 +127,25 @@ export function sleep(milliseconds: number, option?: { signal?: AbortSignal }) {
     });
 }
 
+export async function waitUntil(
+    condition: () => boolean,
+    option?: {
+        initialSleepDuration?: number;
+        maxSleepDuration?: number;
+        signal?: AbortSignal;
+    }
+) {
+    let currentSleepDuration = option?.initialSleepDuration ?? 10;
+    const maxSleepDuration = option?.maxSleepDuration ?? 1000;
+    while (condition()) {
+        await sleep(currentSleepDuration, option);
+        currentSleepDuration = Math.min(
+            currentSleepDuration * 2,
+            maxSleepDuration
+        );
+    }
+}
+
 export function microYield() {
     return Promise.resolve();
 }
