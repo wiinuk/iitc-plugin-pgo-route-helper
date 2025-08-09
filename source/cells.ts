@@ -47,7 +47,7 @@ export type Cell14s = Map<CellId14, Cell14>;
 export function getSpotLatLng(route: Route) {
     if (getRouteKind(route) !== "spot") return;
     const [lat, lng] = route.coordinates[0];
-    return { lat, lng } as const;
+    return L.latLng(lat, lng);
 }
 export function getS2Cell<L extends number>(latLng: S2LatLng, level: L) {
     if (typeof S2 === "undefined") throw new Error("S2 is undefined");
