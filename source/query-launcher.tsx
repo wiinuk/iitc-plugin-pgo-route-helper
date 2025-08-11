@@ -56,7 +56,9 @@ interface CreateLauncherOptions {
         source: QuerySource,
         query: EffectiveFunction<[], UnitQueryFactory<Route>> | "simple-query"
     ) => void;
-    onPortalQueryChanged?: (query: EffectiveFunction<[Route], boolean>) => void;
+    onPortalQueryChanged?: (
+        query: EffectiveFunction<[], UnitQueryFactory<Route>> | undefined
+    ) => void;
     loadSources(options?: { signal?: AbortSignal }): Promise<QuerySources>;
     saveSources(
         sources: QuerySources,
@@ -85,6 +87,8 @@ export async function createQueryLauncher({
         };
     }
     const state = await createState();
+
+    notifyPortalQueryChanged();
 
     async function setQueryExpression(signal: AbortSignal) {
         await sleep(checkDelayMilliseconds, { signal });
@@ -213,6 +217,14 @@ export async function createQueryLauncher({
             },
         }
     );
+    const portalQueryButtonOffText = "⭐ポータル指定";
+    const portalQueryButtonOnText = "⭐ポータル指定解除";
+    const portalQueryButtonElement = addListeners(
+        <button>{portalQueryButtonOffText}</button>,
+        {
+            click: togglePortalQuery,
+        }
+    );
 
     const queryEditor = createQueryEditor({
         initialText: getCurrentSource()?.text,
@@ -224,6 +236,9 @@ export async function createQueryLauncher({
         onValueChange(e) {
             setCurrentSourceText(e.value);
             setQueryExpressionDelayed();
+            if (getCurrentSource()?.isPortalQuery) {
+                notifyPortalQueryChanged();
+            }
         },
     });
 
@@ -279,6 +294,7 @@ export async function createQueryLauncher({
             Math.min((state.selectedSourceIndex ?? 0) + 1, state.sources.length)
         );
         updateQueryList();
+        notifyPortalQueryChanged();
     }
 
     function deleteQuery() {
@@ -289,16 +305,7 @@ export async function createQueryLauncher({
         state.selectedSourceIndex =
             state.sources.length <= index ? state.sources.length - 1 : index;
         updateQueryList();
-    }
-
-    function selectQuery(index: number) {
-        const selectedSource = state.sources[index];
-        if (selectedSource == null) return;
-
-        state.selectedSourceIndex = index;
-        queryEditor.setValue(selectedSource.text);
-        nameInputElement.value = selectedSource.name;
-        updateQueryList();
+        notifyPortalQueryChanged();
     }
 
     function moveQueryLeft() {
@@ -310,6 +317,7 @@ export async function createQueryLauncher({
         state.sources.splice(index - 1, 0, movedSource!);
         state.selectedSourceIndex = index - 1;
         updateQueryList();
+        notifyPortalQueryChanged();
     }
 
     function moveQueryRight() {
@@ -322,6 +330,45 @@ export async function createQueryLauncher({
         state.sources.splice(index + 1, 0, movedSource!);
         state.selectedSourceIndex = index + 1;
         updateQueryList();
+        notifyPortalQueryChanged();
+    }
+
+    function togglePortalQuery() {
+        const currentSource = getCurrentSource();
+        if (!currentSource) return;
+
+        const isCurrentlyPortal = !!currentSource.isPortalQuery;
+        state.sources.forEach((src, idx) => {
+            if (src.isPortalQuery) {
+                state.sources[idx] = { ...src, isPortalQuery: false };
+            }
+        });
+        if (!isCurrentlyPortal) {
+            setCurrentSource({ ...currentSource, isPortalQuery: true });
+        } else {
+            setCurrentSource({ ...currentSource, isPortalQuery: false });
+        }
+        updateQueryList();
+        notifyPortalQueryChanged();
+    }
+
+    function notifyPortalQueryChanged() {
+        const portalSource = state.sources.find((src) => src.isPortalQuery);
+        if (!onPortalQueryChanged) return;
+        if (!portalSource) {
+            onPortalQueryChanged(undefined);
+            return;
+        }
+        if (portalSource.text.trim() === "") {
+            onPortalQueryChanged(undefined);
+        } else {
+            const { getQuery, diagnostics } = createQuery(portalSource.text);
+            if (diagnostics.length === 0) {
+                onPortalQueryChanged(getQuery);
+            } else {
+                onPortalQueryChanged(undefined);
+            }
+        }
     }
 
     function updateQueryList() {
@@ -332,6 +379,11 @@ export async function createQueryLauncher({
                     class={`${classNames["ellipsis-text"]} ${classNames["select-button"]} ${classNames["draggable"]}`}
                     draggable={true}
                 >
+                    {source.isPortalQuery ? (
+                        <span class={classNames["source-title-icon"]}>⭐</span>
+                    ) : (
+                        <></>
+                    )}
                     {source.summary}
                 </button>,
                 {
@@ -400,6 +452,21 @@ export async function createQueryLauncher({
             queryListElement.appendChild(listItem);
         });
         nameInputElement.value = getCurrentSource()?.name ?? "";
+
+        const currentSource = getCurrentSource();
+        portalQueryButtonElement.textContent = currentSource?.isPortalQuery
+            ? portalQueryButtonOnText
+            : portalQueryButtonOffText;
+    }
+
+    function selectQuery(index: number) {
+        const selectedSource = state.sources[index];
+        if (selectedSource == null) return;
+
+        state.selectedSourceIndex = index;
+        queryEditor.setValue(selectedSource.text);
+        nameInputElement.value = selectedSource.name;
+        updateQueryList();
     }
 
     const element = (
@@ -415,6 +482,7 @@ export async function createQueryLauncher({
                     {deleteButtonElement}
                     {moveLeftButtonElement}
                     {moveRightButtonElement}
+                    {portalQueryButtonElement}
                     {nameInputElement}
                 </div>
             </div>
