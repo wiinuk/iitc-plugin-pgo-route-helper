@@ -60,6 +60,7 @@ import { loadConfig, saveConfig } from "./config";
 import { createProgress, type ProgressMessage } from "./progress-element";
 import { createSelectedRouteLayer } from "./selected-route-layer";
 import { createEditorTitle } from "./editor-title";
+import { setupPortalsModifier } from "./portals-modifier";
 
 function reportError(error: unknown) {
     console.error(error);
@@ -177,12 +178,16 @@ async function asyncMain() {
         routeListQuery: Readonly<{
             query: EffectiveFunction<[], UnitQueryFactory<Route>> | undefined;
         }>;
+        currentPortalQuery:
+            | EffectiveFunction<[], UnitQueryFactory<Route>>
+            | undefined;
     } = {
         selectedRouteId: null,
         deleteRouteId: null,
         templateCandidateRouteId: null,
         routes: "routes-unloaded",
         routeListQuery: { query: undefined },
+        currentPortalQuery: undefined,
     };
     const selectedRouteLayer = createSelectedRouteLayer({
         onDrag(coordinate) {
@@ -927,6 +932,9 @@ async function asyncMain() {
             };
             updateRoutesListElement();
         },
+        onPortalQueryChanged(query) {
+            state.currentPortalQuery = query;
+        },
         async loadSources() {
             return (
                 config.querySources ?? {
@@ -1327,5 +1335,27 @@ async function asyncMain() {
                 },
             })
         );
+        await setupPortalsModifier({
+            getCurrentRoutes() {
+                return state.routes === "routes-unloaded"
+                    ? []
+                    : state.routes.values();
+            },
+            getCurrentPortalQuery() {
+                const { currentPortalQuery: getQuery, routes } = state;
+                if (routes === "routes-unloaded" || getQuery == null) {
+                    return undefined;
+                }
+                return {
+                    getQuery,
+                    createEnvironment() {
+                        return {
+                            ...defaultEnvironment,
+                            routes: [...routes.values()].map((r) => r.route),
+                        };
+                    },
+                };
+            },
+        });
     }
 }
