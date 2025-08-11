@@ -127,6 +127,11 @@ export function sleep(milliseconds: number, option?: { signal?: AbortSignal }) {
     });
 }
 
+let neverAbortedSignal;
+export function getSharedAbortSignal() {
+    return (neverAbortedSignal ??= new AbortController().signal);
+}
+
 export async function waitUntil(
     condition: () => boolean,
     option?: {
