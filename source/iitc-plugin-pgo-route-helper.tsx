@@ -60,6 +60,7 @@ import { loadConfig, saveConfig } from "./config";
 import { createProgress, type ProgressMessage } from "./progress-element";
 import { createSelectedRouteLayer } from "./selected-route-layer";
 import { createEditorTitle } from "./editor-title";
+import { setupPortalsModifier } from "./portals-modifier";
 
 function reportError(error: unknown) {
     console.error(error);
@@ -1334,5 +1335,27 @@ async function asyncMain() {
                 },
             })
         );
+        await setupPortalsModifier({
+            getCurrentRoutes() {
+                return state.routes === "routes-unloaded"
+                    ? []
+                    : state.routes.values();
+            },
+            getCurrentPortalQuery() {
+                const { currentPortalQuery: getQuery, routes } = state;
+                if (routes === "routes-unloaded" || getQuery == null) {
+                    return undefined;
+                }
+                return {
+                    getQuery,
+                    createEnvironment() {
+                        return {
+                            ...defaultEnvironment,
+                            routes: [...routes.values()].map((r) => r.route),
+                        };
+                    },
+                };
+            },
+        });
     }
 }
