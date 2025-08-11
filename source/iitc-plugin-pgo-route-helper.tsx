@@ -177,12 +177,16 @@ async function asyncMain() {
         routeListQuery: Readonly<{
             query: EffectiveFunction<[], UnitQueryFactory<Route>> | undefined;
         }>;
+        currentPortalQuery:
+            | EffectiveFunction<[], UnitQueryFactory<Route>>
+            | undefined;
     } = {
         selectedRouteId: null,
         deleteRouteId: null,
         templateCandidateRouteId: null,
         routes: "routes-unloaded",
         routeListQuery: { query: undefined },
+        currentPortalQuery: undefined,
     };
     const selectedRouteLayer = createSelectedRouteLayer({
         onDrag(coordinate) {
@@ -926,6 +930,9 @@ async function asyncMain() {
                 query: query === "simple-query" ? undefined : query,
             };
             updateRoutesListElement();
+        },
+        onPortalQueryChanged(query) {
+            state.currentPortalQuery = query;
         },
         async loadSources() {
             return (
