@@ -45,7 +45,7 @@
     "typescript": "^5.1.6",
     "webpack": "^5.65.0",
     "webpack-cli": "^4.9.1",
-    "iitc-plugin-portal-records": "wiinuk/iitc-plugin-portal-records.git"
+    "iitc-plugin-portal-records": "wiinuk/iitc-plugin-portal-records.git#d7052c515f405c928ea34a2bbfda59795a11214e"
   },
   "optionalDependencies": {
     "fsevents": "^2.3.2"

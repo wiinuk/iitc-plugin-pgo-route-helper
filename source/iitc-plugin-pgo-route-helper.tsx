@@ -60,6 +60,7 @@ import { loadConfig, saveConfig } from "./config";
 import { createProgress, type ProgressMessage } from "./progress-element";
 import { createSelectedRouteLayer } from "./selected-route-layer";
 import { createEditorTitle } from "./editor-title";
+import { setupPortalsModifier } from "./portals-modifier";
 
 function reportError(error: unknown) {
     console.error(error);
@@ -162,6 +163,7 @@ async function asyncMain() {
         readonly coordinatesEditor: Readonly<{
             layer: L.ILayer;
             update: (route: Route) => void;
+            updateZoom: (zoom: number, map: L.Map) => void;
             highlight: (enabled: boolean) => void;
         }>;
         readonly listView: RouteListItemView;
@@ -176,14 +178,36 @@ async function asyncMain() {
         routeListQuery: Readonly<{
             query: EffectiveFunction<[], UnitQueryFactory<Route>> | undefined;
         }>;
+        currentPortalQuery:
+            | EffectiveFunction<[], UnitQueryFactory<Route>>
+            | undefined;
     } = {
         selectedRouteId: null,
         deleteRouteId: null,
         templateCandidateRouteId: null,
         routes: "routes-unloaded",
         routeListQuery: { query: undefined },
+        currentPortalQuery: undefined,
     };
-    const selectedRouteLayer = createSelectedRouteLayer();
+    const selectedRouteLayer = createSelectedRouteLayer({
+        onDrag(coordinate) {
+            const view = getSelectedRoute();
+            if (view == null) return;
+
+            const { route } = view;
+            route.coordinates = [latLngToCoordinate(coordinate)];
+            updateSelectedRouteInfo();
+        },
+        onDragEnd(coordinate) {
+            const view = getSelectedRoute();
+            if (view == null) return;
+
+            const { route } = view;
+            route.coordinates = [latLngToCoordinate(coordinate)];
+            updateSelectedRouteInfo();
+            queueSetRouteCommandDelayed(3000, route);
+        },
+    });
     addStyle(selectedRouteLayer.cssText);
 
     type RemoteCommand = Readonly<{
@@ -908,6 +932,9 @@ async function asyncMain() {
             };
             updateRoutesListElement();
         },
+        onPortalQueryChanged(query) {
+            state.currentPortalQuery = query;
+        },
         async loadSources() {
             return (
                 config.querySources ?? {
@@ -1061,7 +1088,7 @@ async function asyncMain() {
             updateSelectedRouteInfo();
             queueSetRouteCommandDelayed(3000, route);
         });
-        return { layer, update: ignore, highlight: ignore };
+        return { layer, update: ignore, updateZoom: ignore, highlight: ignore };
     }
     const maxTitleWidth = 160;
     const maxTitleHeight = 46;
@@ -1073,67 +1100,74 @@ async function asyncMain() {
             iconSize: [maxTitleWidth, maxTitleHeight],
         });
     }
-    const classNameSeparatorPattern = /\s/g;
-    function createSpotView(
-        route: Route,
-        routeMap: Map<string, RouteWithView>
-    ) {
+    const minNamedZoom = 15;
+    const circleSize = 16;
+    const circleSizeNonNamed = 8;
+    function setSpotViewCircleStyle(options: L.PathOptions) {
+        options.radius = circleSize * 0.5;
+
+        // border
+        options.opacity = 1;
+        options.color = "hsla(56, 0%, 39%, 80%)";
+        options.weight = 2;
+
+        // background
+        options.fillOpacity = 1;
+        options.fillColor = "hsla(152deg, 84%, 56%, 40%)";
+        return options;
+    }
+
+    function inMap(path: L.Path) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        return (path as any)._map != null;
+    }
+    function createSpotView(route: Route, _routeMap: unknown) {
         const { routeId } = route;
         const initialCoordinate = coordinateToLatLng(route.coordinates[0]);
-        const circleId = `spot-circle-${routeId.replace(
-            classNameSeparatorPattern,
-            "_"
-        )}`;
-        const circleSize = 20;
-        const circle = L.marker(initialCoordinate, {
-            icon: L.divIcon({
-                className: `${classNames["spot-handle"]} ${circleId}`,
-                iconSize: [circleSize, circleSize],
-                iconAnchor: [circleSize * 0.5, circleSize * 0.5],
-            }),
-        });
+        const style = setSpotViewCircleStyle({});
+        const circle = L.circleMarker(initialCoordinate, style);
         let highlighted = false;
-        let draggable = false;
-        circle.on("drag", () => {
-            const position = circle.getLatLng();
-            label.setLatLng(position);
-            if (routeId === state.selectedRouteId) {
-                selectedRouteLayer.setLatLng(position);
-            }
-        });
-        function changeStyle() {
-            const e = document.getElementsByClassName(circleId).item(0);
-            if (!e) return;
 
-            e.classList.toggle(classNames.highlighted, highlighted);
-            e.classList.toggle(classNames.draggable, draggable);
-        }
-        circle.on("dblclick", () => {
-            draggable = !draggable;
-            if (draggable) {
-                circle.dragging.enable();
-            } else {
-                circle.dragging.disable();
+        function changeStyle(zoom: number) {
+            const showName = minNamedZoom <= zoom;
+
+            setSpotViewCircleStyle(style);
+            if (highlighted) {
+                // border
+                style.weight = 4;
+                style.color = "hsla(56, 100%, 39%, 80%)";
             }
-            changeStyle();
-        });
-        circle.on("click", () => {
+            if (!showName) {
+                style.radius = circleSizeNonNamed * 0.5;
+            }
+            circle.setStyle(style);
+        }
+        circle.on("add", () => changeStyle(map.getZoom()));
+        const labelOptions = {
+            icon: createSpotLabel(route.routeName),
+            pane: routePane,
+        } as const;
+        const label = L.marker(circle.getLatLng(), labelOptions);
+        const group = L.featureGroup([circle, label]);
+        group.on("click", () => {
             state.selectedRouteId = routeId;
             updateSelectedRouteInfo();
         });
-        circle.on("dragend", () => {
-            const view = routeMap.get(routeId);
-            if (!view) return;
-            const { route } = view;
-            route.coordinates = [latLngToCoordinate(circle.getLatLng())];
-            queueSetRouteCommandDelayed(3000, route);
-        });
-        circle.on("add", changeStyle);
-        const label = L.marker(circle.getLatLng(), {
-            icon: createSpotLabel(route.routeName),
-        });
-        const group = L.featureGroup([circle, label]);
 
+        let lastZoom: number | null = null;
+        function updateZoom(zoom: number) {
+            if (inMap(circle)) circle.bringToFront();
+
+            if (lastZoom !== zoom) {
+                changeStyle(zoom);
+                if (minNamedZoom <= zoom) {
+                    group.addLayer(label);
+                } else {
+                    group.removeLayer(label);
+                }
+                lastZoom = zoom;
+            }
+        }
         function update(route: Route) {
             label.setIcon(createSpotLabel(route.routeName));
             const coordinate0 = coordinateToLatLng(route.coordinates[0]);
@@ -1142,9 +1176,9 @@ async function asyncMain() {
         }
         function highlight(enabled: boolean) {
             highlighted = enabled;
-            changeStyle();
+            changeStyle(map.getZoom());
         }
-        return { layer: group, update, highlight };
+        return { layer: group, update, updateZoom, highlight };
     }
 
     function addRouteView(routeMap: Map<string, RouteWithView>, route: Route) {
@@ -1194,6 +1228,15 @@ async function asyncMain() {
             }
         }
 
+        // 範囲内のスポットの表示を更新する
+        const zoom = map.getZoom();
+        for (const view of layerToRoutesRequiringAddition.values()) {
+            if (scheduler.yieldRequested()) {
+                await scheduler.yield({ signal });
+            }
+            view.coordinatesEditor.updateZoom(zoom, map);
+        }
+
         // 現在追加されているレイヤーが範囲外なら削除する
         for (const oldLayer of routeLayerGroup.getLayers()) {
             if (!isRouteLayer(oldLayer)) continue;
@@ -1226,6 +1269,7 @@ async function asyncMain() {
         return layer !== selectedRouteLayer.layer;
     }
     const routeLayerGroup = L.layerGroup();
+    const routePane = map.getPanes().popupPane;
     window.addLayerGroup(routeLayerGroupName, routeLayerGroup, true);
 
     // Routes レイヤーが表示されるまで読み込みを中止
@@ -1291,5 +1335,27 @@ async function asyncMain() {
                 },
             })
         );
+        await setupPortalsModifier({
+            getCurrentRoutes() {
+                return state.routes === "routes-unloaded"
+                    ? []
+                    : state.routes.values();
+            },
+            getCurrentPortalQuery() {
+                const { currentPortalQuery: getQuery, routes } = state;
+                if (routes === "routes-unloaded" || getQuery == null) {
+                    return undefined;
+                }
+                return {
+                    getQuery,
+                    createEnvironment() {
+                        return {
+                            ...defaultEnvironment,
+                            routes: [...routes.values()].map((r) => r.route),
+                        };
+                    },
+                };
+            },
+        });
     }
 }

@@ -1,4 +1,9 @@
-type KnownElementTagNameMap = HTMLElementTagNameMap & SVGElementTagNameMap;
+type KnownElementTagNameMap = HTMLElementTagNameMap &
+    SVGElementTagNameMap &
+    FragmentTagNameMap;
+interface FragmentTagNameMap {
+    [Fragment]: DocumentFragment;
+}
 
 type KnownAttributeNameAndType<
     TTagName extends keyof KnownElementTagNameMap,
@@ -38,7 +43,9 @@ type KnownAttributeNameAndType<
     : { name: never; type: never };
 
 type KnownExtendedAttributes<TTagName extends keyof KnownElementTagNameMap> =
-    TTagName extends "path"
+    TTagName extends typeof Fragment
+        ? { readonly children?: Node | Node[] }
+        : TTagName extends "path"
         ? {
               d: string;
               fill: string;
@@ -52,7 +59,10 @@ type ElementProperties<TName extends keyof KnownElementTagNameMap> = {
         TName,
         k
     >["name"]]?: KnownAttributeNameAndType<TName, k>["type"];
-} & KnownExtendedAttributes<TName> & { readonly classList?: readonly string[] };
+} & KnownExtendedAttributes<TName> & {
+        readonly classList?: readonly string[];
+        readonly children?: ChildrenProperty;
+    };
 
 type falsy = false | null | undefined | 0 | "" | void;
 interface JsxOption {
@@ -67,14 +77,16 @@ type ChildrenProperty =
 
 export function jsxs<TName extends keyof KnownElementTagNameMap>(
     name: TName,
-    properties: Readonly<
-        ElementProperties<TName> & {
-            children?: ChildrenProperty;
-        }
-    > | null,
+    properties: Readonly<ElementProperties<TName>> | null,
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     _option?: JsxOption
 ): KnownElementTagNameMap[TName] {
+    if (name === Fragment) {
+        return createFragment(
+            (properties as Readonly<ElementProperties<typeof Fragment>>)
+                .children
+        ) as KnownElementTagNameMap[TName];
+    }
     const element = document.createElement(name);
     for (const [key, value] of Object.entries(properties ?? {})) {
         if (key === "children") continue;
@@ -107,6 +119,20 @@ export function jsxs<TName extends keyof KnownElementTagNameMap>(
     return element as KnownElementTagNameMap[TName];
 }
 export const jsx = jsxs;
+export const Fragment = Symbol("Fragment");
+function createFragment(children: Node | Node[] | undefined) {
+    const fragment = document.createDocumentFragment();
+    if (children != null) {
+        if (Array.isArray(children)) {
+            for (const child of children) {
+                fragment.appendChild(child);
+            }
+        } else {
+            fragment.appendChild(children);
+        }
+    }
+    return fragment;
+}
 
 // eslint-disable-next-line @typescript-eslint/no-namespace
 export namespace JSX {

@@ -3,7 +3,27 @@
 import { getS2Cell } from "./cells";
 import classNames, { cssText } from "./selected-route-layer.module.css";
 
-export function createSelectedRouteLayer() {
+export interface CreateSelectedRouteLayerOptions {
+    onDrag: (latLng: L.LatLng) => void;
+    onDragEnd: (latLng: L.LatLng) => void;
+}
+export function createSelectedRouteLayer(
+    options: Readonly<CreateSelectedRouteLayerOptions>
+) {
+    const { onDrag, onDragEnd } = options;
+
+    const circleSize = 20;
+    const dragHandle = L.marker(
+        { lat: 0, lng: 0 },
+        {
+            icon: L.divIcon({
+                className: classNames["drag-handle"],
+                iconSize: [circleSize, circleSize],
+                iconAnchor: [circleSize * 0.5, circleSize * 0.5],
+            }),
+            draggable: true,
+        }
+    );
     const tooCloseCircle = L.circle([0, 0], 20, {
         className: "iitc-plugin-pgo-route-helper-too-close-circle",
         stroke: true,
@@ -48,12 +68,16 @@ export function createSelectedRouteLayer() {
     });
 
     const layer = L.featureGroup([
+        dragHandle,
         tooCloseCircle,
         polyline14,
         polyline16,
         polyline17,
     ]);
+    dragHandle.on("drag", () => onDrag(dragHandle.getLatLng()));
+    dragHandle.on("dragend", () => onDragEnd(dragHandle.getLatLng()));
     function setLatLng(center: L.LatLng) {
+        dragHandle.setLatLng(center);
         tooCloseCircle.setLatLng(center);
         if (typeof S2 !== "undefined") {
             const cell14 = getS2Cell(center, 14);

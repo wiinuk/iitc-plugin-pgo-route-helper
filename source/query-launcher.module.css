@@ -85,3 +85,9 @@ details.tab > .tab-contents:not(summary) {
 .name-input {
     flex: 0 0 content;
 }
+
+.source-title-icon {
+    padding-right: 0.3em;
+    margin-right: 0.3em;
+    border-right: dashed 1px #c5c5c5;
+}

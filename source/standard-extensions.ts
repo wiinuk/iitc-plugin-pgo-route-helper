@@ -127,6 +127,32 @@ export function sleep(milliseconds: number, option?: { signal?: AbortSignal }) {
     });
 }
 
+let neverAbortedSignal;
+export function getSharedAbortSignal() {
+    return (neverAbortedSignal ??= new AbortController().signal);
+}
+
+export async function waitForNonNullable<T>(
+    condition: () => T,
+    option?: {
+        initialSleepDuration?: number;
+        maxSleepDuration?: number;
+        signal?: AbortSignal;
+    }
+): Promise<NonNullable<T>> {
+    let currentSleepDuration = option?.initialSleepDuration ?? 10;
+    const maxSleepDuration = option?.maxSleepDuration ?? 1000;
+    let result;
+    while (!(result = condition())) {
+        await sleep(currentSleepDuration, option);
+        currentSleepDuration = Math.min(
+            currentSleepDuration * 2,
+            maxSleepDuration
+        );
+    }
+    return result;
+}
+
 export function microYield() {
     return Promise.resolve();
 }
