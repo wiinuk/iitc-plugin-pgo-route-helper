@@ -6,7 +6,7 @@
 // @downloadURL  https://github.com/wiinuk/iitc-plugin-pgo-route-helper/raw/master/iitc-plugin-pgo-route-helper.user.js
 // @updateURL    https://github.com/wiinuk/iitc-plugin-pgo-route-helper/raw/master/iitc-plugin-pgo-route-helper.user.js
 // @homepageURL  https://github.com/wiinuk/iitc-plugin-pgo-route-helper
-// @version      0.12.0
+// @version      0.14.0
 // @description  IITC plugin to assist in Pokémon GO route creation.
 // @author       Wiinuk
 // @include      https://*.ingress.com/intel*
@@ -73,6 +73,10 @@ const isIITCMobile = (typeof android !== "undefined" && android && android.addPa
 function jsxs(name, properties, 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 _option) {
+    if (name === Fragment) {
+        return createFragment(properties
+            .children);
+    }
     const element = document.createElement(name);
     for (const [key, value] of Object.entries(properties !== null && properties !== void 0 ? properties : {})) {
         if (key === "children")
@@ -109,10 +113,34 @@ _option) {
     return element;
 }
 const jsx = jsxs;
+const Fragment = Symbol("Fragment");
+function createFragment(children) {
+    const fragment = document.createDocumentFragment();
+    if (children != null) {
+        if (Array.isArray(children)) {
+            for (const child of children) {
+                fragment.appendChild(child);
+            }
+        }
+        else {
+            fragment.appendChild(children);
+        }
+    }
+    return fragment;
+}
 
 ;// CONCATENATED MODULE: ./package.json
 const package_namespaceObject = {};
 ;// CONCATENATED MODULE: ./source/standard-extensions.ts
+var __awaiter = (undefined && undefined.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
 function standard_extensions_error(template, ...substitutions) {
     const message = String.raw(template, ...substitutions.map((x) => typeof x === "string" ? x : JSON.stringify(x)));
     throw new Error(message);
@@ -198,6 +226,23 @@ function sleep(milliseconds, option) {
         signal === null || signal === void 0 ? void 0 : signal.addEventListener("abort", onAbort);
     });
 }
+let neverAbortedSignal;
+function getSharedAbortSignal() {
+    return (neverAbortedSignal !== null && neverAbortedSignal !== void 0 ? neverAbortedSignal : (neverAbortedSignal = new AbortController().signal));
+}
+function waitForNonNullable(condition, option) {
+    var _a, _b;
+    return __awaiter(this, void 0, void 0, function* () {
+        let currentSleepDuration = (_a = option === null || option === void 0 ? void 0 : option.initialSleepDuration) !== null && _a !== void 0 ? _a : 10;
+        const maxSleepDuration = (_b = option === null || option === void 0 ? void 0 : option.maxSleepDuration) !== null && _b !== void 0 ? _b : 1000;
+        let result;
+        while (!(result = condition())) {
+            yield sleep(currentSleepDuration, option);
+            currentSleepDuration = Math.min(currentSleepDuration * 2, maxSleepDuration);
+        }
+        return result;
+    });
+}
 function microYield() {
     return Promise.resolve();
 }
@@ -245,7 +290,7 @@ function pipe(value, ...processes) {
 const isArray = Array.isArray;
 
 ;// CONCATENATED MODULE: ./source/document-extensions.ts
-var __awaiter = (undefined && undefined.__awaiter) || function (thisArg, _arguments, P, generator) {
+var document_extensions_awaiter = (undefined && undefined.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
         function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
@@ -284,7 +329,7 @@ function addScript(url) {
     });
 }
 function loadPackageScript(name, path) {
-    return __awaiter(this, void 0, void 0, function* () {
+    return document_extensions_awaiter(this, void 0, void 0, function* () {
         function getVersion(dependency) {
             var _a, _b;
             if (dependency === "" || dependency === "*") {
@@ -466,37 +511,29 @@ function includesIn(bounds, route) {
 }
 
 ;// CONCATENATED MODULE: ./source/styles.module.css
-const cssText = ".import-text-input-8adb0f83f2751e93cebaa7948eaf20e8956b7705 {\r\n    position: fixed;\r\n    top: 0;\r\n    left: 0;\r\n    width: 100%;\r\n    height: 100%;\r\n    z-index: 10000;\r\n\r\n    display: flex;\r\n    justify-content: center;\r\n    align-items: center;\r\n}\r\n\r\n.hidden-11ad600df67ab79d9ba34435f93fa9d9be0c8116 {\r\n    display: none;\r\n}\r\n.ellipsis-text-6096861212b8b076fd1cc328e675995595739789 {\r\n    white-space: nowrap;\r\n    overflow: hidden;\r\n    text-overflow: ellipsis;\r\n}\r\n.ellipsis-text-6096861212b8b076fd1cc328e675995595739789 br {\r\n    display: none;\r\n}\r\n\r\ninput.editable-text-646860ac8417f8f4892cd4291e8eaee40f046989 {\r\n    border: none;\r\n    background: none;\r\n    font-size: 16px;\r\n    color: black;\r\n}\r\n\r\n.spot-label-a076abb95ad2e88f215c613874b2f18792b594af {\r\n    color: #FFFFBB;\r\n    font-size: 11px;\r\n    line-height: 12px;\r\n    text-align: center;\r\n    padding: 2px;\r\n    overflow: hidden;\r\n    white-space: nowrap;\r\n    text-overflow: ellipsis;\r\n    text-shadow: 1px 1px #000, 1px -1px #000, -1px 1px #000, -1px -1px #000, 0 0 5px #000;\r\n    pointer-events: none;\r\n}\r\n.spot-handle-3d9ee2c9cf5cb31699b69dba40ff9a765b2410f4 {\r\n    --background-hue-84bb0fa7068086ad4ac3a9522dfcfe29ecde611f: 152deg;\r\n    --background-opacity-dc78a3ef42663bc116505fa1f2b34b135e6082f9: 40%;\r\n    --border-width-03b2edcc74dce220baceefc9e27aa78fc7639a86: 2px;\r\n    --border-saturation-6c842ea396d948b3ce99f7122138ecf69d1eb66b: 0%;\r\n    --border-opacity-9a496cc23134a3cb21db3cb1cd7b601fc828b4e2: 80%;\r\n\r\n    transition: all 0.5s, transform 0s;\r\n    box-sizing: border-box;\r\n    background-color: hsla(var(--background-hue-84bb0fa7068086ad4ac3a9522dfcfe29ecde611f), 84%, 56%, var(--background-opacity-dc78a3ef42663bc116505fa1f2b34b135e6082f9));\r\n    border: solid var(--border-width-03b2edcc74dce220baceefc9e27aa78fc7639a86) hsla(56, var(--border-saturation-6c842ea396d948b3ce99f7122138ecf69d1eb66b), 39%, var(--border-opacity-9a496cc23134a3cb21db3cb1cd7b601fc828b4e2));\r\n    border-radius: 100%;\r\n}\r\n.spot-handle-3d9ee2c9cf5cb31699b69dba40ff9a765b2410f4.draggable-d80a05aba9639289409ed914275b6b423b07b06e {\r\n    --background-opacity-dc78a3ef42663bc116505fa1f2b34b135e6082f9: 100%;\r\n    --border-opacity-9a496cc23134a3cb21db3cb1cd7b601fc828b4e2: 100%;\r\n    border-radius: 0;\r\n}\r\n.spot-handle-3d9ee2c9cf5cb31699b69dba40ff9a765b2410f4.highlighted-01d99204027ffd8a9bcb4b5f85938115b8c9192a {\r\n    --border-width-03b2edcc74dce220baceefc9e27aa78fc7639a86: 4px;\r\n    --border-saturation-6c842ea396d948b3ce99f7122138ecf69d1eb66b: 100%;\r\n}\r\n\r\n.properties-editor-89d32821d601c013b1abbc893312b766e2be5f92 {\r\n    display: flex;\r\n    flex-direction: column;\r\n    height: 100%;\r\n}\r\n\r\n.properties-editor-89d32821d601c013b1abbc893312b766e2be5f92 textarea,\r\n.properties-editor-89d32821d601c013b1abbc893312b766e2be5f92 input {\r\n    box-sizing: border-box;\r\n    width: 100%;\r\n    resize: vertical;\r\n}\r\n.properties-editor-89d32821d601c013b1abbc893312b766e2be5f92 input.title-2810699c44d20485cef2324d886d7814e205faa7 {\r\n    /* 2em: アコーディオンハンドルの margin */\r\n    /* 10px: アコーディオンハンドルの幅 */\r\n    width: calc(100% - 2em - 10px);\r\n}\r\n\r\n.properties-editor-89d32821d601c013b1abbc893312b766e2be5f92 textarea.invalid-58d464c7773b074add182645b6b6bca2f20be1d6 {\r\n    border: solid 1px red;\r\n    background-color: lightgoldenrodyellow;\r\n}\r\n\r\n.without-report-container-00dfab527b8dabf847f8aea1b2eac841affabf65 {\r\n    flex-grow: 1;\r\n    height: 0;\r\n    overflow: auto;\r\n}\r\n.without-report-container-00dfab527b8dabf847f8aea1b2eac841affabf65 {\r\n    display: flex;\r\n    flex-direction: column;\r\n}\r\n.report-container-0f2420c1f5eb638fb4e01c85be2d7f4dcb38b3fc {\r\n    background: #00c2ff70;\r\n    color: #ffffff;\r\n}\r\n\r\n.route-list-b2cd6cb77391429007d8d4162b1783a1c16e4796 .selecting-45fd456dafd471714070d2104ee334992ae26b03 {\r\n    background: #FECA40;\r\n}\r\n\r\n.route-list-b2cd6cb77391429007d8d4162b1783a1c16e4796 .selected-7057343cfbb22c39477184781bb59c0b8fee0d42 {\r\n    background: #F39814;\r\n    color: white;\r\n}\r\n\r\n.route-list-b2cd6cb77391429007d8d4162b1783a1c16e4796 {\r\n    flex-grow: 1;\r\n    overflow: hidden;\r\n\r\n    list-style-type: none;\r\n    margin: 0;\r\n    padding: 0;\r\n}\r\n\r\n.route-list-b2cd6cb77391429007d8d4162b1783a1c16e4796 .route-list-item-bcbcc8c63e012e12eb370bd8aad46b1c37efc74f {\r\n    margin: var(--route-list-item-margin-b89b43737a5f177fc28b32260ccac401c7524537);\r\n    padding: var(--route-list-item-padding-6be1aa920350ac504abed7421e04fefacbcc37ee);\r\n    cursor: pointer;\r\n    user-select: none;\r\n}\r\n.route-list-b2cd6cb77391429007d8d4162b1783a1c16e4796 .note-81a6bb0f737a3bfe949fc137a8321175eed610bc {\r\n    font-size: 75%;\r\n    padding-left: 0.5em;\r\n    color: #ffffffab;\r\n}\r\n\r\n.auto-complete-list-eef72770eaad09c698d36ffac69ed2741669d432 {\r\n    position: absolute;\r\n    background-color: #f9f9f9;\r\n    min-width: 160px;\r\n    box-shadow: 0px 8px 16px 0px rgba(0, 0, 0, 0.2);\r\n    padding: 12px 16px;\r\n    z-index: 1;\r\n}\r\n\r\n.auto-complete-list-eef72770eaad09c698d36ffac69ed2741669d432 .auto-complete-list-item-8f2fadee7ec113774433dcbf13a30bf97a460dc3 {\r\n    color: black;\r\n    padding: 12px 16px;\r\n    text-decoration: none;\r\n    display: block;\r\n}\r\n\r\n.auto-complete-list-eef72770eaad09c698d36ffac69ed2741669d432 .auto-complete-list-item-8f2fadee7ec113774433dcbf13a30bf97a460dc3:hover {\r\n    background-color: #ddd;\r\n}\r\n";
+const cssText = ".import-text-input-8397d1b228cc9ffbba300ee39d6cd853e08f51f8 {\r\n    position: fixed;\r\n    top: 0;\r\n    left: 0;\r\n    width: 100%;\r\n    height: 100%;\r\n    z-index: 10000;\r\n\r\n    display: flex;\r\n    justify-content: center;\r\n    align-items: center;\r\n}\r\n\r\n.hidden-c099adfce55abd406b869f1599a69eb4b6c321e9 {\r\n    display: none;\r\n}\r\n.ellipsis-text-48490efc982744f7102903b16b21b552c02868d1 {\r\n    white-space: nowrap;\r\n    overflow: hidden;\r\n    text-overflow: ellipsis;\r\n}\r\n.ellipsis-text-48490efc982744f7102903b16b21b552c02868d1 br {\r\n    display: none;\r\n}\r\n\r\ninput.editable-text-85175512ff899fcbfbd0a07508bab34072df868b {\r\n    border: none;\r\n    background: none;\r\n    font-size: 16px;\r\n    color: black;\r\n}\r\n\r\n.spot-label-19ec60e487f8d0dc5aea24820ea6d3c9936e91db {\r\n    color: #FFFFBB;\r\n    font-size: 11px;\r\n    line-height: 12px;\r\n    text-align: center;\r\n    padding: 2px;\r\n    overflow: hidden;\r\n    white-space: nowrap;\r\n    text-overflow: ellipsis;\r\n    text-shadow: 1px 1px #000, 1px -1px #000, -1px 1px #000, -1px -1px #000, 0 0 5px #000;\r\n}\r\n\r\n.properties-editor-ef55c80f44007bef29e0447e5e9ffde685d95262 {\r\n    display: flex;\r\n    flex-direction: column;\r\n    height: 100%;\r\n}\r\n\r\n.properties-editor-ef55c80f44007bef29e0447e5e9ffde685d95262 textarea,\r\n.properties-editor-ef55c80f44007bef29e0447e5e9ffde685d95262 input {\r\n    box-sizing: border-box;\r\n    width: 100%;\r\n    resize: vertical;\r\n}\r\n.properties-editor-ef55c80f44007bef29e0447e5e9ffde685d95262 input.title-ed7d2a44e2932bc04bdf23c41c36292402ca3f8e {\r\n    /* 2em: アコーディオンハンドルの margin */\r\n    /* 10px: アコーディオンハンドルの幅 */\r\n    width: calc(100% - 2em - 10px);\r\n}\r\n\r\n.properties-editor-ef55c80f44007bef29e0447e5e9ffde685d95262 textarea.invalid-0672d14127bdc037c80f35b69d406af8f1605324 {\r\n    border: solid 1px red;\r\n    background-color: lightgoldenrodyellow;\r\n}\r\n\r\n.without-report-container-333b9752958b8cf6e8226d2b84dc7a2818d51297 {\r\n    flex-grow: 1;\r\n    height: 0;\r\n    overflow: auto;\r\n}\r\n.without-report-container-333b9752958b8cf6e8226d2b84dc7a2818d51297 {\r\n    display: flex;\r\n    flex-direction: column;\r\n}\r\n.report-container-8f619d457b0820feaa4cc2b7140d4072c61bb816 {\r\n    background: #00c2ff70;\r\n    color: #ffffff;\r\n}\r\n\r\n.route-list-be463c012ee81f42f8dde7c1435e6050bc644c4a .selecting-fde04a0c3dca08cc37ed0ff16d12431219cf8640 {\r\n    background: #FECA40;\r\n}\r\n\r\n.route-list-be463c012ee81f42f8dde7c1435e6050bc644c4a .selected-12331cc0c87b64413c7daa48fc4c128eb11fd9c6 {\r\n    background: #F39814;\r\n    color: white;\r\n}\r\n\r\n.route-list-be463c012ee81f42f8dde7c1435e6050bc644c4a {\r\n    flex-grow: 1;\r\n    overflow: hidden;\r\n\r\n    list-style-type: none;\r\n    margin: 0;\r\n    padding: 0;\r\n}\r\n\r\n.route-list-be463c012ee81f42f8dde7c1435e6050bc644c4a .route-list-item-6a954ba19f10e68d83e395bb47a386c3fe44dded {\r\n    margin: var(--route-list-item-margin-fb35b8c0d004ea8a3fe0931378137087251c5bd6);\r\n    padding: var(--route-list-item-padding-6e4fe9aff1a271b053b3d88f20846c36674ffc6c);\r\n    cursor: pointer;\r\n    user-select: none;\r\n}\r\n.route-list-be463c012ee81f42f8dde7c1435e6050bc644c4a .note-f4fe3437ad46f22ab3f8c68e4a7d96f15d9643e4 {\r\n    font-size: 75%;\r\n    padding-left: 0.5em;\r\n    color: #ffffffab;\r\n}\r\n\r\n.auto-complete-list-36f3477de23a077191e35d2f73f52aa10f27fb96 {\r\n    position: absolute;\r\n    background-color: #f9f9f9;\r\n    min-width: 160px;\r\n    box-shadow: 0px 8px 16px 0px rgba(0, 0, 0, 0.2);\r\n    padding: 12px 16px;\r\n    z-index: 1;\r\n}\r\n\r\n.auto-complete-list-36f3477de23a077191e35d2f73f52aa10f27fb96 .auto-complete-list-item-513197116aee5aeb6e3c7699a742164224d87af9 {\r\n    color: black;\r\n    padding: 12px 16px;\r\n    text-decoration: none;\r\n    display: block;\r\n}\r\n\r\n.auto-complete-list-36f3477de23a077191e35d2f73f52aa10f27fb96 .auto-complete-list-item-513197116aee5aeb6e3c7699a742164224d87af9:hover {\r\n    background-color: #ddd;\r\n}\r\n";
 const variables = {
-    "--background-hue": "--background-hue-84bb0fa7068086ad4ac3a9522dfcfe29ecde611f",
-    "--background-opacity": "--background-opacity-dc78a3ef42663bc116505fa1f2b34b135e6082f9",
-    "--border-width": "--border-width-03b2edcc74dce220baceefc9e27aa78fc7639a86",
-    "--border-saturation": "--border-saturation-6c842ea396d948b3ce99f7122138ecf69d1eb66b",
-    "--border-opacity": "--border-opacity-9a496cc23134a3cb21db3cb1cd7b601fc828b4e2",
-    "--route-list-item-margin": "--route-list-item-margin-b89b43737a5f177fc28b32260ccac401c7524537",
-    "--route-list-item-padding": "--route-list-item-padding-6be1aa920350ac504abed7421e04fefacbcc37ee",
+    "--route-list-item-margin": "--route-list-item-margin-fb35b8c0d004ea8a3fe0931378137087251c5bd6",
+    "--route-list-item-padding": "--route-list-item-padding-6e4fe9aff1a271b053b3d88f20846c36674ffc6c",
 };
 /* harmony default export */ const styles_module = ({
-    "import-text-input": "import-text-input-8adb0f83f2751e93cebaa7948eaf20e8956b7705",
-    hidden: "hidden-11ad600df67ab79d9ba34435f93fa9d9be0c8116",
-    "ellipsis-text": "ellipsis-text-6096861212b8b076fd1cc328e675995595739789",
-    "editable-text": "editable-text-646860ac8417f8f4892cd4291e8eaee40f046989",
-    "spot-label": "spot-label-a076abb95ad2e88f215c613874b2f18792b594af",
-    "spot-handle": "spot-handle-3d9ee2c9cf5cb31699b69dba40ff9a765b2410f4",
-    draggable: "draggable-d80a05aba9639289409ed914275b6b423b07b06e",
-    highlighted: "highlighted-01d99204027ffd8a9bcb4b5f85938115b8c9192a",
-    "properties-editor": "properties-editor-89d32821d601c013b1abbc893312b766e2be5f92",
-    title: "title-2810699c44d20485cef2324d886d7814e205faa7",
-    invalid: "invalid-58d464c7773b074add182645b6b6bca2f20be1d6",
-    "without-report-container": "without-report-container-00dfab527b8dabf847f8aea1b2eac841affabf65",
-    "report-container": "report-container-0f2420c1f5eb638fb4e01c85be2d7f4dcb38b3fc",
-    "route-list": "route-list-b2cd6cb77391429007d8d4162b1783a1c16e4796",
-    selecting: "selecting-45fd456dafd471714070d2104ee334992ae26b03",
-    selected: "selected-7057343cfbb22c39477184781bb59c0b8fee0d42",
-    "route-list-item": "route-list-item-bcbcc8c63e012e12eb370bd8aad46b1c37efc74f",
-    note: "note-81a6bb0f737a3bfe949fc137a8321175eed610bc",
-    "auto-complete-list": "auto-complete-list-eef72770eaad09c698d36ffac69ed2741669d432",
-    "auto-complete-list-item": "auto-complete-list-item-8f2fadee7ec113774433dcbf13a30bf97a460dc3",
+    "import-text-input": "import-text-input-8397d1b228cc9ffbba300ee39d6cd853e08f51f8",
+    hidden: "hidden-c099adfce55abd406b869f1599a69eb4b6c321e9",
+    "ellipsis-text": "ellipsis-text-48490efc982744f7102903b16b21b552c02868d1",
+    "editable-text": "editable-text-85175512ff899fcbfbd0a07508bab34072df868b",
+    "spot-label": "spot-label-19ec60e487f8d0dc5aea24820ea6d3c9936e91db",
+    "properties-editor": "properties-editor-ef55c80f44007bef29e0447e5e9ffde685d95262",
+    title: "title-ed7d2a44e2932bc04bdf23c41c36292402ca3f8e",
+    invalid: "invalid-0672d14127bdc037c80f35b69d406af8f1605324",
+    "without-report-container": "without-report-container-333b9752958b8cf6e8226d2b84dc7a2818d51297",
+    "report-container": "report-container-8f619d457b0820feaa4cc2b7140d4072c61bb816",
+    "route-list": "route-list-be463c012ee81f42f8dde7c1435e6050bc644c4a",
+    selecting: "selecting-fde04a0c3dca08cc37ed0ff16d12431219cf8640",
+    selected: "selected-12331cc0c87b64413c7daa48fc4c128eb11fd9c6",
+    "route-list-item": "route-list-item-6a954ba19f10e68d83e395bb47a386c3fe44dded",
+    note: "note-f4fe3437ad46f22ab3f8c68e4a7d96f15d9643e4",
+    "auto-complete-list": "auto-complete-list-36f3477de23a077191e35d2f73f52aa10f27fb96",
+    "auto-complete-list-item": "auto-complete-list-item-513197116aee5aeb6e3c7699a742164224d87af9",
 });
 
 ;// CONCATENATED MODULE: ./source/accordion.module.css
@@ -1692,7 +1729,7 @@ function getSpotLatLng(route) {
     if (getRouteKind(route) !== "spot")
         return;
     const [lat, lng] = route.coordinates[0];
-    return { lat, lng };
+    return L.latLng(lat, lng);
 }
 function getS2Cell(latLng, level) {
     if (typeof S2 === "undefined")
@@ -2910,6 +2947,21 @@ const library = {
         return hasNearbyPortalWith(options);
     },
     portalNearby: hasNearbyPortalWith(),
+    *inCell(coordinate, level) {
+        return {
+            *initialize() {
+                const targetCell = getS2Cell(coordinateToLatLng(coordinate), level);
+                return {
+                    *predicate(r) {
+                        if (getRouteKind(r) !== "spot")
+                            return false;
+                        const spotCell = getS2Cell(coordinateToLatLng(r.coordinates[0]), level);
+                        return targetCell.toString() === spotCell.toString();
+                    },
+                };
+            },
+        };
+    },
     any: anyQuery,
     *["_add_"](x, y) {
         return x + y;
@@ -3570,21 +3622,22 @@ function createQueryEditor(options) {
 }
 
 ;// CONCATENATED MODULE: ./source/query-launcher.module.css
-const query_launcher_module_cssText = ".ellipsis-text-92a6642e52618a2001e42e20b9ed4d6fd0d10946 {\r\n    overflow: hidden;\r\n    white-space: nowrap;\r\n    text-overflow: ellipsis;\r\n}\r\n\r\n/* スクロールバー非表示 */\r\n.select-list-a7fb8c6ec5632ee96d5f7d6775eaa37e0698cd48::-webkit-scrollbar {\r\n    display: none;\r\n}\r\n.select-list-a7fb8c6ec5632ee96d5f7d6775eaa37e0698cd48 {\r\n    scrollbar-width: none;\r\n}\r\n\r\n/* クエリリスト */\r\n.select-list-a7fb8c6ec5632ee96d5f7d6775eaa37e0698cd48 {\r\n    display: flex;\r\n    flex-direction: row;\r\n    flex-wrap: nowrap;\r\n    overflow-x: auto;\r\n    padding: 0;\r\n    margin: 0;\r\n    width: calc(100% - 2em);\r\n}\r\n\r\n.select-list-item-11d559fbf9ada2c8da6db5a5d430b731dc5f605d {\r\n    display: inline-block;\r\n    position: relative;\r\n}\r\n\r\n.select-button-1e1e74b364e3426eefcd5d03fcbd222d39e7fd29 {\r\n    max-width: 10em;\r\n    min-height: 2em;\r\n\r\n    border: none;\r\n    border-top: solid 3px gray;\r\n    background-color: #ffffffaa;\r\n}\r\n\r\n.selected-fac1ff092d6ab7d6bb44b4d35dbf9dff4708723d.select-list-item-11d559fbf9ada2c8da6db5a5d430b731dc5f605d > .select-button-1e1e74b364e3426eefcd5d03fcbd222d39e7fd29 {\r\n    border-top-color: lightblue;\r\n    background-color: white;\r\n}\r\n\r\n.select-list-item-11d559fbf9ada2c8da6db5a5d430b731dc5f605d:not(.selected-fac1ff092d6ab7d6bb44b4d35dbf9dff4708723d) + .select-list-item-11d559fbf9ada2c8da6db5a5d430b731dc5f605d:not(.selected-fac1ff092d6ab7d6bb44b4d35dbf9dff4708723d)::before {\r\n    content: \"\";\r\n    height: 1.2em;\r\n    border-left: 1px solid darkgray;\r\n    position: absolute;\r\n    top: 3px;\r\n    bottom: 0;\r\n    margin: auto;\r\n}\r\n\r\n/* タブコントロールっぽい見た目にする */\r\ndetails.tab-5f4c8971bfd97c3672a8665878d5902128f26219 > summary {\r\n    border-bottom-width: 0;\r\n    padding-bottom: 0;\r\n}\r\ndetails.tab-5f4c8971bfd97c3672a8665878d5902128f26219 > .tab-contents-90f5c8c34eed17b7243a347b0deae94f7eb68207:not(summary) {\r\n    padding-top: 0;\r\n    border-top-width: 0;\r\n}\r\n\r\n\r\n/* ドラッグ中の見た目を変更 */\r\n.draggable-8b0b6596aef3cf745848dedb4c237acab55394fc {\r\n    cursor: grab;\r\n}\r\n\r\n.dragging-9fb0f200853e3e7b531079782597e2578e5ab166 {\r\n    opacity: 0.5;\r\n}\r\n\r\n.drag-over-79ef7583f4dafc294f8e2a2fad56051bb1d342de {\r\n    border: 2px dashed #000;\r\n}\r\n\r\n/* コマンドボタンの整列用 */\r\n.commands-container-5cd613777ec77d6c3d53d15a63750f7ad7961527 {\r\n    display: flex;\r\n    flex-direction: row;\r\n    flex-wrap: wrap;\r\n}\r\n.name-input-b9209aaffa4cc77ef779ba033399687e13d9a019 {\r\n    flex: 0 0 content;\r\n}\r\n";
+const query_launcher_module_cssText = ".ellipsis-text-40fbd5804d99bd182b115deab6fe915e21558d05 {\r\n    overflow: hidden;\r\n    white-space: nowrap;\r\n    text-overflow: ellipsis;\r\n}\r\n\r\n/* スクロールバー非表示 */\r\n.select-list-3e5c759360e91a17da6a5d97a40cbbfdda014328::-webkit-scrollbar {\r\n    display: none;\r\n}\r\n.select-list-3e5c759360e91a17da6a5d97a40cbbfdda014328 {\r\n    scrollbar-width: none;\r\n}\r\n\r\n/* クエリリスト */\r\n.select-list-3e5c759360e91a17da6a5d97a40cbbfdda014328 {\r\n    display: flex;\r\n    flex-direction: row;\r\n    flex-wrap: nowrap;\r\n    overflow-x: auto;\r\n    padding: 0;\r\n    margin: 0;\r\n    width: calc(100% - 2em);\r\n}\r\n\r\n.select-list-item-83fbd92442eada5fe9e0d784bee614737cb35e1c {\r\n    display: inline-block;\r\n    position: relative;\r\n}\r\n\r\n.select-button-ea06e3663dcdc2ad58cd87011cb35cbbc6bf9747 {\r\n    max-width: 10em;\r\n    min-height: 2em;\r\n\r\n    border: none;\r\n    border-top: solid 3px gray;\r\n    background-color: #ffffffaa;\r\n}\r\n\r\n.selected-19c0763b0c571a21d0be6f52880fa00d13f2235b.select-list-item-83fbd92442eada5fe9e0d784bee614737cb35e1c > .select-button-ea06e3663dcdc2ad58cd87011cb35cbbc6bf9747 {\r\n    border-top-color: lightblue;\r\n    background-color: white;\r\n}\r\n\r\n.select-list-item-83fbd92442eada5fe9e0d784bee614737cb35e1c:not(.selected-19c0763b0c571a21d0be6f52880fa00d13f2235b) + .select-list-item-83fbd92442eada5fe9e0d784bee614737cb35e1c:not(.selected-19c0763b0c571a21d0be6f52880fa00d13f2235b)::before {\r\n    content: \"\";\r\n    height: 1.2em;\r\n    border-left: 1px solid darkgray;\r\n    position: absolute;\r\n    top: 3px;\r\n    bottom: 0;\r\n    margin: auto;\r\n}\r\n\r\n/* タブコントロールっぽい見た目にする */\r\ndetails.tab-1cea9f2986bebd225eb4c8d033382a78812ed910 > summary {\r\n    border-bottom-width: 0;\r\n    padding-bottom: 0;\r\n}\r\ndetails.tab-1cea9f2986bebd225eb4c8d033382a78812ed910 > .tab-contents-34d9b4f7df5479ce9840c81f28adfac37623e217:not(summary) {\r\n    padding-top: 0;\r\n    border-top-width: 0;\r\n}\r\n\r\n\r\n/* ドラッグ中の見た目を変更 */\r\n.draggable-c94e3846acbcbef7883424ca6cae1676786b5c1d {\r\n    cursor: grab;\r\n}\r\n\r\n.dragging-1bf8cb20e42acc29f3d83300d1cbf24f538313e3 {\r\n    opacity: 0.5;\r\n}\r\n\r\n.drag-over-c5674c76c58af7ba4abc7b7387a769aeea013f74 {\r\n    border: 2px dashed #000;\r\n}\r\n\r\n/* コマンドボタンの整列用 */\r\n.commands-container-c6674b7cd3c9dac7a00aa73c6101288592afab75 {\r\n    display: flex;\r\n    flex-direction: row;\r\n    flex-wrap: wrap;\r\n}\r\n.name-input-a0604ec61a77120ae2d97754393645af4b4e89cc {\r\n    flex: 0 0 content;\r\n}\r\n\r\n.source-title-icon-9c459a3fe8357e4d199e7f1986e2e389bbb01687 {\r\n    padding-right: 0.3em;\r\n    margin-right: 0.3em;\r\n    border-right: dashed 1px #c5c5c5;\r\n}\r\n";
 const query_launcher_module_variables = {};
 /* harmony default export */ const query_launcher_module = ({
-    "ellipsis-text": "ellipsis-text-92a6642e52618a2001e42e20b9ed4d6fd0d10946",
-    "select-list": "select-list-a7fb8c6ec5632ee96d5f7d6775eaa37e0698cd48",
-    "select-list-item": "select-list-item-11d559fbf9ada2c8da6db5a5d430b731dc5f605d",
-    "select-button": "select-button-1e1e74b364e3426eefcd5d03fcbd222d39e7fd29",
-    selected: "selected-fac1ff092d6ab7d6bb44b4d35dbf9dff4708723d",
-    tab: "tab-5f4c8971bfd97c3672a8665878d5902128f26219",
-    "tab-contents": "tab-contents-90f5c8c34eed17b7243a347b0deae94f7eb68207",
-    draggable: "draggable-8b0b6596aef3cf745848dedb4c237acab55394fc",
-    dragging: "dragging-9fb0f200853e3e7b531079782597e2578e5ab166",
-    "drag-over": "drag-over-79ef7583f4dafc294f8e2a2fad56051bb1d342de",
-    "commands-container": "commands-container-5cd613777ec77d6c3d53d15a63750f7ad7961527",
-    "name-input": "name-input-b9209aaffa4cc77ef779ba033399687e13d9a019",
+    "ellipsis-text": "ellipsis-text-40fbd5804d99bd182b115deab6fe915e21558d05",
+    "select-list": "select-list-3e5c759360e91a17da6a5d97a40cbbfdda014328",
+    "select-list-item": "select-list-item-83fbd92442eada5fe9e0d784bee614737cb35e1c",
+    "select-button": "select-button-ea06e3663dcdc2ad58cd87011cb35cbbc6bf9747",
+    selected: "selected-19c0763b0c571a21d0be6f52880fa00d13f2235b",
+    tab: "tab-1cea9f2986bebd225eb4c8d033382a78812ed910",
+    "tab-contents": "tab-contents-34d9b4f7df5479ce9840c81f28adfac37623e217",
+    draggable: "draggable-c94e3846acbcbef7883424ca6cae1676786b5c1d",
+    dragging: "dragging-1bf8cb20e42acc29f3d83300d1cbf24f538313e3",
+    "drag-over": "drag-over-c5674c76c58af7ba4abc7b7387a769aeea013f74",
+    "commands-container": "commands-container-c6674b7cd3c9dac7a00aa73c6101288592afab75",
+    "name-input": "name-input-a0604ec61a77120ae2d97754393645af4b4e89cc",
+    "source-title-icon": "source-title-icon-9c459a3fe8357e4d199e7f1986e2e389bbb01687",
 });
 
 ;// CONCATENATED MODULE: ./source/query/service.ts
@@ -3678,7 +3731,7 @@ var query_launcher_awaiter = (undefined && undefined.__awaiter) || function (thi
 
 
 
-function createQueryLauncher({ signal, handleAsyncError, progress, onCurrentQueryChanged, loadSources, saveSources, }) {
+function createQueryLauncher({ signal, handleAsyncError, progress, onCurrentQueryChanged, onPortalQueryChanged, loadSources, saveSources, }) {
     var _a, _b, _c;
     return query_launcher_awaiter(this, void 0, void 0, function* () {
         const checkDelayMilliseconds = 500;
@@ -3693,6 +3746,7 @@ function createQueryLauncher({ signal, handleAsyncError, progress, onCurrentQuer
             });
         }
         const state = yield createState();
+        notifyPortalQueryChanged();
         function setQueryExpression(signal) {
             return query_launcher_awaiter(this, void 0, void 0, function* () {
                 yield sleep(checkDelayMilliseconds, { signal });
@@ -3801,13 +3855,22 @@ function createQueryLauncher({ signal, handleAsyncError, progress, onCurrentQuer
                 updateQueryList();
             },
         });
+        const portalQueryButtonOffText = "⭐ポータル指定";
+        const portalQueryButtonOnText = "⭐ポータル指定解除";
+        const portalQueryButtonElement = addListeners(jsx("button", { children: portalQueryButtonOffText }), {
+            click: togglePortalQuery,
+        });
         const queryEditor = createQueryEditor({
             initialText: (_c = getCurrentSource()) === null || _c === void 0 ? void 0 : _c.text,
             placeholder: "🔍ルート検索",
             tokenDefinitions: mapTokenDefinitions(tokenDefinitions, getTokenCategory),
             onValueChange(e) {
+                var _a;
                 setCurrentSourceText(e.value);
                 setQueryExpressionDelayed();
+                if ((_a = getCurrentSource()) === null || _a === void 0 ? void 0 : _a.isPortalQuery) {
+                    notifyPortalQueryChanged();
+                }
             },
         });
         function setCurrentSourceText(text) {
@@ -3858,6 +3921,7 @@ function createQueryLauncher({ signal, handleAsyncError, progress, onCurrentQuer
                 return;
             insertNewQuery(currentSource.summary, currentSource.text, Math.min(((_a = state.selectedSourceIndex) !== null && _a !== void 0 ? _a : 0) + 1, state.sources.length));
             updateQueryList();
+            notifyPortalQueryChanged();
         }
         function deleteQuery() {
             const index = state.selectedSourceIndex;
@@ -3867,15 +3931,7 @@ function createQueryLauncher({ signal, handleAsyncError, progress, onCurrentQuer
             state.selectedSourceIndex =
                 state.sources.length <= index ? state.sources.length - 1 : index;
             updateQueryList();
-        }
-        function selectQuery(index) {
-            const selectedSource = state.sources[index];
-            if (selectedSource == null)
-                return;
-            state.selectedSourceIndex = index;
-            queryEditor.setValue(selectedSource.text);
-            nameInputElement.value = selectedSource.name;
-            updateQueryList();
+            notifyPortalQueryChanged();
         }
         function moveQueryLeft() {
             const index = state.selectedSourceIndex;
@@ -3886,6 +3942,7 @@ function createQueryLauncher({ signal, handleAsyncError, progress, onCurrentQuer
             state.sources.splice(index - 1, 0, movedSource);
             state.selectedSourceIndex = index - 1;
             updateQueryList();
+            notifyPortalQueryChanged();
         }
         function moveQueryRight() {
             const index = state.selectedSourceIndex;
@@ -3896,12 +3953,55 @@ function createQueryLauncher({ signal, handleAsyncError, progress, onCurrentQuer
             state.sources.splice(index + 1, 0, movedSource);
             state.selectedSourceIndex = index + 1;
             updateQueryList();
+            notifyPortalQueryChanged();
+        }
+        function togglePortalQuery() {
+            const currentSource = getCurrentSource();
+            if (!currentSource)
+                return;
+            const isCurrentlyPortal = !!currentSource.isPortalQuery;
+            for (let idx = 0; idx < state.sources.length; idx++) {
+                // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+                const src = state.sources[idx];
+                if (src.isPortalQuery) {
+                    state.sources[idx] = Object.assign(Object.assign({}, src), { isPortalQuery: false });
+                }
+            }
+            if (!isCurrentlyPortal) {
+                setCurrentSource(Object.assign(Object.assign({}, currentSource), { isPortalQuery: true }));
+            }
+            else {
+                setCurrentSource(Object.assign(Object.assign({}, currentSource), { isPortalQuery: false }));
+            }
+            updateQueryList();
+            notifyPortalQueryChanged();
+        }
+        function notifyPortalQueryChanged() {
+            const portalSource = state.sources.find((src) => src.isPortalQuery);
+            if (!onPortalQueryChanged)
+                return;
+            if (!portalSource) {
+                onPortalQueryChanged(undefined);
+                return;
+            }
+            if (portalSource.text.trim() === "") {
+                onPortalQueryChanged(undefined);
+            }
+            else {
+                const { getQuery, diagnostics } = createQuery(portalSource.text);
+                if (diagnostics.length === 0) {
+                    onPortalQueryChanged(getQuery);
+                }
+                else {
+                    onPortalQueryChanged(undefined);
+                }
+            }
         }
         function updateQueryList() {
             var _a, _b;
             queryListElement.innerHTML = "";
             state.sources.map((source, index) => {
-                const listButton = addListeners(jsx("button", { class: `${query_launcher_module["ellipsis-text"]} ${query_launcher_module["select-button"]} ${query_launcher_module["draggable"]}`, draggable: true, children: source.summary }), {
+                const listButton = addListeners(jsxs("button", { class: `${query_launcher_module["ellipsis-text"]} ${query_launcher_module["select-button"]} ${query_launcher_module["draggable"]}`, draggable: true, children: [source.isPortalQuery ? (jsx("span", { class: query_launcher_module["source-title-icon"], children: "\u2B50" })) : (jsx(Fragment, {})), source.summary] }), {
                     click() {
                         selectQuery(index);
                     },
@@ -3942,8 +4042,21 @@ function createQueryLauncher({ signal, handleAsyncError, progress, onCurrentQuer
                 queryListElement.appendChild(listItem);
             });
             nameInputElement.value = (_b = (_a = getCurrentSource()) === null || _a === void 0 ? void 0 : _a.name) !== null && _b !== void 0 ? _b : "";
+            const currentSource = getCurrentSource();
+            portalQueryButtonElement.textContent = (currentSource === null || currentSource === void 0 ? void 0 : currentSource.isPortalQuery)
+                ? portalQueryButtonOnText
+                : portalQueryButtonOffText;
         }
-        const element = (jsxs("details", { open: true, class: `${accordion_module.accordion} ${query_launcher_module.tab}`, children: [jsx("summary", { children: queryListElement }), jsxs("div", { class: query_launcher_module["tab-contents"], children: [queryEditor.element, jsxs("div", { class: query_launcher_module["commands-container"], children: [saveButtonElement, deleteButtonElement, moveLeftButtonElement, moveRightButtonElement, nameInputElement] })] })] }));
+        function selectQuery(index) {
+            const selectedSource = state.sources[index];
+            if (selectedSource == null)
+                return;
+            state.selectedSourceIndex = index;
+            queryEditor.setValue(selectedSource.text);
+            nameInputElement.value = selectedSource.name;
+            updateQueryList();
+        }
+        const element = (jsxs("details", { open: true, class: `${accordion_module.accordion} ${query_launcher_module.tab}`, children: [jsx("summary", { children: queryListElement }), jsxs("div", { class: query_launcher_module["tab-contents"], children: [queryEditor.element, jsxs("div", { class: query_launcher_module["commands-container"], children: [saveButtonElement, deleteButtonElement, moveLeftButtonElement, moveRightButtonElement, portalQueryButtonElement, nameInputElement] })] })] }));
         updateQueryList();
         return {
             element,
@@ -4244,17 +4357,28 @@ function createProgress({ routeLayerGroupName, handleAsyncError, }) {
 }
 
 ;// CONCATENATED MODULE: ./source/selected-route-layer.module.css
-const selected_route_layer_module_cssText = "path.selected-cell17-c503fd1e25460bc37c8f183f52bf178dc26e18bb {\r\n    transition-property: d;\r\n    transition-timing-function: ease-out;\r\n    transition-duration: 0.1s;\r\n}\r\n";
+const selected_route_layer_module_cssText = "path.selected-cell17-2a08b843193a6b4e08fbb35a5c19b15e1262d9d0 {\r\n    transition-property: d;\r\n    transition-timing-function: ease-out;\r\n    transition-duration: 0.1s;\r\n}\r\n\r\n.drag-handle-d45be27314f6944c10839eabc447c265595ecae4 {\r\n    background-color: #FFFFFF01;\r\n    border-radius: 100%;\r\n}\r\n";
 const selected_route_layer_module_variables = {};
 /* harmony default export */ const selected_route_layer_module = ({
-    "selected-cell17": "selected-cell17-c503fd1e25460bc37c8f183f52bf178dc26e18bb",
+    "selected-cell17": "selected-cell17-2a08b843193a6b4e08fbb35a5c19b15e1262d9d0",
+    "drag-handle": "drag-handle-d45be27314f6944c10839eabc447c265595ecae4",
 });
 
 ;// CONCATENATED MODULE: ./source/selected-route-layer.ts
 //spell-checker: ignore Lngs
 
 
-function createSelectedRouteLayer() {
+function createSelectedRouteLayer(options) {
+    const { onDrag, onDragEnd } = options;
+    const circleSize = 20;
+    const dragHandle = L.marker({ lat: 0, lng: 0 }, {
+        icon: L.divIcon({
+            className: selected_route_layer_module["drag-handle"],
+            iconSize: [circleSize, circleSize],
+            iconAnchor: [circleSize * 0.5, circleSize * 0.5],
+        }),
+        draggable: true,
+    });
     const tooCloseCircle = L.circle([0, 0], 20, {
         className: "iitc-plugin-pgo-route-helper-too-close-circle",
         stroke: true,
@@ -4280,12 +4404,16 @@ function createSelectedRouteLayer() {
         fillOpacity: 0.2 }));
     const polyline17 = L.polygon([], Object.assign(Object.assign({}, cellOptions), { className: selected_route_layer_module["selected-cell17"], stroke: false, fill: true, fillColor: "rgb(240, 252, 249)", fillOpacity: 0.3 }));
     const layer = L.featureGroup([
+        dragHandle,
         tooCloseCircle,
         polyline14,
         polyline16,
         polyline17,
     ]);
+    dragHandle.on("drag", () => onDrag(dragHandle.getLatLng()));
+    dragHandle.on("dragend", () => onDragEnd(dragHandle.getLatLng()));
     function setLatLng(center) {
+        dragHandle.setLatLng(center);
         tooCloseCircle.setLatLng(center);
         if (typeof S2 !== "undefined") {
             const cell14 = getS2Cell(center, 14);
@@ -4404,6 +4532,95 @@ function createEditorTitle() {
     return { element: root, cssText: editor_title_module_cssText, progress };
 }
 
+;// CONCATENATED MODULE: ./source/portals-modifier.ts
+var portals_modifier_awaiter = (undefined && undefined.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+
+
+
+
+function protectedCallQueryFunction(action, defaultValue, signal) {
+    return portals_modifier_awaiter(this, void 0, void 0, function* () {
+        try {
+            return yield handleAwaitOrError(action(), signal);
+        }
+        catch (error) {
+            return yield handleAwaitOrError(defaultValue(), signal);
+        }
+    });
+}
+function isPortalByQuery(route, predicate, signal) {
+    return portals_modifier_awaiter(this, void 0, void 0, function* () {
+        return protectedCallQueryFunction(() => predicate(route), 
+        // eslint-disable-next-line require-yield
+        function* () {
+            return false;
+        }, signal);
+    });
+}
+const modifierId = Symbol("pgo-route-helper-modifier");
+function setupPortalsModifier({ getCurrentRoutes, getCurrentPortalQuery, }) {
+    return portals_modifier_awaiter(this, void 0, void 0, function* () {
+        const PortalRecords = yield waitForNonNullable(() => portal_records_cef3ad7e_0804_420c_8c44_ef4e08dbcdc2);
+        const version = PortalRecords.version;
+        switch (version) {
+            case undefined:
+                return;
+            case "0.8.0":
+                break;
+            default:
+                exhaustive(version);
+                return;
+        }
+        function getCurrentPredicate(signal) {
+            return portals_modifier_awaiter(this, void 0, void 0, function* () {
+                const result = getCurrentPortalQuery();
+                if (!result)
+                    return undefined;
+                const { getQuery, createEnvironment } = result;
+                const query = yield protectedCallQueryFunction(function* () {
+                    const query = yield* getQuery();
+                    const environment = createEnvironment();
+                    return yield* query.initialize(environment);
+                }, 
+                // eslint-disable-next-line require-yield
+                function* () {
+                    return undefined;
+                }, signal);
+                return query === null || query === void 0 ? void 0 : query.predicate;
+            });
+        }
+        PortalRecords.registerModifier({
+            id: modifierId,
+            getPortals(bounds, result, signal = getSharedAbortSignal()) {
+                return portals_modifier_awaiter(this, void 0, void 0, function* () {
+                    const predicate = yield getCurrentPredicate(signal);
+                    if (predicate == null)
+                        return;
+                    for (const { route } of getCurrentRoutes()) {
+                        const coordinate = getSpotLatLng(route);
+                        if (coordinate == null)
+                            continue;
+                        if (!bounds.contains(coordinate))
+                            continue;
+                        if (!(yield isPortalByQuery(route, predicate, signal))) {
+                            continue;
+                        }
+                        result.push(PortalRecords.createNewFakePortal(coordinate.lat, coordinate.lng, route.routeName));
+                    }
+                });
+            },
+        });
+    });
+}
+
 ;// CONCATENATED MODULE: ./source/iitc-plugin-pgo-route-helper.tsx
 var iitc_plugin_pgo_route_helper_awaiter = (undefined && undefined.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
@@ -4417,6 +4634,7 @@ var iitc_plugin_pgo_route_helper_awaiter = (undefined && undefined.__awaiter) ||
 
 /* eslint-disable require-yield */
 // spell-checker: ignore layeradd latlngschanged lngs latlng buttonset moveend zoomend
+
 
 
 
@@ -4512,8 +4730,27 @@ function asyncMain() {
             templateCandidateRouteId: null,
             routes: "routes-unloaded",
             routeListQuery: { query: undefined },
+            currentPortalQuery: undefined,
         };
-        const selectedRouteLayer = createSelectedRouteLayer();
+        const selectedRouteLayer = createSelectedRouteLayer({
+            onDrag(coordinate) {
+                const view = getSelectedRoute();
+                if (view == null)
+                    return;
+                const { route } = view;
+                route.coordinates = [latLngToCoordinate(coordinate)];
+                updateSelectedRouteInfo();
+            },
+            onDragEnd(coordinate) {
+                const view = getSelectedRoute();
+                if (view == null)
+                    return;
+                const { route } = view;
+                route.coordinates = [latLngToCoordinate(coordinate)];
+                updateSelectedRouteInfo();
+                queueSetRouteCommandDelayed(3000, route);
+            },
+        });
         addStyle(selectedRouteLayer.cssText);
         const remoteCommandCancelScope = createAsyncCancelScope(handleAsyncError);
         let nextCommandId = 0;
@@ -5073,6 +5310,9 @@ function asyncMain() {
                 };
                 updateRoutesListElement();
             },
+            onPortalQueryChanged(query) {
+                state.currentPortalQuery = query;
+            },
             loadSources() {
                 var _a;
                 return iitc_plugin_pgo_route_helper_awaiter(this, void 0, void 0, function* () {
@@ -5164,7 +5404,7 @@ function asyncMain() {
                 updateSelectedRouteInfo();
                 queueSetRouteCommandDelayed(3000, route);
             });
-            return { layer, update: ignore, highlight: ignore };
+            return { layer, update: ignore, updateZoom: ignore, highlight: ignore };
         }
         const maxTitleWidth = 160;
         const maxTitleHeight = 46;
@@ -5176,62 +5416,69 @@ function asyncMain() {
                 iconSize: [maxTitleWidth, maxTitleHeight],
             });
         }
-        const classNameSeparatorPattern = /\s/g;
-        function createSpotView(route, routeMap) {
+        const minNamedZoom = 15;
+        const circleSize = 16;
+        const circleSizeNonNamed = 8;
+        function setSpotViewCircleStyle(options) {
+            options.radius = circleSize * 0.5;
+            // border
+            options.opacity = 1;
+            options.color = "hsla(56, 0%, 39%, 80%)";
+            options.weight = 2;
+            // background
+            options.fillOpacity = 1;
+            options.fillColor = "hsla(152deg, 84%, 56%, 40%)";
+            return options;
+        }
+        function inMap(path) {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            return path._map != null;
+        }
+        function createSpotView(route, _routeMap) {
             const { routeId } = route;
             const initialCoordinate = coordinateToLatLng(route.coordinates[0]);
-            const circleId = `spot-circle-${routeId.replace(classNameSeparatorPattern, "_")}`;
-            const circleSize = 20;
-            const circle = L.marker(initialCoordinate, {
-                icon: L.divIcon({
-                    className: `${styles_module["spot-handle"]} ${circleId}`,
-                    iconSize: [circleSize, circleSize],
-                    iconAnchor: [circleSize * 0.5, circleSize * 0.5],
-                }),
-            });
+            const style = setSpotViewCircleStyle({});
+            const circle = L.circleMarker(initialCoordinate, style);
             let highlighted = false;
-            let draggable = false;
-            circle.on("drag", () => {
-                const position = circle.getLatLng();
-                label.setLatLng(position);
-                if (routeId === state.selectedRouteId) {
-                    selectedRouteLayer.setLatLng(position);
+            function changeStyle(zoom) {
+                const showName = minNamedZoom <= zoom;
+                setSpotViewCircleStyle(style);
+                if (highlighted) {
+                    // border
+                    style.weight = 4;
+                    style.color = "hsla(56, 100%, 39%, 80%)";
                 }
-            });
-            function changeStyle() {
-                const e = document.getElementsByClassName(circleId).item(0);
-                if (!e)
-                    return;
-                e.classList.toggle(styles_module.highlighted, highlighted);
-                e.classList.toggle(styles_module.draggable, draggable);
+                if (!showName) {
+                    style.radius = circleSizeNonNamed * 0.5;
+                }
+                circle.setStyle(style);
             }
-            circle.on("dblclick", () => {
-                draggable = !draggable;
-                if (draggable) {
-                    circle.dragging.enable();
-                }
-                else {
-                    circle.dragging.disable();
-                }
-                changeStyle();
-            });
-            circle.on("click", () => {
+            circle.on("add", () => changeStyle(map.getZoom()));
+            const labelOptions = {
+                icon: createSpotLabel(route.routeName),
+                pane: routePane,
+            };
+            const label = L.marker(circle.getLatLng(), labelOptions);
+            const group = L.featureGroup([circle, label]);
+            group.on("click", () => {
                 state.selectedRouteId = routeId;
                 updateSelectedRouteInfo();
             });
-            circle.on("dragend", () => {
-                const view = routeMap.get(routeId);
-                if (!view)
-                    return;
-                const { route } = view;
-                route.coordinates = [latLngToCoordinate(circle.getLatLng())];
-                queueSetRouteCommandDelayed(3000, route);
-            });
-            circle.on("add", changeStyle);
-            const label = L.marker(circle.getLatLng(), {
-                icon: createSpotLabel(route.routeName),
-            });
-            const group = L.featureGroup([circle, label]);
+            let lastZoom = null;
+            function updateZoom(zoom) {
+                if (inMap(circle))
+                    circle.bringToFront();
+                if (lastZoom !== zoom) {
+                    changeStyle(zoom);
+                    if (minNamedZoom <= zoom) {
+                        group.addLayer(label);
+                    }
+                    else {
+                        group.removeLayer(label);
+                    }
+                    lastZoom = zoom;
+                }
+            }
             function update(route) {
                 label.setIcon(createSpotLabel(route.routeName));
                 const coordinate0 = coordinateToLatLng(route.coordinates[0]);
@@ -5240,9 +5487,9 @@ function asyncMain() {
             }
             function highlight(enabled) {
                 highlighted = enabled;
-                changeStyle();
+                changeStyle(map.getZoom());
             }
-            return { layer: group, update, highlight };
+            return { layer: group, update, updateZoom, highlight };
         }
         function addRouteView(routeMap, route) {
             const { routeId } = route;
@@ -5283,6 +5530,14 @@ function asyncMain() {
                         layerToRoutesRequiringAddition.set(view.coordinatesEditor.layer, view);
                     }
                 }
+                // 範囲内のスポットの表示を更新する
+                const zoom = map.getZoom();
+                for (const view of layerToRoutesRequiringAddition.values()) {
+                    if (scheduler.yieldRequested()) {
+                        yield scheduler.yield({ signal });
+                    }
+                    view.coordinatesEditor.updateZoom(zoom, map);
+                }
                 // 現在追加されているレイヤーが範囲外なら削除する
                 for (const oldLayer of routeLayerGroup.getLayers()) {
                     if (!isRouteLayer(oldLayer))
@@ -5314,6 +5569,7 @@ function asyncMain() {
             return layer !== selectedRouteLayer.layer;
         }
         const routeLayerGroup = L.layerGroup();
+        const routePane = map.getPanes().popupPane;
         window.addLayerGroup(routeLayerGroupName, routeLayerGroup, true);
         // Routes レイヤーが表示されるまで読み込みを中止
         progress({ type: "waiting-until-routes-layer-loading" });
@@ -5368,6 +5624,25 @@ function asyncMain() {
                     onMoveToSelectedElement(true);
                 },
             }));
+            yield setupPortalsModifier({
+                getCurrentRoutes() {
+                    return state.routes === "routes-unloaded"
+                        ? []
+                        : state.routes.values();
+                },
+                getCurrentPortalQuery() {
+                    const { currentPortalQuery: getQuery, routes } = state;
+                    if (routes === "routes-unloaded" || getQuery == null) {
+                        return undefined;
+                    }
+                    return {
+                        getQuery,
+                        createEnvironment() {
+                            return Object.assign(Object.assign({}, defaultEnvironment), { routes: [...routes.values()].map((r) => r.route) });
+                        },
+                    };
+                },
+            });
         }
     });
 }
