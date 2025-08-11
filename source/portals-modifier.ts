@@ -6,6 +6,7 @@ import {
 import { type Route } from "./route";
 import { getSpotLatLng } from "./cells";
 import { handleAwaitOrError, type EffectiveFunction } from "./effective";
+import type { QueryEnvironment, UnitQueryFactory } from "./query";
 
 async function protectedCallQueryFunction<R>(
     action: EffectiveFunction<[], R>,
@@ -37,12 +38,15 @@ async function isPortalByQuery(
 const modifierId = Symbol("pgo-route-helper-modifier");
 export async function setupPortalsModifier({
     getCurrentRoutes,
-    getCurrentPredicate,
+    getCurrentPortalQuery,
 }: {
     getCurrentRoutes(): Iterable<{ readonly route: Route }>;
-    getCurrentPredicate(
-        signal: AbortSignal
-    ): Promise<EffectiveFunction<[Route], boolean> | undefined>;
+    getCurrentPortalQuery():
+        | {
+              getQuery: EffectiveFunction<[], UnitQueryFactory<Route>>;
+              createEnvironment(): QueryEnvironment<Route>;
+          }
+        | undefined;
 }) {
     await waitUntil(
         () => portal_records_cef3ad7e_0804_420c_8c44_ef4e08dbcdc2 == null
@@ -60,6 +64,26 @@ export async function setupPortalsModifier({
         default:
             exhaustive(version);
             return;
+    }
+
+    async function getCurrentPredicate(signal: AbortSignal) {
+        const result = getCurrentPortalQuery();
+        if (!result) return undefined;
+
+        const { getQuery, createEnvironment } = result;
+        const query = await protectedCallQueryFunction(
+            function* () {
+                const query = yield* getQuery();
+                const environment = createEnvironment();
+                return yield* query.initialize(environment);
+            },
+            // eslint-disable-next-line require-yield
+            function* () {
+                return undefined;
+            },
+            signal
+        );
+        return query?.predicate;
     }
 
     PortalRecords.registerModifier({
