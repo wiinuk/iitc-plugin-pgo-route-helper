@@ -2,6 +2,7 @@
 /* eslint-disable require-yield */
 import type { CellId } from "iitc-plugin-portal-records/source/typed-s2cell";
 import type { PortalRecord } from "iitc-plugin-portal-records/source/portal-records";
+import type { FakePortalRecord } from "iitc-plugin-portal-records/source/portal-modifier";
 import { awaitPromise, getSignal, type Effective } from "./effective";
 import { getRouteKind, type Route } from "./route";
 import { error } from "./standard-extensions";
@@ -32,7 +33,11 @@ export interface S2CellWith<L extends number> extends S2Cell {
     ];
     toString(): CellId<L>;
 }
-export type Cell17PortalRecord = PortalRecord | IITCPortalLocationsPluginPortal;
+export type Cell17PortalRecord =
+    | PortalRecord
+    | FakePortalRecord
+    | IITCPortalLocationsPluginPortal;
+
 type Cell17 = Readonly<{
     s2Cell: S2CellWith<17>;
     routes: Route[];
