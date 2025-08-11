@@ -338,11 +338,13 @@ export async function createQueryLauncher({
         if (!currentSource) return;
 
         const isCurrentlyPortal = !!currentSource.isPortalQuery;
-        state.sources.forEach((src, idx) => {
+        for (let idx = 0; idx < state.sources.length; idx++) {
+            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+            const src = state.sources[idx]!;
             if (src.isPortalQuery) {
                 state.sources[idx] = { ...src, isPortalQuery: false };
             }
-        });
+        }
         if (!isCurrentlyPortal) {
             setCurrentSource({ ...currentSource, isPortalQuery: true });
         } else {

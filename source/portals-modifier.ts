@@ -1,7 +1,7 @@
 import {
     exhaustive,
     getSharedAbortSignal,
-    waitUntil,
+    waitForNonNullable,
 } from "./standard-extensions";
 import { type Route } from "./route";
 import { getSpotLatLng } from "./cells";
@@ -48,13 +48,9 @@ export async function setupPortalsModifier({
           }
         | undefined;
 }) {
-    await waitUntil(
-        () => portal_records_cef3ad7e_0804_420c_8c44_ef4e08dbcdc2 == null
+    const PortalRecords = await waitForNonNullable(
+        () => portal_records_cef3ad7e_0804_420c_8c44_ef4e08dbcdc2
     );
-    const PortalRecords =
-        await portal_records_cef3ad7e_0804_420c_8c44_ef4e08dbcdc2;
-    if (PortalRecords == null) return;
-
     const version = PortalRecords.version;
     switch (version) {
         case undefined:
