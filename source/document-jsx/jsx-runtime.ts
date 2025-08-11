@@ -74,6 +74,11 @@ export function jsxs<TName extends keyof KnownElementTagNameMap>(
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     _option?: JsxOption
 ): KnownElementTagNameMap[TName] {
+    if ((name as string) === Fragment) {
+        return createFragment(
+            properties?.children as Node | Node[]
+        ) as unknown as KnownElementTagNameMap[TName];
+    }
     const element = document.createElement(name);
     for (const [key, value] of Object.entries(properties ?? {})) {
         if (key === "children") continue;
@@ -106,6 +111,20 @@ export function jsxs<TName extends keyof KnownElementTagNameMap>(
     return element as KnownElementTagNameMap[TName];
 }
 export const jsx = jsxs;
+export const Fragment = "_Fragment";
+function createFragment(children: Node | Node[] | undefined) {
+    const fragment = document.createDocumentFragment();
+    if (children != null) {
+        if (Array.isArray(children)) {
+            for (const child of children) {
+                fragment.appendChild(child);
+            }
+        } else {
+            fragment.appendChild(children);
+        }
+    }
+    return fragment;
+}
 
 // eslint-disable-next-line @typescript-eslint/no-namespace
 export namespace JSX {
