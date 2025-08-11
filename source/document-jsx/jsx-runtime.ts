@@ -1,4 +1,9 @@
-type KnownElementTagNameMap = HTMLElementTagNameMap & SVGElementTagNameMap;
+type KnownElementTagNameMap = HTMLElementTagNameMap &
+    SVGElementTagNameMap &
+    FragmentTagNameMap;
+interface FragmentTagNameMap {
+    [Fragment]: DocumentFragment;
+}
 
 type KnownAttributeNameAndType<
     TTagName extends keyof KnownElementTagNameMap,
@@ -38,7 +43,9 @@ type KnownAttributeNameAndType<
     : { name: never; type: never };
 
 type KnownExtendedAttributes<TTagName extends keyof KnownElementTagNameMap> =
-    TTagName extends "path"
+    TTagName extends typeof Fragment
+        ? { readonly children?: Node | Node[] }
+        : TTagName extends "path"
         ? {
               d: string;
               fill: string;
@@ -74,10 +81,11 @@ export function jsxs<TName extends keyof KnownElementTagNameMap>(
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     _option?: JsxOption
 ): KnownElementTagNameMap[TName] {
-    if ((name as string) === Fragment) {
+    if (name === Fragment) {
         return createFragment(
-            properties?.children as Node | Node[]
-        ) as unknown as KnownElementTagNameMap[TName];
+            (properties as Readonly<ElementProperties<typeof Fragment>>)
+                .children
+        ) as KnownElementTagNameMap[TName];
     }
     const element = document.createElement(name);
     for (const [key, value] of Object.entries(properties ?? {})) {
@@ -111,7 +119,7 @@ export function jsxs<TName extends keyof KnownElementTagNameMap>(
     return element as KnownElementTagNameMap[TName];
 }
 export const jsx = jsxs;
-export const Fragment = "_Fragment";
+export const Fragment = Symbol("Fragment");
 function createFragment(children: Node | Node[] | undefined) {
     const fragment = document.createDocumentFragment();
     if (children != null) {
