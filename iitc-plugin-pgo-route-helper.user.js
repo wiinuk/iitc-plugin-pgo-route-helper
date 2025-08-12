@@ -1,0 +1,5694 @@
+// ==UserScript==
+// @id           iitc-plugin-pgo-route-helper
+// @name         IITC plugin: Pgo Route Helper
+// @category     Controls
+// @namespace    https://github.com/IITC-CE/ingress-intel-total-conversion
+// @downloadURL  https://github.com/wiinuk/iitc-plugin-pgo-route-helper/raw/main/iitc-plugin-pgo-route-helper.user.js
+// @updateURL    https://github.com/wiinuk/iitc-plugin-pgo-route-helper/raw/main/iitc-plugin-pgo-route-helper.user.js
+// @homepageURL  https://github.com/wiinuk/iitc-plugin-pgo-route-helper
+// @version      0.14.2
+// @description  IITC plugin to assist in Pokémon GO route creation.
+// @author       Wiinuk
+// @include      https://*.ingress.com/intel*
+// @include      http://*.ingress.com/intel*
+// @match        https://*.ingress.com/intel*
+// @match        http://*.ingress.com/intel*
+// @include      https://*.ingress.com/mission/*
+// @include      http://*.ingress.com/mission/*
+// @match        https://*.ingress.com/mission/*
+// @match        http://*.ingress.com/mission/*
+// @icon         https://www.google.com/s2/favicons?domain=iitc.me
+// @grant        GM_info
+// ==/UserScript==
+
+/******/ (() => { // webpackBootstrap
+/******/ 	"use strict";
+/******/ 	// The require scope
+/******/ 	var __webpack_require__ = {};
+/******/ 	
+/************************************************************************/
+/******/ 	/* webpack/runtime/define property getters */
+/******/ 	(() => {
+/******/ 		// define getter functions for harmony exports
+/******/ 		__webpack_require__.d = (exports, definition) => {
+/******/ 			for(var key in definition) {
+/******/ 				if(__webpack_require__.o(definition, key) && !__webpack_require__.o(exports, key)) {
+/******/ 					Object.defineProperty(exports, key, { enumerable: true, get: definition[key] });
+/******/ 				}
+/******/ 			}
+/******/ 		};
+/******/ 	})();
+/******/ 	
+/******/ 	/* webpack/runtime/hasOwnProperty shorthand */
+/******/ 	(() => {
+/******/ 		__webpack_require__.o = (obj, prop) => (Object.prototype.hasOwnProperty.call(obj, prop))
+/******/ 	})();
+/******/ 	
+/******/ 	/* webpack/runtime/make namespace object */
+/******/ 	(() => {
+/******/ 		// define __esModule on exports
+/******/ 		__webpack_require__.r = (exports) => {
+/******/ 			if(typeof Symbol !== 'undefined' && Symbol.toStringTag) {
+/******/ 				Object.defineProperty(exports, Symbol.toStringTag, { value: 'Module' });
+/******/ 			}
+/******/ 			Object.defineProperty(exports, '__esModule', { value: true });
+/******/ 		};
+/******/ 	})();
+/******/ 	
+/************************************************************************/
+var __webpack_exports__ = {};
+
+// NAMESPACE OBJECT: ./source/iitc-plugin-pgo-route-helper.tsx
+var iitc_plugin_pgo_route_helper_namespaceObject = {};
+__webpack_require__.r(iitc_plugin_pgo_route_helper_namespaceObject);
+__webpack_require__.d(iitc_plugin_pgo_route_helper_namespaceObject, {
+  main: () => (main)
+});
+
+;// CONCATENATED MODULE: ./source/environment.ts
+const isIITCMobile = (typeof android !== "undefined" && android && android.addPane) ||
+    navigator.userAgent.toLowerCase().includes("android");
+
+;// CONCATENATED MODULE: ./source/document-jsx/jsx-runtime.ts
+function jsxs(name, properties, 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+_option) {
+    if (name === Fragment) {
+        return createFragment(properties
+            .children);
+    }
+    const element = document.createElement(name);
+    for (const [key, value] of Object.entries(properties !== null && properties !== void 0 ? properties : {})) {
+        if (key === "children")
+            continue;
+        if (key === "style" && typeof value === "function") {
+            value(element.style);
+            continue;
+        }
+        if (key === "classList") {
+            if (typeof value === "string") {
+                element.classList.add(name);
+            }
+            else {
+                for (const name of value) {
+                    element.classList.add(name);
+                }
+            }
+        }
+        element.setAttribute(key, String(value));
+    }
+    const children = properties === null || properties === void 0 ? void 0 : properties.children;
+    if (children) {
+        if (Array.isArray(children)) {
+            for (const child of children) {
+                if (!child)
+                    continue;
+                element.append(child);
+            }
+        }
+        else {
+            element.append(children);
+        }
+    }
+    return element;
+}
+const jsx = jsxs;
+const Fragment = Symbol("Fragment");
+function createFragment(children) {
+    const fragment = document.createDocumentFragment();
+    if (children != null) {
+        if (Array.isArray(children)) {
+            for (const child of children) {
+                fragment.appendChild(child);
+            }
+        }
+        else {
+            fragment.appendChild(children);
+        }
+    }
+    return fragment;
+}
+
+;// CONCATENATED MODULE: ./package.json
+const package_namespaceObject = {};
+;// CONCATENATED MODULE: ./source/standard-extensions.ts
+var __awaiter = (undefined && undefined.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+function standard_extensions_error(template, ...substitutions) {
+    const message = String.raw(template, ...substitutions.map((x) => typeof x === "string" ? x : JSON.stringify(x)));
+    throw new Error(message);
+}
+function exhaustive(value) {
+    return standard_extensions_error `unexpected value: ${value}`;
+}
+function id(x) {
+    return x;
+}
+function ignore(..._args) {
+    /* 引数を無視する関数 */
+}
+let ignoreReporterCache;
+function createProgressReporter(progress, total) {
+    class MessagedProgressEvent extends ProgressEvent {
+        constructor(message, options) {
+            super("message", options);
+            this.message = message;
+        }
+    }
+    if (progress === undefined) {
+        return (ignoreReporterCache !== null && ignoreReporterCache !== void 0 ? ignoreReporterCache : (ignoreReporterCache = {
+            next: ignore,
+            done: ignore,
+        }));
+    }
+    let loaded = 0;
+    return {
+        next(message) {
+            loaded = Math.max(loaded + 1, total);
+            progress(new MessagedProgressEvent(message, {
+                lengthComputable: true,
+                loaded,
+                total,
+            }));
+        },
+        done(message) {
+            progress(new MessagedProgressEvent(message, {
+                lengthComputable: true,
+                loaded: total,
+                total,
+            }));
+        },
+    };
+}
+class AbortError extends Error {
+    constructor(message) {
+        super(message);
+        this.name = "AbortError";
+    }
+}
+function newAbortError(message = "The operation was aborted.") {
+    if (typeof DOMException === "function") {
+        return new DOMException(message, "AbortError");
+    }
+    else {
+        return new AbortError(message);
+    }
+}
+function throwIfAborted(signal) {
+    if (signal === null || signal === void 0 ? void 0 : signal.aborted) {
+        throw newAbortError();
+    }
+}
+function sleep(milliseconds, option) {
+    return new Promise((resolve, reject) => {
+        const signal = option === null || option === void 0 ? void 0 : option.signal;
+        if (signal === null || signal === void 0 ? void 0 : signal.aborted) {
+            reject(newAbortError());
+            return;
+        }
+        const onAbort = signal
+            ? () => {
+                clearTimeout(id);
+                reject(newAbortError());
+            }
+            : ignore;
+        const id = setTimeout(() => {
+            signal === null || signal === void 0 ? void 0 : signal.removeEventListener("abort", onAbort);
+            resolve();
+        }, milliseconds);
+        signal === null || signal === void 0 ? void 0 : signal.addEventListener("abort", onAbort);
+    });
+}
+let neverAbortedSignal;
+function getSharedAbortSignal() {
+    return (neverAbortedSignal !== null && neverAbortedSignal !== void 0 ? neverAbortedSignal : (neverAbortedSignal = new AbortController().signal));
+}
+function waitForNonNullable(condition, option) {
+    var _a, _b;
+    return __awaiter(this, void 0, void 0, function* () {
+        let currentSleepDuration = (_a = option === null || option === void 0 ? void 0 : option.initialSleepDuration) !== null && _a !== void 0 ? _a : 10;
+        const maxSleepDuration = (_b = option === null || option === void 0 ? void 0 : option.maxSleepDuration) !== null && _b !== void 0 ? _b : 1000;
+        let result;
+        while (!(result = condition())) {
+            yield sleep(currentSleepDuration, option);
+            currentSleepDuration = Math.min(currentSleepDuration * 2, maxSleepDuration);
+        }
+        return result;
+    });
+}
+function microYield() {
+    return Promise.resolve();
+}
+function cancelToReject(promise, onCancel = ignore) {
+    return promise.catch((e) => {
+        if (e instanceof Error && e.name === "AbortError") {
+            return onCancel();
+        }
+        throw e;
+    });
+}
+function createAsyncCancelScope(handleAsyncError) {
+    let lastCancel = new AbortController();
+    return (process) => {
+        // 前の操作をキャンセル
+        lastCancel.abort();
+        lastCancel = new AbortController();
+        handleAsyncError(
+        // キャンセル例外を無視する
+        cancelToReject(process(lastCancel.signal)));
+    };
+}
+function assertTrue() {
+    // 型レベルアサーション関数
+}
+function pipe(value, ...processes) {
+    let a = value;
+    for (const p of processes) {
+        switch (typeof p) {
+            case "function":
+                a = p(a);
+                break;
+            case "string":
+                a = a == null ? a : a[p];
+                break;
+            default: {
+                const [f, ...xs] = p;
+                a = f.call(null, a, ...xs);
+                break;
+            }
+        }
+    }
+    return a;
+}
+const isArray = Array.isArray;
+
+;// CONCATENATED MODULE: ./source/document-extensions.ts
+var document_extensions_awaiter = (undefined && undefined.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+
+
+function waitElementLoaded() {
+    if (document.readyState !== "loading") {
+        return Promise.resolve();
+    }
+    return new Promise((resolve) => document.addEventListener("DOMContentLoaded", () => resolve()));
+}
+let styleElement = null;
+function addStyle(cssOrTemplate, ...substitutions) {
+    const css = typeof cssOrTemplate === "string"
+        ? cssOrTemplate
+        : String.raw(cssOrTemplate, ...substitutions);
+    if (styleElement == null) {
+        styleElement = document.createElement("style");
+        document.head.appendChild(styleElement);
+    }
+    styleElement.textContent += css + "\n";
+    document.head.appendChild(styleElement);
+}
+function addScript(url) {
+    return new Promise((onSuccess, onError) => {
+        const script = document.createElement("script");
+        script.onload = onSuccess;
+        script.onerror = onError;
+        document.head.appendChild(script);
+        script.src = url;
+    });
+}
+function loadPackageScript(name, path) {
+    return document_extensions_awaiter(this, void 0, void 0, function* () {
+        function getVersion(dependency) {
+            var _a, _b;
+            if (dependency === "" || dependency === "*") {
+                return "latest";
+            }
+            for (const range of dependency.split("||")) {
+                // `2.2 - 3.5` = `>=2.2 <=3.5`
+                const version2 = (_a = /^([^\s]+)\s+-\s+([^\s]+)$/.exec(range)) === null || _a === void 0 ? void 0 : _a[1];
+                if (version2 != null) {
+                    return version2;
+                }
+                const singleVersion = (_b = /^\s*((~|^|>=|<=)?[^\s]+)\s*$/.exec(dependency)) === null || _b === void 0 ? void 0 : _b[0];
+                // `5.x`, `^5.2`, `~5.2`, `<=5.2`, `>5.2` などは cdn で処理されるので変換不要
+                if (singleVersion != null) {
+                    return singleVersion;
+                }
+                // `>=2.2 <=3.5` など複雑な指定子は非対応
+                return error `非対応のバージョン指定子 ( ${dependency} ) です。`;
+            }
+            return error `ここには来ない`;
+        }
+        function getPackageBaseUrl(name, dependency) {
+            // url
+            if (/^(https?:\/\/|file:)/.test(dependency)) {
+                return dependency;
+            }
+            // ローカルパス
+            if (/^(\.\.\/|~\/|\.\/|\/)/.test(dependency)) {
+                return `file:${dependency}`;
+            }
+            // git
+            if (/^git(\+(ssh|https))?:\/\//.test(dependency)) {
+                return error `git URL 依存関係は対応していません。`;
+            }
+            // github
+            if (/^[^\\]+\/.+$/.test(dependency)) {
+                return error `github URL 依存関係は対応していません。`;
+            }
+            // 普通のバージョン指定
+            const version = getVersion(dependency);
+            return `https://cdn.jsdelivr.net/npm/${name}@${version}`;
+        }
+        const dependency = packageJson.dependencies[name];
+        const baseUrl = getPackageBaseUrl(name, dependency);
+        const url = `${baseUrl}/${path}`;
+        yield addScript(url);
+        console.debug(`${url} からスクリプトを読み込みました`);
+        return;
+    });
+}
+let parseCssColorTemp = null;
+let parseCssColorRegex = null;
+function parseCssColor(cssColor, result = { r: 0, g: 0, b: 0, a: 0 }) {
+    const d = (parseCssColorTemp !== null && parseCssColorTemp !== void 0 ? parseCssColorTemp : (parseCssColorTemp = document.createElement("div")));
+    d.style.color = cssColor;
+    const m = d.style
+        .getPropertyValue("color")
+        .match((parseCssColorRegex !== null && parseCssColorRegex !== void 0 ? parseCssColorRegex : (parseCssColorRegex = /^rgba?\s*\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*(?:,\s*(\d+(?:\.\d+)?)\s*)?\)$/i)));
+    if (!m) {
+        return error `color "${cssColor}" is could not be parsed.`;
+    }
+    const [, r, g, b, a] = m;
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    result.r = parseInt(r);
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    result.g = parseInt(g);
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    result.b = parseInt(b);
+    result.a = a === undefined ? 1 : parseFloat(a);
+    return result;
+}
+function addListeners(element, eventListenerMap) {
+    for (const [type, listener] of Object.entries(eventListenerMap)) {
+        element.addEventListener(type, listener);
+    }
+    return element;
+}
+let e;
+function escapeHtml(text) {
+    (e !== null && e !== void 0 ? e : (e = document.createElement("div"))).innerText = text;
+    return e.innerHTML;
+}
+function sleepUntilNextAnimationFrame(options) {
+    return new Promise((resolve, reject) => {
+        const signal = options === null || options === void 0 ? void 0 : options.signal;
+        if (signal === null || signal === void 0 ? void 0 : signal.aborted) {
+            return reject(newAbortError());
+        }
+        const onAbort = signal
+            ? () => {
+                cancelAnimationFrame(id);
+                reject(newAbortError());
+            }
+            : ignore;
+        const id = requestAnimationFrame((time) => {
+            signal === null || signal === void 0 ? void 0 : signal.removeEventListener("abort", onAbort);
+            resolve(time);
+        });
+        signal === null || signal === void 0 ? void 0 : signal.addEventListener("abort", onAbort);
+    });
+}
+
+;// CONCATENATED MODULE: ./source/kml.ts
+
+const numberPattern = "\\d+(\\.\\d+)?\\s*";
+const commaPattern = ",\\s*";
+const pointPattern = numberPattern + commaPattern + numberPattern;
+const coordinatesPattern = new RegExp(`^\\s*${pointPattern}(${commaPattern}${pointPattern})*$`);
+// TODO: パースエラーを戻り値で伝える
+function parseCoordinates(kmlCoordinatesText) {
+    const tokens = kmlCoordinatesText.split(",");
+    const result = [];
+    for (let i = 1; i < tokens.length; i += 2) {
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        result.push([Number(tokens[i - 1]), Number(tokens[i])]);
+    }
+    if (result.length === 0) {
+        throw new Error();
+    }
+    return result;
+}
+function stringifyCoordinates(coordinates) {
+    return coordinates
+        .map((c) => {
+        let lat, lng;
+        if (isArray(c)) {
+            [lat, lng] = c;
+        }
+        else {
+            ({ lat, lng } = c);
+        }
+        return `${lat},${lng}`;
+    })
+        .join(",");
+}
+
+;// CONCATENATED MODULE: ./source/route.ts
+
+function getRouteKind(route) {
+    return route.data["kind"] === "spot" ? "spot" : "route";
+}
+function setRouteKind(route, kind) {
+    switch (kind) {
+        case "route":
+            delete route.data["kind"];
+            return;
+        case "spot":
+            route.data["kind"] = "spot";
+            return;
+        default:
+            return exhaustive(kind);
+    }
+}
+function getRouteTags(route) {
+    const tags = route.data["tags"];
+    if (tags != null && typeof tags === "object" && !Array.isArray(tags)) {
+        return tags;
+    }
+    return undefined;
+}
+function setRouteIsTemplate(route, isTemplate) {
+    route.data["isTemplate"] = isTemplate || undefined;
+}
+function getRouteIsTemplate(route) {
+    return route.data["isTemplate"] === true;
+}
+function latLngToCoordinate({ lat, lng }) {
+    return [lat, lng];
+}
+function coordinateToLatLng([lat, lng]) {
+    return L.latLng(lat, lng);
+}
+function includesIn(bounds, route) {
+    if (getRouteKind(route) === "spot") {
+        return bounds.contains(coordinateToLatLng(route.coordinates[0]));
+    }
+    const routeBounds = L.latLngBounds(route.coordinates.map(coordinateToLatLng));
+    return bounds.intersects(routeBounds);
+}
+
+;// CONCATENATED MODULE: ./source/styles.module.css
+const cssText = ".import-text-input-8397d1b228cc9ffbba300ee39d6cd853e08f51f8 {\r\n    position: fixed;\r\n    top: 0;\r\n    left: 0;\r\n    width: 100%;\r\n    height: 100%;\r\n    z-index: 10000;\r\n\r\n    display: flex;\r\n    justify-content: center;\r\n    align-items: center;\r\n}\r\n\r\n.hidden-c099adfce55abd406b869f1599a69eb4b6c321e9 {\r\n    display: none;\r\n}\r\n.ellipsis-text-48490efc982744f7102903b16b21b552c02868d1 {\r\n    white-space: nowrap;\r\n    overflow: hidden;\r\n    text-overflow: ellipsis;\r\n}\r\n.ellipsis-text-48490efc982744f7102903b16b21b552c02868d1 br {\r\n    display: none;\r\n}\r\n\r\ninput.editable-text-85175512ff899fcbfbd0a07508bab34072df868b {\r\n    border: none;\r\n    background: none;\r\n    font-size: 16px;\r\n    color: black;\r\n}\r\n\r\n.spot-label-19ec60e487f8d0dc5aea24820ea6d3c9936e91db {\r\n    color: #FFFFBB;\r\n    font-size: 11px;\r\n    line-height: 12px;\r\n    text-align: center;\r\n    padding: 2px;\r\n    overflow: hidden;\r\n    white-space: nowrap;\r\n    text-overflow: ellipsis;\r\n    text-shadow: 1px 1px #000, 1px -1px #000, -1px 1px #000, -1px -1px #000, 0 0 5px #000;\r\n}\r\n\r\n.properties-editor-ef55c80f44007bef29e0447e5e9ffde685d95262 {\r\n    display: flex;\r\n    flex-direction: column;\r\n    height: 100%;\r\n}\r\n\r\n.properties-editor-ef55c80f44007bef29e0447e5e9ffde685d95262 textarea,\r\n.properties-editor-ef55c80f44007bef29e0447e5e9ffde685d95262 input {\r\n    box-sizing: border-box;\r\n    width: 100%;\r\n    resize: vertical;\r\n}\r\n.properties-editor-ef55c80f44007bef29e0447e5e9ffde685d95262 input.title-ed7d2a44e2932bc04bdf23c41c36292402ca3f8e {\r\n    /* 2em: アコーディオンハンドルの margin */\r\n    /* 10px: アコーディオンハンドルの幅 */\r\n    width: calc(100% - 2em - 10px);\r\n}\r\n\r\n.properties-editor-ef55c80f44007bef29e0447e5e9ffde685d95262 textarea.invalid-0672d14127bdc037c80f35b69d406af8f1605324 {\r\n    border: solid 1px red;\r\n    background-color: lightgoldenrodyellow;\r\n}\r\n\r\n.without-report-container-333b9752958b8cf6e8226d2b84dc7a2818d51297 {\r\n    flex-grow: 1;\r\n    height: 0;\r\n    overflow: auto;\r\n}\r\n.without-report-container-333b9752958b8cf6e8226d2b84dc7a2818d51297 {\r\n    display: flex;\r\n    flex-direction: column;\r\n}\r\n.report-container-8f619d457b0820feaa4cc2b7140d4072c61bb816 {\r\n    background: #00c2ff70;\r\n    color: #ffffff;\r\n}\r\n\r\n.route-list-be463c012ee81f42f8dde7c1435e6050bc644c4a .selecting-fde04a0c3dca08cc37ed0ff16d12431219cf8640 {\r\n    background: #FECA40;\r\n}\r\n\r\n.route-list-be463c012ee81f42f8dde7c1435e6050bc644c4a .selected-12331cc0c87b64413c7daa48fc4c128eb11fd9c6 {\r\n    background: #F39814;\r\n    color: white;\r\n}\r\n\r\n.route-list-be463c012ee81f42f8dde7c1435e6050bc644c4a {\r\n    flex-grow: 1;\r\n    overflow: hidden;\r\n\r\n    list-style-type: none;\r\n    margin: 0;\r\n    padding: 0;\r\n}\r\n\r\n.route-list-be463c012ee81f42f8dde7c1435e6050bc644c4a .route-list-item-6a954ba19f10e68d83e395bb47a386c3fe44dded {\r\n    margin: var(--route-list-item-margin-fb35b8c0d004ea8a3fe0931378137087251c5bd6);\r\n    padding: var(--route-list-item-padding-6e4fe9aff1a271b053b3d88f20846c36674ffc6c);\r\n    cursor: pointer;\r\n    user-select: none;\r\n}\r\n.route-list-be463c012ee81f42f8dde7c1435e6050bc644c4a .note-f4fe3437ad46f22ab3f8c68e4a7d96f15d9643e4 {\r\n    font-size: 75%;\r\n    padding-left: 0.5em;\r\n    color: #ffffffab;\r\n}\r\n\r\n.auto-complete-list-36f3477de23a077191e35d2f73f52aa10f27fb96 {\r\n    position: absolute;\r\n    background-color: #f9f9f9;\r\n    min-width: 160px;\r\n    box-shadow: 0px 8px 16px 0px rgba(0, 0, 0, 0.2);\r\n    padding: 12px 16px;\r\n    z-index: 1;\r\n}\r\n\r\n.auto-complete-list-36f3477de23a077191e35d2f73f52aa10f27fb96 .auto-complete-list-item-513197116aee5aeb6e3c7699a742164224d87af9 {\r\n    color: black;\r\n    padding: 12px 16px;\r\n    text-decoration: none;\r\n    display: block;\r\n}\r\n\r\n.auto-complete-list-36f3477de23a077191e35d2f73f52aa10f27fb96 .auto-complete-list-item-513197116aee5aeb6e3c7699a742164224d87af9:hover {\r\n    background-color: #ddd;\r\n}\r\n";
+const variables = {
+    "--route-list-item-margin": "--route-list-item-margin-fb35b8c0d004ea8a3fe0931378137087251c5bd6",
+    "--route-list-item-padding": "--route-list-item-padding-6e4fe9aff1a271b053b3d88f20846c36674ffc6c",
+};
+/* harmony default export */ const styles_module = ({
+    "import-text-input": "import-text-input-8397d1b228cc9ffbba300ee39d6cd853e08f51f8",
+    hidden: "hidden-c099adfce55abd406b869f1599a69eb4b6c321e9",
+    "ellipsis-text": "ellipsis-text-48490efc982744f7102903b16b21b552c02868d1",
+    "editable-text": "editable-text-85175512ff899fcbfbd0a07508bab34072df868b",
+    "spot-label": "spot-label-19ec60e487f8d0dc5aea24820ea6d3c9936e91db",
+    "properties-editor": "properties-editor-ef55c80f44007bef29e0447e5e9ffde685d95262",
+    title: "title-ed7d2a44e2932bc04bdf23c41c36292402ca3f8e",
+    invalid: "invalid-0672d14127bdc037c80f35b69d406af8f1605324",
+    "without-report-container": "without-report-container-333b9752958b8cf6e8226d2b84dc7a2818d51297",
+    "report-container": "report-container-8f619d457b0820feaa4cc2b7140d4072c61bb816",
+    "route-list": "route-list-be463c012ee81f42f8dde7c1435e6050bc644c4a",
+    selecting: "selecting-fde04a0c3dca08cc37ed0ff16d12431219cf8640",
+    selected: "selected-12331cc0c87b64413c7daa48fc4c128eb11fd9c6",
+    "route-list-item": "route-list-item-6a954ba19f10e68d83e395bb47a386c3fe44dded",
+    note: "note-f4fe3437ad46f22ab3f8c68e4a7d96f15d9643e4",
+    "auto-complete-list": "auto-complete-list-36f3477de23a077191e35d2f73f52aa10f27fb96",
+    "auto-complete-list-item": "auto-complete-list-item-513197116aee5aeb6e3c7699a742164224d87af9",
+});
+
+;// CONCATENATED MODULE: ./source/accordion.module.css
+const accordion_module_cssText = "\r\n/* アコーディオン */\r\n/* マーカー */\r\n.accordion-77af8f6cf196726c58c088fe88ab0b254fe950ec>summary::-webkit-details-marker {\r\n    display: none;\r\n}\r\n\r\n.accordion-77af8f6cf196726c58c088fe88ab0b254fe950ec>summary::before {\r\n    content: \"\";\r\n    position: absolute;\r\n    width: 6px;\r\n    height: 6px;\r\n    border-top: 2px solid #fff;\r\n    border-right: 2px solid #fff;\r\n\r\n    transform: rotate(225deg);\r\n    top: calc(50% - 3px);\r\n    right: 1em;\r\n}\r\n\r\n/* 閉じているとき */\r\n.accordion-77af8f6cf196726c58c088fe88ab0b254fe950ec>summary {\r\n    cursor: grab;\r\n    display: block;\r\n    height: auto;\r\n    padding: 3px;\r\n    width: auto;\r\n    height: auto;\r\n\r\n    background: #019bc656;\r\n    border: solid 1px #00000000\r\n}\r\n\r\n.accordion-77af8f6cf196726c58c088fe88ab0b254fe950ec>* {\r\n    backface-visibility: hidden;\r\n    transform: translateZ(0);\r\n    transition: all 0.3s;\r\n}\r\n\r\n.accordion-77af8f6cf196726c58c088fe88ab0b254fe950ec> :not(summary) {\r\n    margin-bottom: 6px;\r\n    padding: 0 3px;\r\n    border: solid 1px #00000000;\r\n}\r\n\r\n/* 開いたとき */\r\n.accordion-77af8f6cf196726c58c088fe88ab0b254fe950ec[open]>summary {\r\n    background: #c6880156;\r\n}\r\n\r\n.accordion-77af8f6cf196726c58c088fe88ab0b254fe950ec[open]>summary::before {\r\n    transform: rotate(135deg);\r\n}\r\n\r\n.accordion-77af8f6cf196726c58c088fe88ab0b254fe950ec[open]> :not(summary) {\r\n    padding: 3px;\r\n    transition: all 0.3s;\r\n\r\n    border: solid 1px #c6880156;\r\n}\r\n";
+const accordion_module_variables = {};
+/* harmony default export */ const accordion_module = ({
+    accordion: "accordion-77af8f6cf196726c58c088fe88ab0b254fe950ec",
+});
+
+;// CONCATENATED MODULE: ./node_modules/gas-drivetunnel/source/json-schema-core.ts
+const pathCaches = [];
+const seenCaches = [];
+// eslint-disable-next-line @typescript-eslint/ban-types
+class Schema {
+    constructor(_validate, _isOptional = false) {
+        this._validate = _validate;
+        this._isOptional = _isOptional;
+    }
+    parse(target) {
+        var _a, _b;
+        const currentPath = (_a = pathCaches.pop()) !== null && _a !== void 0 ? _a : [];
+        const seen = (_b = seenCaches.pop()) !== null && _b !== void 0 ? _b : {
+            // TODO: ES5 または Rhino ランタイムは WeakMap が存在しない V8 はエラーが発生するので polyfill を使う
+            add() {
+                /* fake */
+            },
+            has() {
+                return false;
+            },
+        };
+        try {
+            return this._validate(target, currentPath, seen);
+        }
+        finally {
+            currentPath.length = 0;
+            pathCaches.push(currentPath);
+            seenCaches.push(seen);
+        }
+    }
+    optional() {
+        return optional(this);
+    }
+}
+function wrap(validate) {
+    return new Schema(validate);
+}
+class ValidationError extends Error {
+    constructor(message, path, expected, actual) {
+        super(message);
+        this.path = path;
+        this.expected = expected;
+        this.actual = actual;
+    }
+    get name() {
+        return "ValidationError";
+    }
+}
+function errorAsValidationDiagnostics(error) {
+    if (error instanceof ValidationError) {
+        return [
+            {
+                message: error.message,
+                path: error.path,
+                expected: error.expected,
+                actual: error.actual,
+            },
+        ];
+    }
+}
+function validationError(path, expected, actual) {
+    return new ValidationError(JSON.stringify({
+        path,
+        expected,
+        actual,
+    }), path, expected, actual);
+}
+function record(keySchema, valueSchema) {
+    return wrap((target, path, seen) => {
+        if (target == null || typeof target !== "object") {
+            throw validationError(path, "object", target === null ? "null" : typeof target);
+        }
+        if (seen.has(target)) {
+            return target;
+        }
+        seen.add(target);
+        for (const key of Object.keys(target)) {
+            const value = target[key];
+            keySchema.parse(key);
+            try {
+                path.push(key);
+                valueSchema._validate(value, path, seen);
+            }
+            finally {
+                path.pop();
+            }
+        }
+        return target;
+    });
+}
+function strictObject(shape) {
+    const props = [];
+    for (const key in shape) {
+        props.push([key, shape[key]]);
+    }
+    return wrap((target, path, seen) => {
+        if (target === null || typeof target !== "object") {
+            throw validationError(path, "object", target === null ? "null" : typeof target);
+        }
+        if (seen.has(target)) {
+            return target;
+        }
+        seen.add(target);
+        for (const [key, valueSchema] of props) {
+            if (!(key in target)) {
+                if (valueSchema._isOptional) {
+                    continue;
+                }
+                throw validationError(path, `{ '${key}': any }`, "object");
+            }
+            const value = target[key];
+            try {
+                path.push(key);
+                valueSchema._validate(value, path, seen);
+            }
+            finally {
+                path.pop();
+            }
+        }
+        return target;
+    });
+}
+function literal(value) {
+    const expected = typeof value === "string" ? JSON.stringify(value) : String(value);
+    return wrap((target, path) => {
+        if (target !== value) {
+            throw validationError(path, expected, typeof value === "object" ? "object" : String(target));
+        }
+        return target;
+    });
+}
+let stringSchema;
+function string() {
+    return (stringSchema !== null && stringSchema !== void 0 ? stringSchema : (stringSchema = wrap((target, path) => {
+        if (typeof target !== "string") {
+            throw validationError(path, "string", typeof target);
+        }
+        return target;
+    })));
+}
+let numberSchema;
+function number() {
+    return (numberSchema !== null && numberSchema !== void 0 ? numberSchema : (numberSchema = wrap((target, path) => {
+        if (typeof target !== "number") {
+            throw validationError(path, "number", typeof target);
+        }
+        return target;
+    })));
+}
+let booleanSchema;
+function json_schema_core_boolean() {
+    return (booleanSchema !== null && booleanSchema !== void 0 ? booleanSchema : (booleanSchema = wrap((target, path) => {
+        if (typeof target === "boolean") {
+            throw validationError(path, "boolean", typeof target);
+        }
+        return target;
+    })));
+}
+function tuple(schemas) {
+    const anyTupleName = `[${schemas.map(() => "any").join(", ")}]`;
+    return wrap((target, path, seen) => {
+        if (!Array.isArray(target)) {
+            throw validationError(path, "any[]", typeof target);
+        }
+        if (seen.has(target)) {
+            return target;
+        }
+        seen.add(target);
+        if (target.length < schemas.length) {
+            const actualTypeName = 5 < target.length
+                ? "any[]"
+                : `[${target.map(() => "any").join(", ")}]`;
+            throw validationError(path, anyTupleName, actualTypeName);
+        }
+        for (let i = 0; i < schemas.length; i++) {
+            const elementSchema = schemas[i];
+            const element = target[i];
+            path.push(i);
+            try {
+                elementSchema._validate(element, path, seen);
+            }
+            finally {
+                path.pop();
+            }
+        }
+        return target;
+    });
+}
+function array(elementSchema) {
+    return wrap((target, path, seen) => {
+        if (!Array.isArray(target)) {
+            throw validationError(path, "any[]", typeof target);
+        }
+        if (seen.has(target)) {
+            return target;
+        }
+        seen.add(target);
+        for (let i = 0; i < target.length; i++) {
+            const element = target[i];
+            try {
+                path.push(i);
+                elementSchema._validate(element, path, seen);
+            }
+            finally {
+                path.pop();
+            }
+        }
+        return target;
+    });
+}
+const errorsCache = [];
+function union(schemas) {
+    return wrap((target, path, seen) => {
+        var _a;
+        const errors = (_a = errorsCache.pop()) !== null && _a !== void 0 ? _a : [];
+        try {
+            for (const schema of schemas) {
+                try {
+                    schema._validate(target, path, seen);
+                    return target;
+                }
+                catch (e) {
+                    if (e instanceof ValidationError) {
+                        errors.push(e);
+                    }
+                }
+            }
+            if (errors[0] !== undefined && errors.length === 1) {
+                throw errors[0];
+            }
+            throw new ValidationError(JSON.stringify({
+                path,
+                errors: errors.map((e) => JSON.parse(e.message)),
+            }), path, `Union<[${errors.map((e) => e.expected).join(", ")}}]>`, typeof target);
+        }
+        finally {
+            errors.length = 0;
+            errorsCache.push(errors);
+        }
+    });
+}
+let nullSchemaCache;
+function null_() {
+    return (nullSchemaCache !== null && nullSchemaCache !== void 0 ? nullSchemaCache : (nullSchemaCache = wrap((target, path) => {
+        if (target === null) {
+            return target;
+        }
+        throw validationError(path, "null", typeof target);
+    })));
+}
+
+let neverSchemaCache;
+function never() {
+    return (neverSchemaCache !== null && neverSchemaCache !== void 0 ? neverSchemaCache : (neverSchemaCache = wrap((target, path) => {
+        throw validationError(path, "never", typeof target);
+    })));
+}
+let anySchemaCache;
+function any() {
+    return (anySchemaCache !== null && anySchemaCache !== void 0 ? anySchemaCache : (anySchemaCache = wrap((target) => target)));
+}
+function optional(schema) {
+    return new Schema(schema._validate, true);
+}
+function regexp(pattern) {
+    return wrap((target, path) => {
+        if (typeof target !== "string") {
+            throw validationError(path, pattern.toString(), typeof target);
+        }
+        if (!pattern.test(target)) {
+            throw validationError(path, pattern.toString(), target);
+        }
+        return target;
+    });
+}
+function createJsonSchema() {
+    const json = wrap((target, path, seen) => {
+        if (target === null) {
+            return target;
+        }
+        switch (typeof target) {
+            case "boolean":
+            case "number":
+            case "string":
+                return target;
+            case "object":
+                return Array.isArray(target)
+                    ? jsonArray._validate(target, path, seen)
+                    : jsonObject._validate(target, path, seen);
+        }
+        throw validationError(path, "Json", typeof target);
+    });
+    const jsonArray = array(json);
+    const jsonObject = record(string(), json);
+    return json;
+}
+let jsonSchemaCache;
+function json() {
+    return (jsonSchemaCache !== null && jsonSchemaCache !== void 0 ? jsonSchemaCache : (jsonSchemaCache = createJsonSchema()));
+}
+// eslint-disable-next-line @typescript-eslint/ban-types
+function delayed(createSchema) {
+    let schema;
+    return wrap((target, path, seen) => {
+        return (schema !== null && schema !== void 0 ? schema : (schema = createSchema()))._validate(target, path, seen);
+    });
+}
+function function_() {
+    return wrap((target, path) => {
+        if (typeof target === "function") {
+            return target;
+        }
+        throw validationError(path, "Function", typeof target);
+    });
+}
+
+;// CONCATENATED MODULE: ./node_modules/gas-drivetunnel/source/schemas.ts
+
+
+const iso8601DateTimeSchema = regexp(/\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[-+]\d{2}:\d{2})?/);
+const routeDataSchema = record(string(), json());
+const routePropertySchemas = {
+    type: literal("route"),
+    userId: string(),
+    routeId: string(),
+    routeName: string(),
+    description: string(),
+    note: string(),
+    data: routeDataSchema,
+    coordinates: string(),
+};
+const serverRouteSchema = strictObject(Object.assign(Object.assign({}, routePropertySchemas), { updatedAt: iso8601DateTimeSchema }));
+const routeSchema = strictObject(routePropertySchemas);
+const routeColumns = [
+    literal("route"),
+    string(),
+    string(),
+    string(),
+    string(),
+    string(),
+    string(),
+    string(),
+    number(),
+];
+const routeRowSchema = tuple(routeColumns);
+const queryRowSchema = tuple([number(), ...routeColumns]);
+const errorResponseSchema = strictObject({
+    type: literal("error"),
+    name: string(),
+    message: string(),
+    stack: string().optional(),
+});
+const okResponseSchema = strictObject({
+    type: literal("success"),
+    value: any(),
+});
+const jsonResponseSchema = union([
+    okResponseSchema,
+    errorResponseSchema,
+]);
+const schemas_interfaces = {
+    getRoutes: {
+        path: "get-routes",
+        parameter: strictObject({
+            "user-id": string(),
+            since: iso8601DateTimeSchema.optional(),
+        }),
+        result: strictObject({
+            routes: array(serverRouteSchema),
+        }),
+    },
+    setRoute: {
+        path: "set-route",
+        parameter: strictObject({
+            type: literal("route"),
+            "user-id": string(),
+            "route-id": string(),
+            "route-name": string(),
+            description: string(),
+            note: string(),
+            coordinates: string(),
+            data: string(),
+        }),
+        result: strictObject({
+            /** ISO8601 */
+            updatedAt: iso8601DateTimeSchema,
+        }),
+    },
+    deleteRoute: {
+        path: "delete-route",
+        parameter: strictObject({
+            "route-id": string(),
+        }),
+        result: strictObject({
+            /** ISO8601 */
+            updatedAt: iso8601DateTimeSchema,
+        }),
+    },
+    clearRoutes: {
+        path: "clear-routes",
+        parameter: strictObject({
+            "user-id": string(),
+        }),
+        result: strictObject({
+            /** ISO8601 */
+            updatedAt: iso8601DateTimeSchema,
+        }),
+    },
+};
+const requestPathSchema = union([
+    literal(schemas_interfaces.getRoutes.path),
+    literal(schemas_interfaces.setRoute.path),
+    literal(schemas_interfaces.deleteRoute.path),
+    literal(schemas_interfaces.clearRoutes.path),
+]);
+
+;// CONCATENATED MODULE: ./source/remote.ts
+var remote_awaiter = (undefined && undefined.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+
+
+class RemoteError extends Error {
+    constructor(response) {
+        super();
+        this.response = response;
+    }
+    get name() {
+        return "RemoteError";
+    }
+}
+function bindSignalToRequest(request, signal) {
+    return remote_awaiter(this, void 0, void 0, function* () {
+        if (signal == null) {
+            return yield request;
+        }
+        if (signal.aborted) {
+            throw newAbortError();
+        }
+        const onAbort = () => request.abort();
+        try {
+            signal.addEventListener("abort", onAbort);
+            return yield request;
+        }
+        finally {
+            signal.removeEventListener("abort", onAbort);
+        }
+    });
+}
+function fetchGet(schema, parameters, options) {
+    return remote_awaiter(this, void 0, void 0, function* () {
+        const rootUrl = options.rootUrl;
+        const method = "GET";
+        const url = `${rootUrl}/${schema.path}`;
+        console.debug(`-> ${JSON.stringify([method, url, JSON.stringify(parameters)])}`);
+        const request = $.ajax({
+            type: method,
+            url: url.toString(),
+            dataType: "jsonp",
+            data: parameters,
+            jsonp: "jsonp-callback",
+        });
+        const resultData = yield bindSignalToRequest(request, options.signal);
+        console.debug(`<- ${JSON.stringify([method, url, resultData])}`);
+        const result = jsonResponseSchema.parse(resultData);
+        const { type } = result;
+        switch (type) {
+            case "success": {
+                return schema.result.parse(result.value);
+            }
+            case "error": {
+                throw new RemoteError(result);
+            }
+            default: {
+                throw new Error(`unknown response type: ${type}`);
+            }
+        }
+    });
+}
+function getRoutes(parameter, options) {
+    return remote_awaiter(this, void 0, void 0, function* () {
+        return yield fetchGet(schemas_interfaces.getRoutes, parameter, options);
+    });
+}
+function setRoute(parameter, options) {
+    return remote_awaiter(this, void 0, void 0, function* () {
+        return yield fetchGet(schemas_interfaces.setRoute, parameter, options);
+    });
+}
+function deleteRoute(parameter, options) {
+    return remote_awaiter(this, void 0, void 0, function* () {
+        return yield fetchGet(schemas_interfaces.deleteRoute, parameter, options);
+    });
+}
+function clearRoutes(parameter, options) {
+    return remote_awaiter(this, void 0, void 0, function* () {
+        return yield fetchGet(interfaces.clearRoutes, parameter, options);
+    });
+}
+
+;// CONCATENATED MODULE: ./images/icons.svg
+const icons_namespaceObject = "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>\n<svg\n   xmlns:dc=\"http://purl.org/dc/elements/1.1/\"\n   xmlns:cc=\"http://creativecommons.org/ns#\"\n   xmlns:rdf=\"http://www.w3.org/1999/02/22-rdf-syntax-ns#\"\n   xmlns:svg=\"http://www.w3.org/2000/svg\"\n   xmlns=\"http://www.w3.org/2000/svg\"\n   xmlns:sodipodi=\"http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd\"\n   xmlns:inkscape=\"http://www.inkscape.org/namespaces/inkscape\"\n   sodipodi:docname=\"icons.svg\"\n   inkscape:version=\"1.0 (4035a4fb49, 2020-05-01)\"\n   id=\"svg8\"\n   version=\"1.1\"\n   viewBox=\"0 0 12.7 12.7\"\n   height=\"48\"\n   width=\"48\">\n  <defs\n     id=\"defs2\">\n    <filter\n       inkscape:collect=\"always\"\n       style=\"color-interpolation-filters:sRGB\"\n       id=\"filter933\"\n       x=\"-0.192\"\n       width=\"1.384\"\n       y=\"-0.192\"\n       height=\"1.384\">\n      <feGaussianBlur\n         inkscape:collect=\"always\"\n         stdDeviation=\"0.6773333\"\n         id=\"feGaussianBlur935\" />\n    </filter>\n    <filter\n       inkscape:collect=\"always\"\n       style=\"color-interpolation-filters:sRGB\"\n       id=\"filter937\"\n       x=\"-0.192\"\n       width=\"1.384\"\n       y=\"-0.192\"\n       height=\"1.384\">\n      <feGaussianBlur\n         inkscape:collect=\"always\"\n         stdDeviation=\"2.56\"\n         id=\"feGaussianBlur939\" />\n    </filter>\n  </defs>\n  <sodipodi:namedview\n     inkscape:pagecheckerboard=\"true\"\n     inkscape:window-maximized=\"1\"\n     inkscape:window-y=\"-8\"\n     inkscape:window-x=\"-8\"\n     inkscape:window-height=\"1057\"\n     inkscape:window-width=\"1920\"\n     units=\"px\"\n     showgrid=\"true\"\n     inkscape:document-rotation=\"0\"\n     inkscape:current-layer=\"g881\"\n     inkscape:document-units=\"mm\"\n     inkscape:cy=\"24\"\n     inkscape:cx=\"24\"\n     inkscape:zoom=\"18.0625\"\n     inkscape:pageshadow=\"2\"\n     inkscape:pageopacity=\"0.0\"\n     borderopacity=\"1.0\"\n     bordercolor=\"#666666\"\n     pagecolor=\"#ffffff\"\n     id=\"base\">\n    <sodipodi:guide\n       id=\"guide833\"\n       orientation=\"0,48\"\n       position=\"0,12.7\" />\n    <sodipodi:guide\n       id=\"guide835\"\n       orientation=\"48,0\"\n       position=\"12.7,12.7\" />\n    <sodipodi:guide\n       id=\"guide837\"\n       orientation=\"0,-48\"\n       position=\"12.7,0\" />\n    <sodipodi:guide\n       id=\"guide839\"\n       orientation=\"-48,0\"\n       position=\"0,0\" />\n    <inkscape:grid\n       dotted=\"true\"\n       empspacing=\"8\"\n       id=\"grid841\"\n       type=\"xygrid\" />\n  </sodipodi:namedview>\n  <metadata\n     id=\"metadata5\">\n    <rdf:RDF>\n      <cc:Work\n         rdf:about=\"\">\n        <dc:format>image/svg+xml</dc:format>\n        <dc:type\n           rdf:resource=\"http://purl.org/dc/dcmitype/StillImage\" />\n        <dc:title />\n      </cc:Work>\n    </rdf:RDF>\n  </metadata>\n  <g\n     id=\"layer1\"\n     inkscape:groupmode=\"layer\"\n     inkscape:label=\"vertex icon\"\n     style=\"display:inline\">\n    <g\n       style=\"display:inline\"\n       inkscape:label=\"shadow\"\n       id=\"layer2\"\n       inkscape:groupmode=\"layer\">\n      <circle\n         style=\"fill:#000000;fill-opacity:1;stroke:#000000;stroke-width:1.05833;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1;filter:url(#filter933)\"\n         id=\"circle845\"\n         cx=\"6.3499999\"\n         cy=\"6.3318763\"\n         r=\"4.2333331\" />\n    </g>\n    <g\n       style=\"display:inline\"\n       inkscape:label=\"foreground\"\n       id=\"layer3\"\n       inkscape:groupmode=\"layer\">\n      <circle\n         style=\"fill:#5fd6ff;fill-opacity:1;stroke:#daebf0;stroke-width:1.05833;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1\"\n         id=\"circle851\"\n         cx=\"6.3499999\"\n         cy=\"6.3499999\"\n         r=\"4.2333331\" />\n    </g>\n  </g>\n  <g\n     inkscape:label=\"insert icon\"\n     inkscape:groupmode=\"layer\"\n     id=\"g852\"\n     style=\"display:inline\">\n    <g\n       inkscape:groupmode=\"layer\"\n       id=\"g846\"\n       inkscape:label=\"shadow\"\n       style=\"display:inline\">\n      <path\n         d=\"m 16,8 v 8 H 8 v 16 h 8 v 8 h 16 v -8 h 8 V 16 H 32 V 8 Z\"\n         style=\"font-variation-settings:normal;display:inline;opacity:1;vector-effect:none;fill:#000000;fill-opacity:1;stroke:#000000;stroke-width:3.99999;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1;filter:url(#filter937);stop-color:#000000;stop-opacity:1\"\n         id=\"path904\"\n         transform=\"scale(0.26458333)\" />\n    </g>\n    <g\n       inkscape:groupmode=\"layer\"\n       id=\"g850\"\n       inkscape:label=\"foreground\"\n       style=\"display:inline\">\n      <path\n         id=\"rect856\"\n         style=\"font-variation-settings:normal;opacity:1;vector-effect:none;fill:#5fd6ff;fill-opacity:1;stroke:#daebf0;stroke-width:4;stroke-linecap:butt;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1;stop-color:#000000;stop-opacity:1\"\n         d=\"m 16,8 v 8 H 8 v 16 h 8 v 8 h 16 v -8 h 8 V 16 H 32 V 8 Z\"\n         transform=\"scale(0.26458333)\" />\n    </g>\n  </g>\n  <g\n     style=\"display:inline\"\n     id=\"g887\"\n     inkscape:groupmode=\"layer\"\n     inkscape:label=\"remove icon\">\n    <g\n       style=\"display:inline\"\n       inkscape:label=\"shadow\"\n       id=\"g881\"\n       inkscape:groupmode=\"layer\">\n      <path\n         transform=\"matrix(0.18708867,0.18708867,-0.18708867,0.18708867,6.3499997,-2.630256)\"\n         id=\"path879\"\n         style=\"font-variation-settings:normal;display:inline;opacity:1;vector-effect:none;fill:#000000;fill-opacity:1;stroke:#000000;stroke-width:3.99999;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1;filter:url(#filter937);stop-color:#000000;stop-opacity:1\"\n         d=\"m 16,8 v 8 H 8 v 16 h 8 v 8 h 16 v -8 h 8 V 16 H 32 V 8 Z\" />\n    </g>\n    <g\n       style=\"display:inline\"\n       inkscape:label=\"foreground\"\n       id=\"g885\"\n       inkscape:groupmode=\"layer\">\n      <path\n         d=\"M 7.8467093,1.8598719 6.3499999,3.3565813 4.8532906,1.8598719 1.8598719,4.8532906 3.3565813,6.3499999 1.8598719,7.8467093 4.8532906,10.840128 6.3499999,9.3434186 7.8467093,10.840128 10.840128,7.8467093 9.3434186,6.3499999 10.840128,4.8532906 Z\"\n         style=\"font-variation-settings:normal;opacity:1;vector-effect:none;fill:#5fd6ff;fill-opacity:1;stroke:#daebf0;stroke-width:1.05833;stroke-linecap:butt;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1;stop-color:#000000;stop-opacity:1\"\n         id=\"path883\" />\n    </g>\n  </g>\n</svg>\n";
+;// CONCATENATED MODULE: ./source/polyline-editor.ts
+
+const inkscapeNameSpace = "http://www.inkscape.org/namespaces/inkscape";
+function getInkscapeLayerName(element) {
+    if (element.getAttributeNS(inkscapeNameSpace, "groupmode") !== "layer") {
+        return null;
+    }
+    return element.getAttributeNS(inkscapeNameSpace, "label");
+}
+let domParserCache;
+function createIconSvg(idOrLayerName) {
+    const iconsSvg = (domParserCache !== null && domParserCache !== void 0 ? domParserCache : (domParserCache = new DOMParser())).parseFromString(icons_namespaceObject, "image/svg+xml");
+    // 指定されたラベルを持ったルートレイヤー以外を削除
+    let found = false;
+    iconsSvg.documentElement
+        .querySelectorAll(":scope > g")
+        .forEach((topGroup) => {
+        if (topGroup.id === idOrLayerName ||
+            getInkscapeLayerName(topGroup) === idOrLayerName) {
+            found = true;
+        }
+        else {
+            topGroup.remove();
+        }
+    });
+    if (!found) {
+        throw new Error(`Layer '${idOrLayerName}' not found.`);
+    }
+    return iconsSvg;
+}
+function createIconHtmlTextWithSize(...args) {
+    const iconSvg = createIconSvg(...args).documentElement;
+    iconSvg.setAttribute("width", String(48));
+    iconSvg.setAttribute("height", String(48));
+    // サイズを正確に計るため一旦 document.body に追加する
+    document.body.append(iconSvg);
+    const { width, height } = iconSvg.getBoundingClientRect();
+    iconSvg.remove();
+    return {
+        html: iconSvg.outerHTML,
+        width,
+        height,
+    };
+}
+function getPixelDistanceIn(map, coordinate1, coordinate2) {
+    return map
+        .latLngToContainerPoint(coordinate1)
+        .distanceTo(map.latLngToContainerPoint(coordinate2));
+}
+const unselectedOpacity = 0.5;
+const selectedOpacity = 1;
+const removeDistancePx = 48;
+const hiddenDistancePx = removeDistancePx * 2;
+function decrementIfEven(n) {
+    return Math.ceil(n / 2) * 2 - 1;
+}
+function createPolylineEditorPlugin({ L }) {
+    function createIcon(...args) {
+        const { html, width, height } = createIconHtmlTextWithSize(...args);
+        return L.divIcon({
+            html,
+            iconSize: [decrementIfEven(width), decrementIfEven(height)],
+            iconAnchor: [Math.floor(width / 2), Math.floor(height / 2)],
+            className: "polyline-editor-icon",
+        });
+    }
+    function getMiddleCoordinate(p1, p2) {
+        return L.latLngBounds(p1, p2).getCenter();
+    }
+    class VertexMarker extends L.Marker {
+        constructor(coordinate, index, previousInsertMarker, options) {
+            super(coordinate, options);
+            this.index = index;
+            this.previousInsertMarker = previousInsertMarker;
+        }
+        *getLayers() {
+            yield this;
+            if (this.previousInsertMarker != null) {
+                yield this.previousInsertMarker;
+            }
+        }
+    }
+    function getMarkerPixelDistanceIn(map, marker1, marker2) {
+        return getPixelDistanceIn(map, marker1.getLatLng(), marker2.getLatLng());
+    }
+    function createInsertMaker(coordinates, index, options) {
+        const coordinate = coordinates[index];
+        const previousCoordinate = coordinates[index - 1];
+        if (coordinate == null || previousCoordinate == null) {
+            return null;
+        }
+        const insertCoordinate = getMiddleCoordinate(previousCoordinate, coordinate);
+        return L.marker(insertCoordinate, options);
+    }
+    // NOTE: spliceLatLngs は iitc-mobile が依存する leaflet@1.7.1 には存在しない
+    function spliceLatLngs(polyline, start, deleteCount, ...items) {
+        const coordinates = polyline.getLatLngs();
+        const deletedCoordinates = coordinates.splice(start, deleteCount, ...items);
+        polyline.setLatLngs(coordinates);
+        return deletedCoordinates;
+    }
+    class PolylineEditor extends L.FeatureGroup {
+        constructor(latlngs, options) {
+            super();
+            this._markers = [];
+            this._selectedVertexIndex = null;
+            this._vertexIcon = createIcon("vertex icon");
+            this._removeIcon = createIcon("remove icon");
+            this._insertIcon = createIcon("insert icon");
+            this._unselectIfMapOnClick = (e) => {
+                if (this._markers.includes(e.target))
+                    return;
+                this._unselect();
+            };
+            this._mapOnZoomEnd = () => {
+                this._refreshMarkers();
+            };
+            this._polyline = L.polyline(latlngs, options);
+            this.addLayer(this._polyline);
+        }
+        onAdd(map) {
+            var _a, _b;
+            super.onAdd(map);
+            (_a = this._map) === null || _a === void 0 ? void 0 : _a.on("click", this._unselectIfMapOnClick);
+            (_b = this._map) === null || _b === void 0 ? void 0 : _b.on("zoomend", this._mapOnZoomEnd);
+            this._refreshMarkers();
+            this._select(0);
+        }
+        onRemove(map) {
+            var _a, _b;
+            this._unselect();
+            this._polyline.setLatLngs([]);
+            this._refreshMarkers();
+            (_a = this._map) === null || _a === void 0 ? void 0 : _a.off("click", this._unselectIfMapOnClick);
+            (_b = this._map) === null || _b === void 0 ? void 0 : _b.off("zoomend", this._mapOnZoomEnd);
+            super.onRemove(map);
+        }
+        getLatLngs() {
+            return this._polyline.getLatLngs();
+        }
+        _getInsertMarkers(index) {
+            var _a, _b;
+            return [
+                (_a = this._markers[index]) === null || _a === void 0 ? void 0 : _a.previousInsertMarker,
+                (_b = this._markers[index + 1]) === null || _b === void 0 ? void 0 : _b.previousInsertMarker,
+            ];
+        }
+        /** 現在選択されているマーカーを非選択状態にする */
+        _unselect() {
+            if (this._selectedVertexIndex == null) {
+                return;
+            }
+            const selectedMarker = this._markers[this._selectedVertexIndex];
+            if (selectedMarker == null) {
+                return;
+            }
+            // 頂点マーカーを半透明にする
+            selectedMarker.setOpacity(unselectedOpacity);
+            // 挿入マーカーを非表示にする
+            this._getInsertMarkers(this._selectedVertexIndex).forEach((marker) => marker && this.removeLayer(marker));
+            this._selectedVertexIndex = null;
+        }
+        /** 指定されたインデックスの頂点マーカーを選択状態にする */
+        _select(index) {
+            const selectedMarker = this._markers[index];
+            if (selectedMarker == null)
+                return;
+            this._unselect();
+            this._selectedVertexIndex = index;
+            // 頂点マーカーを不透明にする
+            selectedMarker.setOpacity(selectedOpacity);
+            // 挿入マーカーを表示する
+            this._getInsertMarkers(index).forEach((marker) => marker && this.addLayer(marker));
+        }
+        _insert(index, coordinate) {
+            spliceLatLngs(this._polyline, index, 0, coordinate);
+            this._refreshMarkers();
+        }
+        _remove(index) {
+            if (this._markers.length <= 2)
+                return;
+            spliceLatLngs(this._polyline, index, 1);
+            this._refreshMarkers();
+        }
+        _createVertexMarker(coordinates, initialIndex) {
+            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+            const coordinate = coordinates[initialIndex];
+            const insertMarker = createInsertMaker(coordinates, initialIndex, {
+                icon: this._insertIcon,
+            });
+            const vertexMarker = new VertexMarker(coordinate, initialIndex, insertMarker, {
+                draggable: true,
+                opacity: unselectedOpacity,
+                icon: this._vertexIcon,
+            });
+            if (insertMarker) {
+                insertMarker.on("click", () => {
+                    const { index } = vertexMarker;
+                    this._insert(index, insertMarker.getLatLng());
+                    this._select(index);
+                    const type = "latlngschanged";
+                    this.fireEvent(type, {
+                        target: this,
+                        type,
+                    });
+                });
+            }
+            vertexMarker.on("click", () => {
+                this._select(vertexMarker.index);
+            });
+            vertexMarker.on("dragstart", () => {
+                this._select(vertexMarker.index);
+            });
+            vertexMarker.on("drag", () => {
+                this._updateVertex(vertexMarker.index);
+                spliceLatLngs(this._polyline, vertexMarker.index, 1, vertexMarker.getLatLng());
+            });
+            vertexMarker.on("dragend", () => {
+                if (this._inRemoveArea(vertexMarker.index)) {
+                    this._remove(vertexMarker.index);
+                }
+                const type = "latlngschanged";
+                this.fireEvent(type, {
+                    target: this,
+                    type,
+                });
+            });
+            return vertexMarker;
+        }
+        _updateVertex(index) {
+            this._updateVertexMarkerOfRemoveDistance(index);
+            this._updateNeighborInsertMarkers(index);
+        }
+        _updatePreviousInsertMarkerCoordinate(index) {
+            const marker1 = this._markers[index - 1];
+            const marker2 = this._markers[index];
+            const insertMarker = marker2 === null || marker2 === void 0 ? void 0 : marker2.previousInsertMarker;
+            if (marker1 == null || marker2 == null || insertMarker == null) {
+                return;
+            }
+            const map = this._map;
+            if (map) {
+                if (getMarkerPixelDistanceIn(map, marker1, marker2) <=
+                    hiddenDistancePx) {
+                    this.removeLayer(insertMarker);
+                }
+                else {
+                    this.addLayer(insertMarker);
+                }
+            }
+            insertMarker.setLatLng(getMiddleCoordinate(marker1.getLatLng(), marker2.getLatLng()));
+        }
+        _updateNeighborInsertMarkers(index) {
+            this._updatePreviousInsertMarkerCoordinate(index);
+            this._updatePreviousInsertMarkerCoordinate(index + 1);
+        }
+        _inRemoveArea(index) {
+            if (this._markers.length <= 2)
+                return false;
+            const vertexMarker = this._markers[index];
+            if (!vertexMarker)
+                return false;
+            const map = this._map;
+            if (!map)
+                return false;
+            const vertex1 = this._markers[index - 1];
+            const vertex2 = this._markers[index + 1];
+            return ((vertex1 &&
+                getMarkerPixelDistanceIn(map, vertexMarker, vertex1) <=
+                    removeDistancePx) ||
+                (vertex2 &&
+                    getMarkerPixelDistanceIn(map, vertexMarker, vertex2) <=
+                        removeDistancePx));
+        }
+        _updateVertexMarkerOfRemoveDistance(index) {
+            const vertexMarker = this._markers[index];
+            if (!vertexMarker)
+                return;
+            // TODO:
+            // leaflet 1.7 でドラッグ中に setIcon するとドラッグが中断される
+            if (!L.version.startsWith("1.7")) {
+                vertexMarker.setIcon(this._inRemoveArea(vertexMarker.index)
+                    ? this._removeIcon
+                    : this._vertexIcon);
+            }
+        }
+        /** 座標列からマーカーを生成しマップに追加する */
+        _refreshMarkers() {
+            const map = this._map;
+            if (!map)
+                return;
+            this._markers.forEach((marker) => {
+                for (const m of marker.getLayers()) {
+                    this.removeLayer(m);
+                }
+            });
+            this._markers.length = 0;
+            const coordinates = this._polyline.getLatLngs();
+            coordinates.forEach((_, initialIndex) => {
+                const vertexMarker = this._createVertexMarker(coordinates, initialIndex);
+                this._markers.push(vertexMarker);
+                this.addLayer(vertexMarker);
+            });
+            this._markers.forEach((vertexMarker) => {
+                this._updateVertex(vertexMarker.index);
+            });
+        }
+    }
+    function polylineEditor(...args) {
+        return new PolylineEditor(...args);
+    }
+    return {
+        polylineEditor,
+        PolylineEditor,
+    };
+}
+
+;// CONCATENATED MODULE: ./source/jquery-ui-polyfill-touch-events.ts
+function polyfill($) {
+    if ("touch" in $.support)
+        return;
+    if (!($.support.touch = "ontouchend" in document))
+        return;
+    const mousePrototype = $.ui.mouse.prototype;
+    const { _mouseInit, _mouseDestroy } = mousePrototype;
+    let touching;
+    function dispatchMouseEventOfTouchEvent(touchEvent, mouseEventType) {
+        // シングルタッチのみを変換する
+        if (1 < touchEvent.originalEvent.touches.length)
+            return;
+        touchEvent.preventDefault();
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        const touch = touchEvent.originalEvent.changedTouches[0];
+        const mouseEvent = new MouseEvent(mouseEventType, {
+            bubbles: true,
+            cancelable: true,
+            view: window,
+            detail: 1,
+            screenX: touch.screenX,
+            screenY: touch.screenY,
+            clientX: touch.clientX,
+            clientY: touch.clientY,
+            ctrlKey: false,
+            altKey: false,
+            shiftKey: false,
+            metaKey: false,
+            button: 0,
+            relatedTarget: null,
+        });
+        touchEvent.target.dispatchEvent(mouseEvent);
+    }
+    mousePrototype._touchStart = function (e) {
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        if (touching || !this._mouseCapture(e.originalEvent.changedTouches[0]))
+            return;
+        touching = true;
+        this._touchMoved = false;
+        dispatchMouseEventOfTouchEvent(e, "mouseover");
+        dispatchMouseEventOfTouchEvent(e, "mousemove");
+        dispatchMouseEventOfTouchEvent(e, "mousedown");
+    };
+    mousePrototype._touchMove = function (e) {
+        if (!touching)
+            return;
+        this._touchMoved = true;
+        dispatchMouseEventOfTouchEvent(e, "mousemove");
+    };
+    mousePrototype._touchEnd = function (e) {
+        if (!touching)
+            return;
+        dispatchMouseEventOfTouchEvent(e, "mouseup");
+        dispatchMouseEventOfTouchEvent(e, "mouseout");
+        if (!this._touchMoved) {
+            dispatchMouseEventOfTouchEvent(e, "click");
+        }
+        touching = false;
+    };
+    mousePrototype._mouseInit = function () {
+        this.element.bind({
+            touchstart: $.proxy(this, "_touchStart"),
+            touchmove: $.proxy(this, "_touchMove"),
+            touchend: $.proxy(this, "_touchEnd"),
+        });
+        _mouseInit.call(this);
+    };
+    mousePrototype._mouseDestroy = function () {
+        this.element.unbind({
+            touchstart: $.proxy(this, "_touchStart"),
+            touchmove: $.proxy(this, "_touchMove"),
+            touchend: $.proxy(this, "_touchEnd"),
+        });
+        _mouseDestroy.call(this);
+    };
+}
+
+;// CONCATENATED MODULE: ./source/assoc.ts
+function get(k, kvs) {
+    while (kvs !== null) {
+        if (Object.is(kvs[0][0], k)) {
+            return kvs[0];
+        }
+        kvs = kvs[1];
+    }
+    return;
+}
+function add(k, v, kvs) {
+    return [[k, v], kvs];
+}
+function append(kvs1, kvs2) {
+    let temp;
+    while (kvs1) {
+        (temp !== null && temp !== void 0 ? temp : (temp = [])).push(kvs1[0]);
+        kvs1 = kvs1[1];
+    }
+    let kv;
+    while ((kv = temp && temp.pop())) {
+        kvs2 = [kv, kvs2];
+    }
+    return kvs2;
+}
+function map(kvs, mapping) {
+    let tempKvs;
+    while (kvs) {
+        (tempKvs !== null && tempKvs !== void 0 ? tempKvs : (tempKvs = [])).push(kvs[0]);
+        kvs = kvs[1];
+    }
+    let result = null;
+    if (tempKvs) {
+        for (let i = tempKvs.length - 1; i >= 0; i--) {
+            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+            const kv = tempKvs[0];
+            const k = kv[0];
+            result = [[k, mapping(k, kv[1])], result];
+        }
+    }
+    return result;
+}
+
+;// CONCATENATED MODULE: ./source/query/expression.ts
+/* eslint-disable require-yield */
+
+
+function throwFunctionExpressionError() {
+    return standard_extensions_error `#function 形式には引数リストと式が必要です。例: ["#function", ["x", "y"], ["+", "x", "y"]]`;
+}
+function throwLetExpressionError() {
+    return standard_extensions_error `#let 形式には要素1と要素2が必要です。例: ["#let", ["result", ["complexTask"]], "result"]`;
+}
+function throwWhereFormError() {
+    return standard_extensions_error `_#where_ 形式には要素1と2が必要です。例: ["_#where_", "result", ["result", ["headTask"]]]`;
+}
+function throwAsFormError() {
+    return standard_extensions_error `_#as_ 形式には要素1と2が必要です。例: ["_#as_", ["headTask"], ["result", "result"]]`;
+}
+const expression_hasOwnProperty = Object.prototype.hasOwnProperty;
+function evaluateVariable(expression, variables, getUnresolved) {
+    const kv = get(expression, variables);
+    if (kv)
+        return kv[1];
+    return getUnresolved(expression);
+}
+function* evaluateExpression(expression, variables, getUnresolved) {
+    switch (typeof expression) {
+        case "boolean":
+        case "number":
+            return expression;
+        case "string":
+            return evaluateVariable(expression, variables, getUnresolved);
+    }
+    if (!isArray(expression)) {
+        const result = Object.create(null);
+        for (const key in expression) {
+            if (expression_hasOwnProperty.call(expression, key)) {
+                result[key] = yield* evaluateExpression(
+                // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+                expression[key], variables, getUnresolved);
+            }
+        }
+        return result;
+    }
+    switch (expression[0]) {
+        case "#quote": {
+            const [, ...rest] = expression;
+            return rest;
+        }
+        case "#list": {
+            const list = [];
+            for (let i = 1; i < expression.length; i++) {
+                list.push(yield* evaluateExpression(
+                // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+                expression[i], variables, getUnresolved));
+            }
+            return list;
+        }
+        case "#strings": {
+            const list = [];
+            for (let i = 1; i < expression.length; i++) {
+                // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+                const c = expression[i];
+                list.push(typeof c === "string"
+                    ? c
+                    : yield* evaluateExpression(c, variables, getUnresolved));
+            }
+            return list;
+        }
+        case "#if": {
+            const [, condition, ifNotFalsy, ifFalsy] = expression;
+            if (condition === undefined ||
+                ifNotFalsy === undefined ||
+                ifFalsy === undefined) {
+                return standard_extensions_error `#if 形式には要素1から3が必要です。例: ["#if", "isEven", ["#", "this is even"], ["#", "this is odd"]]`;
+            }
+            return yield* evaluateExpression((yield* evaluateExpression(condition, variables, getUnresolved))
+                ? ifNotFalsy
+                : ifFalsy, variables, getUnresolved);
+        }
+        case "#function": {
+            const [, parameterOrParameters, body] = expression;
+            if (parameterOrParameters === undefined ||
+                (!isArray(parameterOrParameters) &&
+                    typeof parameterOrParameters !== "string") ||
+                body === undefined) {
+                return throwFunctionExpressionError();
+            }
+            const parameters = typeof parameterOrParameters === "string"
+                ? [parameterOrParameters]
+                : parameterOrParameters;
+            for (const parameter of parameters) {
+                if (typeof parameter !== "string") {
+                    return throwFunctionExpressionError();
+                }
+            }
+            const ps = parameters;
+            return function* (...args) {
+                let vs = variables;
+                for (let i = 0; i < parameterOrParameters.length; i++) {
+                    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+                    vs = add(ps[i], args[i], vs);
+                }
+                return yield* evaluateExpression(body, vs, getUnresolved);
+            };
+        }
+        case "#let": {
+            const [, bindings, scope] = expression;
+            if (!isArray(bindings) || scope === undefined) {
+                return throwLetExpressionError();
+            }
+            for (const binding of bindings) {
+                if (!isArray(binding)) {
+                    return throwLetExpressionError();
+                }
+                const [variable, value] = binding;
+                if (typeof variable !== "string" || value === undefined) {
+                    return throwLetExpressionError();
+                }
+                const v = yield* evaluateExpression(value, variables, getUnresolved);
+                variables = add(variable, v, variables);
+            }
+            return yield* evaluateExpression(scope, variables, getUnresolved);
+        }
+        case "_#where_": {
+            const [, scope, binding] = expression;
+            if (!isArray(binding) || scope === undefined) {
+                return throwWhereFormError();
+            }
+            const [variable, value] = binding;
+            if (typeof variable !== "string" || value === undefined) {
+                return throwWhereFormError();
+            }
+            const v = yield* evaluateExpression(value, variables, getUnresolved);
+            return yield* evaluateExpression(scope, add(variable, v, variables), getUnresolved);
+        }
+        case "_#as_": {
+            const [, value, variableAndScope] = expression;
+            if (!isArray(variableAndScope) || value === undefined) {
+                return throwAsFormError();
+            }
+            const [variable, scope] = variableAndScope;
+            if (typeof variable !== "string" || scope === undefined) {
+                return throwAsFormError();
+            }
+            const v = yield* evaluateExpression(value, variables, getUnresolved);
+            return yield* evaluateExpression(scope, add(variable, v, variables), getUnresolved);
+        }
+        default: {
+            const head = expression[0];
+            if (head === undefined) {
+                return [];
+            }
+            if (expression.length === 1 && typeof head === "string") {
+                return head;
+            }
+            const items = [];
+            for (let i = 0; i < expression.length; i++) {
+                const p = yield* evaluateExpression(
+                // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+                expression[i], variables, getUnresolved);
+                items.push(p);
+            }
+            const listProcessorName = "_lisq_";
+            const listProcessor = evaluateVariable(listProcessorName, variables, getUnresolved);
+            if (typeof listProcessor !== "function") {
+                return standard_extensions_error `変数 ${listProcessorName} は関数ではありません。`;
+            }
+            return yield* listProcessor(items);
+        }
+    }
+}
+
+;// CONCATENATED MODULE: ./source/effective.ts
+function getResultOrError(generator) {
+    const iterator = generator[Symbol.iterator]();
+    const result = iterator.next();
+    if (!result.done)
+        throw new Error(`unresolved effect: ${result.value}`);
+    return result.value;
+}
+const privateAwaitPromiseSymbol = Symbol("awaitPromise");
+function isAwait(value) {
+    return (value !== null &&
+        typeof value === "object" &&
+        "kind" in value &&
+        value.kind === privateAwaitPromiseSymbol);
+}
+const privateGetSignalSymbol = Symbol("getSignal");
+function isGetSignal(value) {
+    return value === privateGetSignalSymbol;
+}
+function* getSignal() {
+    return (yield privateGetSignalSymbol);
+}
+function* awaitPromise(promise) {
+    return (yield {
+        kind: privateAwaitPromiseSymbol,
+        promise,
+    });
+}
+function handleAwaitOrError(generator, signal) {
+    return new Promise((resolve, reject) => {
+        const iterator = generator[Symbol.iterator]();
+        function onNext(resolvedValue) {
+            let result;
+            try {
+                result = iterator.next(resolvedValue);
+            }
+            catch (e) {
+                return reject(e);
+            }
+            if (result.done) {
+                return resolve(result.value);
+            }
+            if (isAwait(result.value)) {
+                return void result.value.promise.then(onNext);
+            }
+            if (isGetSignal(result.value)) {
+                return onNext(signal);
+            }
+            return reject(new Error(`uncaught effect ${result.value}`));
+        }
+        onNext(undefined);
+    });
+}
+
+;// CONCATENATED MODULE: ./source/cells.ts
+
+
+
+function getOrCreate(map, key, createValue) {
+    let v = map.get(key);
+    if (v === undefined) {
+        v = createValue(key);
+        map.set(key, v);
+    }
+    return v;
+}
+function getSpotLatLng(route) {
+    if (getRouteKind(route) !== "spot")
+        return;
+    const [lat, lng] = route.coordinates[0];
+    return L.latLng(lat, lng);
+}
+function getS2Cell(latLng, level) {
+    if (typeof S2 === "undefined")
+        throw new Error("S2 is undefined");
+    return S2.S2Cell.FromLatLng(latLng, level);
+}
+function getCell14(cells, coordinate) {
+    const s2Cell = getS2Cell(coordinate, 14);
+    const id = s2Cell.toString();
+    return cells.get(id);
+}
+function getCell17(cells, coordinate) {
+    const cell14 = getCell14(cells, coordinate);
+    if (cell14 == null)
+        return;
+    const id17 = getS2Cell(coordinate, 17).toString();
+    return cell14.cell17s.get(id17);
+}
+function getOrCreateCell14(cells, coordinate) {
+    const s2Cell14 = getS2Cell(coordinate, 14);
+    const id14 = s2Cell14.toString();
+    return getOrCreate(cells, id14, () => {
+        return {
+            s2Cell: s2Cell14,
+            cell17s: new Map(),
+            fullFetchDate: "unknown",
+        };
+    });
+}
+function getOrCreateCell17(cells, coordinate) {
+    const { cell17s } = getOrCreateCell14(cells, coordinate);
+    const s2Cell17 = getS2Cell(coordinate, 17);
+    const id17 = s2Cell17.toString();
+    return getOrCreate(cell17s, id17, () => ({
+        s2Cell: s2Cell17,
+        routes: [],
+        portals: [],
+    }));
+}
+/** スポットがあるセルとその回りのセルを取得する */
+function getCell14sForSpots(routes) {
+    const cell14s = new Map();
+    for (const route of routes) {
+        const coordinate = getSpotLatLng(route);
+        if (!coordinate)
+            continue;
+        const cell = getS2Cell(coordinate, 14);
+        cell14s.set(cell.toString(), cell);
+        for (const neighborCell of cell.getNeighbors()) {
+            cell14s.set(neighborCell.toString(), neighborCell);
+            for (const nearCell of neighborCell.getNeighbors()) {
+                cell14s.set(nearCell.toString(), nearCell);
+            }
+        }
+    }
+    return cell14s.values();
+}
+function addSpotsToCell14s(routes, cells) {
+    for (const route of routes) {
+        const coordinate = getSpotLatLng(route);
+        if (coordinate == null)
+            continue;
+        getOrCreateCell17(cells, coordinate).routes.push(route);
+    }
+}
+function buildCellsOfPortalLocations(routes, cache) {
+    const cells = new Map();
+    for (const cacheKey in cache) {
+        const portal = cache[cacheKey];
+        if (portal == null || portal.sponsored)
+            continue;
+        getOrCreateCell17(cells, portal.latLng).portals.push(portal);
+    }
+    addSpotsToCell14s(routes, cells);
+    return cells;
+}
+function* buildCellsOfPortalRecords(routes, records) {
+    var _a, _b;
+    const signal = yield* getSignal();
+    const cells = new Map();
+    // スポットが存在するセル14とその回りのセル14の記録を取得
+    for (const s2Cell of getCell14sForSpots(routes)) {
+        const coordinate = s2Cell.getLatLng();
+        const cellRecord = yield* awaitPromise(records.getS2Cell14(coordinate.lat, coordinate.lng, {
+            signal,
+        }));
+        // 記録からセル14の情報を取得
+        getOrCreateCell14(cells, coordinate).fullFetchDate =
+            (_b = (_a = cellRecord.cell) === null || _a === void 0 ? void 0 : _a.lastFetchDate) !== null && _b !== void 0 ? _b : "no-fetched";
+        // 記録からセル14内のポータルを取得
+        for (const portal of cellRecord.portals.values()) {
+            const cell17 = getOrCreateCell17(cells, portal);
+            cell17.portals.push(portal);
+        }
+    }
+    addSpotsToCell14s(routes, cells);
+    return cells;
+}
+function* buildCells(routes) {
+    var _a;
+    if (typeof portal_records_cef3ad7e_0804_420c_8c44_ef4e08dbcdc2 !==
+        "undefined") {
+        return yield* buildCellsOfPortalRecords(routes, yield* awaitPromise(portal_records_cef3ad7e_0804_420c_8c44_ef4e08dbcdc2));
+    }
+    const cache = (_a = plugin.portalLocations) === null || _a === void 0 ? void 0 : _a.cache;
+    if (cache != null) {
+        return buildCellsOfPortalLocations(routes, cache);
+    }
+    return standard_extensions_error `plugin 'portal-location.user.js' or 'iitc-plugin-portal-records.user.js' not installed`;
+}
+/** 指定された領域に近いセルを返す */
+function getNearCellsForBounds(bounds, level) {
+    const result = [];
+    const seenCellIds = new Set();
+    const remainingCells = [getS2Cell(bounds.getCenter(), level)];
+    for (let cell; (cell = remainingCells.pop());) {
+        const id = cell.toString();
+        if (seenCellIds.has(id))
+            continue;
+        seenCellIds.add(id);
+        const corners = cell.getCornerLatLngs();
+        if (!bounds.intersects(L.latLngBounds(corners)))
+            continue;
+        result.push(cell);
+        remainingCells.push(...cell.getNeighbors());
+    }
+    return result;
+}
+
+;// CONCATENATED MODULE: ./source/query/gyms.ts
+/* eslint-disable require-yield */
+// spell-checker: ignore pokestop pokestops
+
+
+function getGymCount(pokestopCount) {
+    if (20 <= pokestopCount)
+        return 3;
+    if (6 <= pokestopCount)
+        return 2;
+    if (2 <= pokestopCount)
+        return 1;
+    return 0;
+}
+function gymCountToMinPokestopCount(gymCount) {
+    switch (gymCount) {
+        case 0:
+            return 0;
+        case 1:
+            return 2;
+        case 2:
+            return 6;
+        default:
+            return gymCount < 0 ? NaN : 20;
+    }
+}
+function getCell14Statistics(cells, cell14ToStatistics, getStatistics, route) {
+    const coordinate = getSpotLatLng(route);
+    if (coordinate == null)
+        return;
+    const cell14 = getCell14(cells, coordinate);
+    if (cell14 == null)
+        return;
+    let statistics = cell14ToStatistics.get(cell14);
+    if (statistics !== undefined)
+        return statistics;
+    statistics = getStatistics(cell14);
+    cell14ToStatistics.set(cell14, statistics);
+    return statistics;
+}
+function getPotentialPokestopCountForNextGym(pokestops, potentialPokestops) {
+    const minPokestopsForNextGym = gymCountToMinPokestopCount(getGymCount(pokestops) + 1);
+    if (pokestops + potentialPokestops < minPokestopsForNextGym ||
+        minPokestopsForNextGym <= pokestops) {
+        return Infinity;
+    }
+    return minPokestopsForNextGym - pokestops;
+}
+function daysToMilliseconds(days) {
+    return days * 24 * 60 * 60 * 1000;
+}
+function getCell14Gyms({ cell17s, fullFetchDate }) {
+    let currentPokestops = 0;
+    let potentialPokestops = 0;
+    for (const [, { portals, routes }] of cell17s) {
+        if (0 < portals.length) {
+            currentPokestops++;
+        }
+        else if (0 < routes.length) {
+            potentialPokestops++;
+        }
+    }
+    const expectedGyms = getGymCount(potentialPokestops + currentPokestops);
+    const currentGyms = getGymCount(currentPokestops);
+    const potentialGyms = expectedGyms - currentGyms;
+    const potentialPokestopsForNextGym = getPotentialPokestopCountForNextGym(currentPokestops, potentialPokestops);
+    const isNotLoaded = fullFetchDate === "no-fetched";
+    const obsoleteDate = typeof fullFetchDate === "number" &&
+        fullFetchDate + daysToMilliseconds(7) < Date.now()
+        ? fullFetchDate
+        : undefined;
+    function stateSymbolAnd(value) {
+        return {
+            value,
+            isNotLoaded,
+            obsoleteDate,
+        };
+    }
+    return {
+        currentPokestops: stateSymbolAnd(currentPokestops),
+        expectedGyms: stateSymbolAnd(expectedGyms),
+        currentGyms: stateSymbolAnd(currentGyms),
+        potentialGyms: stateSymbolAnd(potentialGyms),
+        potentialPokestopsForNextGym: stateSymbolAnd(potentialPokestopsForNextGym),
+    };
+}
+function* initializeRouteStatisticsResolver({ routes, }) {
+    const cells = yield* buildCells(routes);
+    const gymCounts = new WeakMap();
+    return (r) => getCell14Statistics(cells, gymCounts, getCell14Gyms, r);
+}
+function getGymsOrderKinds() {
+    return [
+        "potentialStops",
+        "potentialGyms",
+        "currentStops",
+        "currentGyms",
+    ];
+}
+function timeToLocalISODateString(time) {
+    const date = new Date(time);
+    date.setTime(time);
+    const offset = date.getTimezoneOffset();
+    const absOffset = Math.abs(offset);
+    const offsetSign = offset > 0 ? "-" : "+";
+    const offsetHours = String(Math.floor(absOffset / 60)).padStart(2, "0");
+    const offsetMinutes = String(absOffset % 60).padStart(2, "0");
+    return (date.getFullYear() +
+        "-" +
+        String(date.getMonth() + 1).padStart(2, "0") +
+        "-" +
+        String(date.getDate()).padStart(2, "0") +
+        offsetSign +
+        offsetHours +
+        ":" +
+        offsetMinutes);
+}
+function printSourceState(source) {
+    return `${source.isNotLoaded ? "?" : ""}${source.value}${source.obsoleteDate === undefined
+        ? ""
+        : "@" + timeToLocalISODateString(source.obsoleteDate)}`;
+}
+function* orderByGyms(kind, query) {
+    return {
+        *initialize(e) {
+            const unit = yield* e.queryAsFactory(query).initialize(e);
+            const resolve = yield* initializeRouteStatisticsResolver(e);
+            function createGetter(scope) {
+                return (r) => scope(resolve(r), r);
+            }
+            let getNote;
+            let getKey;
+            let isAscendent;
+            switch (kind) {
+                case "potentialStops":
+                    getNote = createGetter(function* (s, r) {
+                        return `PS${s
+                            ? printSourceState(s.potentialPokestopsForNextGym)
+                            : Infinity},${r.note}`;
+                    });
+                    getKey = createGetter(function* (s) {
+                        var _a, _b;
+                        return ((_b = (_a = s === null || s === void 0 ? void 0 : s.potentialPokestopsForNextGym) === null || _a === void 0 ? void 0 : _a.value) !== null && _b !== void 0 ? _b : Infinity);
+                    });
+                    isAscendent = true;
+                    break;
+                case "potentialGyms":
+                    getNote = createGetter(function* (s, r) {
+                        return `PG${s ? printSourceState(s.potentialGyms) : 0},${r.note}`;
+                    });
+                    getKey = createGetter(function* (s) {
+                        var _a, _b;
+                        return (_b = (_a = s === null || s === void 0 ? void 0 : s.potentialGyms) === null || _a === void 0 ? void 0 : _a.value) !== null && _b !== void 0 ? _b : 0;
+                    });
+                    isAscendent = false;
+                    break;
+                case "currentStops":
+                    getNote = createGetter(function* (s, r) {
+                        return `S${s ? printSourceState(s.currentPokestops) : 0},${r.note}`;
+                    });
+                    getKey = createGetter(function* (s) {
+                        var _a, _b;
+                        return (_b = (_a = s === null || s === void 0 ? void 0 : s.currentPokestops) === null || _a === void 0 ? void 0 : _a.value) !== null && _b !== void 0 ? _b : 0;
+                    });
+                    isAscendent = true;
+                    break;
+                case "currentGyms":
+                    getNote = createGetter(function* (s, r) {
+                        return `G${s ? printSourceState(s.currentGyms) : 0},${r.note}`;
+                    });
+                    getKey = createGetter(function* (s) {
+                        var _a, _b;
+                        return (_b = (_a = s === null || s === void 0 ? void 0 : s.currentGyms) === null || _a === void 0 ? void 0 : _a.value) !== null && _b !== void 0 ? _b : 0;
+                    });
+                    isAscendent = false;
+                    break;
+                default:
+                    throw new Error(`Invalid order kind: ${kind}. Expected ${getGymsOrderKinds().join(" or ")}.`);
+            }
+            return Object.assign(Object.assign({}, unit), { getNote,
+                *getSorter() {
+                    return {
+                        getKey,
+                        isAscendent,
+                    };
+                } });
+        },
+    };
+}
+function countByGyms(kind, searchValue) {
+    return {
+        *initialize(e) {
+            const resolve = yield* initializeRouteStatisticsResolver(e);
+            let selector;
+            switch (kind) {
+                case "potentialStops":
+                    selector = "potentialPokestopsForNextGym";
+                    break;
+                case "potentialGyms":
+                case "currentGyms":
+                    selector = kind;
+                    break;
+                case "currentStops":
+                    selector = "currentPokestops";
+                    break;
+                default:
+                    throw new Error(`Invalid kind: ${kind}. Expected ${getGymsOrderKinds().join(" or ")}.`);
+            }
+            return {
+                *predicate(r) {
+                    var _a;
+                    const source = (_a = resolve(r)) === null || _a === void 0 ? void 0 : _a[selector];
+                    if (source === undefined)
+                        return false;
+                    if (source.value === searchValue)
+                        return true;
+                    return printSourceState(source).startsWith(String(searchValue));
+                },
+            };
+        },
+    };
+}
+function stopsForNextGym(count) {
+    return {
+        *initialize(e) {
+            const resolve = yield* initializeRouteStatisticsResolver(e);
+            return {
+                *predicate(r) {
+                    var _a;
+                    const source = (_a = resolve(r)) === null || _a === void 0 ? void 0 : _a.potentialPokestopsForNextGym;
+                    // 判定に必要な情報が足りないか古すぎるので再取得が必要
+                    if (source === undefined ||
+                        source.isNotLoaded ||
+                        source.obsoleteDate != null) {
+                        return true;
+                    }
+                    return source.value === count;
+                },
+                *getNote(r) {
+                    var _a;
+                    const source = (_a = resolve(r)) === null || _a === void 0 ? void 0 : _a.potentialPokestopsForNextGym;
+                    if (source === undefined || source.isNotLoaded) {
+                        return `SG?,${r.note}`;
+                    }
+                    if (source.obsoleteDate != null) {
+                        const dateString = timeToLocalISODateString(source.obsoleteDate);
+                        return `SG${source.value}@${dateString},${r.note}`;
+                    }
+                    return `SG${source.value},${r.note}`;
+                },
+            };
+        },
+    };
+}
+
+;// CONCATENATED MODULE: ./source/query/parser.ts
+
+var CharacterCodes;
+(function (CharacterCodes) {
+    CharacterCodes[CharacterCodes['"'] = 34] = '"';
+    CharacterCodes[CharacterCodes["$"] = 36] = "$";
+    CharacterCodes[CharacterCodes["("] = 40] = "(";
+    CharacterCodes[CharacterCodes[")"] = 41] = ")";
+    CharacterCodes[CharacterCodes[","] = 44] = ",";
+    CharacterCodes[CharacterCodes["/"] = 47] = "/";
+    CharacterCodes[CharacterCodes["C0"] = 48] = "C0";
+    CharacterCodes[CharacterCodes["C9"] = 57] = "C9";
+    CharacterCodes[CharacterCodes[":"] = 58] = ":";
+    CharacterCodes[CharacterCodes["@"] = 64] = "@";
+    CharacterCodes[CharacterCodes["{"] = 123] = "{";
+    CharacterCodes[CharacterCodes["}"] = 125] = "}";
+})(CharacterCodes || (CharacterCodes = {}));
+// spaces
+(function (CharacterCodes) {
+    /** u+0009 "CHARACTER TABULATION" */
+    CharacterCodes[CharacterCodes["CHARACTER TABULATION"] = 9] = "CHARACTER TABULATION";
+    /** u+000a "LINE FEED (LF)" */
+    CharacterCodes[CharacterCodes["LINE FEED (LF)"] = 10] = "LINE FEED (LF)";
+    /** u+000b "LINE TABULATION" */
+    CharacterCodes[CharacterCodes["LINE TABULATION"] = 11] = "LINE TABULATION";
+    /** u+000d "CARRIAGE RETURN (CR)" */
+    CharacterCodes[CharacterCodes["CARRIAGE RETURN (CR)"] = 13] = "CARRIAGE RETURN (CR)";
+    /** u+0020 "SPACE" */
+    CharacterCodes[CharacterCodes["SPACE"] = 32] = "SPACE";
+    /** u+00a0 "NO-BREAK SPACE" */
+    CharacterCodes[CharacterCodes["NO-BREAK SPACE"] = 160] = "NO-BREAK SPACE";
+    /** u+1680 "OGHAM SPACE MARK" */
+    CharacterCodes[CharacterCodes["OGHAM SPACE MARK"] = 5760] = "OGHAM SPACE MARK";
+    /** u+2000 "EN QUAD" */
+    CharacterCodes[CharacterCodes["EN QUAD"] = 8192] = "EN QUAD";
+    /** u+2001 "EM QUAD" */
+    CharacterCodes[CharacterCodes["EM QUAD"] = 8193] = "EM QUAD";
+    /** u+2002 "EN SPACE" */
+    CharacterCodes[CharacterCodes["EN SPACE"] = 8194] = "EN SPACE";
+    /** u+2003 "EM SPACE" */
+    CharacterCodes[CharacterCodes["EM SPACE"] = 8195] = "EM SPACE";
+    /** u+2004 "THREE-PER-EM SPACE" */
+    CharacterCodes[CharacterCodes["THREE-PER-EM SPACE"] = 8196] = "THREE-PER-EM SPACE";
+    /** u+2005 "FOUR-PER-EM SPACE" */
+    CharacterCodes[CharacterCodes["FOUR-PER-EM SPACE"] = 8197] = "FOUR-PER-EM SPACE";
+    /** u+2006 "SIX-PER-EM SPACE" */
+    CharacterCodes[CharacterCodes["SIX-PER-EM SPACE"] = 8198] = "SIX-PER-EM SPACE";
+    /** u+2007 "FIGURE SPACE" */
+    CharacterCodes[CharacterCodes["FIGURE SPACE"] = 8199] = "FIGURE SPACE";
+    /** u+2008 "PUNCTUATION SPACE" */
+    CharacterCodes[CharacterCodes["PUNCTUATION SPACE"] = 8200] = "PUNCTUATION SPACE";
+    /** u+2009 "THIN SPACE" */
+    CharacterCodes[CharacterCodes["THIN SPACE"] = 8201] = "THIN SPACE";
+    /** u+200a "HAIR SPACE" */
+    CharacterCodes[CharacterCodes["HAIR SPACE"] = 8202] = "HAIR SPACE";
+    /** u+200b "ZERO WIDTH SPACE" */
+    CharacterCodes[CharacterCodes["ZERO WIDTH SPACE"] = 8203] = "ZERO WIDTH SPACE";
+    /** u+202f "NARROW NO-BREAK SPACE" */
+    CharacterCodes[CharacterCodes["NARROW NO-BREAK SPACE"] = 8239] = "NARROW NO-BREAK SPACE";
+    /** u+205f "MEDIUM MATHEMATICAL SPACE" */
+    CharacterCodes[CharacterCodes["MEDIUM MATHEMATICAL SPACE"] = 8287] = "MEDIUM MATHEMATICAL SPACE";
+    /** u+3000 "IDEOGRAPHIC SPACE" */
+    CharacterCodes[CharacterCodes["IDEOGRAPHIC SPACE"] = 12288] = "IDEOGRAPHIC SPACE";
+    /** u+feff "ZERO WIDTH NO-BREAK SPACE" */
+    CharacterCodes[CharacterCodes["ZERO WIDTH NO-BREAK SPACE"] = 65279] = "ZERO WIDTH NO-BREAK SPACE";
+})(CharacterCodes || (CharacterCodes = {}));
+function isAsciiDigit(codePoint) {
+    return CharacterCodes.C0 <= codePoint && codePoint <= CharacterCodes.C9;
+}
+function isUnicodeWhiteSpace(codePoint) {
+    switch (codePoint) {
+        case CharacterCodes["CARRIAGE RETURN (CR)"]:
+        case CharacterCodes["CHARACTER TABULATION"]:
+        case CharacterCodes["LINE TABULATION"]:
+        case CharacterCodes["LINE FEED (LF)"]:
+        case CharacterCodes.SPACE:
+        case CharacterCodes["NO-BREAK SPACE"]:
+        case CharacterCodes["OGHAM SPACE MARK"]:
+        case CharacterCodes["EN QUAD"]:
+        case CharacterCodes["EM QUAD"]:
+        case CharacterCodes["EN SPACE"]:
+        case CharacterCodes["EM SPACE"]:
+        case CharacterCodes["THREE-PER-EM SPACE"]:
+        case CharacterCodes["FOUR-PER-EM SPACE"]:
+        case CharacterCodes["SIX-PER-EM SPACE"]:
+        case CharacterCodes["FIGURE SPACE"]:
+        case CharacterCodes["PUNCTUATION SPACE"]:
+        case CharacterCodes["THIN SPACE"]:
+        case CharacterCodes["HAIR SPACE"]:
+        case CharacterCodes["ZERO WIDTH SPACE"]:
+        case CharacterCodes["NARROW NO-BREAK SPACE"]:
+        case CharacterCodes["MEDIUM MATHEMATICAL SPACE"]:
+        case CharacterCodes["IDEOGRAPHIC SPACE"]:
+        case CharacterCodes["ZERO WIDTH NO-BREAK SPACE"]:
+            return true;
+    }
+    return false;
+}
+function createTokenizer({ tokens, getEos, getDefault, getTokenKind, }) {
+    const tokenPatterns = tokens.map((t) => t.sticky ? t : new RegExp(t.source, t.flags + "y"));
+    let source = "";
+    let sourceLength = 0;
+    let position = 0;
+    let lastMatchStart = 0;
+    let lastMatchEnd = 0;
+    function initialize(sourceText) {
+        source = sourceText;
+        sourceLength = sourceText.length;
+        position = 0;
+        lastMatchStart = 0;
+        lastMatchEnd = 0;
+    }
+    function getText() {
+        return source.slice(lastMatchStart, lastMatchEnd);
+    }
+    function getPosition() {
+        return position;
+    }
+    function noMatch() {
+        lastMatchStart = position;
+        lastMatchEnd = position + 1;
+        position = lastMatchEnd;
+        return getDefault();
+    }
+    function next() {
+        if (sourceLength <= position)
+            return getEos();
+        for (const pattern of tokenPatterns) {
+            pattern.lastIndex = position;
+            if (pattern.test(source)) {
+                lastMatchStart = position;
+                lastMatchEnd = pattern.lastIndex;
+                position = lastMatchEnd;
+                return getTokenKind(source, lastMatchStart, lastMatchEnd);
+            }
+        }
+        return noMatch();
+    }
+    return { initialize, next, getText, getPosition };
+}
+const tokenDefinitions = {
+    tokens: [
+        // 行コメント // comment
+        /\/\/.*?(\n|$)/y,
+        // 複数行コメント /* comment */
+        /\/\*[\s\S]*?\*\//y,
+        // 記号
+        /[[\](){},:@$]/y,
+        // 識別子形式の文字列 { key: 0 }
+        /[^\s/[\](){},:@$"\\\d][^\s/[\](){},:@$"\\]*/y,
+        // 空白
+        /\s+/y,
+        // 数値リテラル
+        /-?\d+(\.\d+)?([eE]\d+)?/y,
+        // 文字列リテラル
+        /"([^"]|\\")*"/y,
+    ],
+    getEos() {
+        return "EndOfSource";
+    },
+    getDefault() {
+        return "Unknown";
+    },
+    getTokenKind,
+};
+var DiagnosticKind;
+(function (DiagnosticKind) {
+    DiagnosticKind["AnyTokenRequired"] = "AnyTokenRequired";
+    DiagnosticKind["RightParenthesisTokenExpected"] = "RightParenthesisTokenExpected";
+    DiagnosticKind["RightCurlyBracketTokenExpected"] = "RightCurlyBracketTokenExpected";
+    DiagnosticKind["CommaTokenExpected"] = "CommaTokenExpected";
+    DiagnosticKind["StringLiteralOrNameRequired"] = "StringLiteralOrNameRequired";
+    DiagnosticKind["LeftParenthesesOrLeftCurlyBracketOrLiteralOrNameRequired"] = "LeftParenthesesOrLeftCurlyBracketOrLiteralOrNameRequired";
+    DiagnosticKind["EndOfSourceOrAtNameExpected"] = "EndOfSourceOrAtNameExpected";
+})(DiagnosticKind || (DiagnosticKind = {}));
+function getTokenKind(source, start, _end) {
+    var _a;
+    switch (source.codePointAt(start)) {
+        case CharacterCodes["("]:
+            return "(";
+        case CharacterCodes[")"]:
+            return ")";
+        case CharacterCodes["{"]:
+            return "{";
+        case CharacterCodes["}"]:
+            return "}";
+        case CharacterCodes[","]:
+            return ",";
+        case CharacterCodes[":"]:
+            return ":";
+        case CharacterCodes["@"]:
+            return "@";
+        case CharacterCodes["$"]:
+            return "$";
+    }
+    const code0 = (_a = source.codePointAt(start)) !== null && _a !== void 0 ? _a : standard_extensions_error `internal error`;
+    if (code0 === CharacterCodes["/"])
+        return "Comment";
+    if (code0 === CharacterCodes['"'])
+        return "String";
+    if (isAsciiDigit(code0))
+        return "Number";
+    if (isUnicodeWhiteSpace(code0))
+        return "WhiteSpace";
+    return "Name";
+}
+function createParser({ next, getText: getCurrentTokenText, getPosition }, reporter) {
+    let currentTokenKind = "Unknown";
+    let currentTokenStart = -1;
+    let currentTokenEnd = -1;
+    function nextToken() {
+        do {
+            currentTokenStart = getPosition();
+            currentTokenKind = next();
+        } while (currentTokenKind === "WhiteSpace" ||
+            currentTokenKind === "Comment");
+        currentTokenEnd = getPosition();
+    }
+    function skipToken(expectedToken, diagnosticKind) {
+        if (currentTokenKind !== expectedToken) {
+            reporter === null || reporter === void 0 ? void 0 : reporter(diagnosticKind, currentTokenStart, currentTokenEnd);
+            return;
+        }
+        nextToken();
+    }
+    function trySkipToken(expectedTokenKind) {
+        return currentTokenKind === expectedTokenKind && (nextToken(), true);
+    }
+    const recoveryToken = "<recover>";
+    function parseExpression() {
+        return parseOperatorExpressionOrHigher();
+    }
+    function tryParseNameOrString() {
+        let value;
+        switch (currentTokenKind) {
+            case "Name":
+                value = getCurrentTokenText();
+                break;
+            case "String":
+                value = JSON.parse(getCurrentTokenText());
+                break;
+            default:
+                return undefined;
+        }
+        nextToken();
+        return value;
+    }
+    // infix-operator :=
+    //     | "@" name
+    //     | "@" string-literal
+    //     | "@" primary-expression
+    function isInfixOperatorHead() {
+        return currentTokenKind === "@";
+    }
+    function parseInfixOperator() {
+        // skip "@"
+        nextToken();
+        const value = tryParseNameOrString();
+        if (value === undefined)
+            return parsePrimaryExpression();
+        return `_${value}_`;
+    }
+    // operator-expression-or-higher := concatenation-expression (infix-operator concatenation-expression)*
+    function parseOperatorExpressionOrHigher() {
+        let left = parseConcatenationExpression();
+        while (isInfixOperatorHead()) {
+            const operator = parseInfixOperator();
+            const right = parseConcatenationExpression();
+            left = [operator, left, right];
+        }
+        return left;
+    }
+    // concatenation-expression-or-higher := primary-expression primary-expression*
+    function parseConcatenationExpression() {
+        const left = parsePrimaryExpression();
+        if (isPrimaryExpressionHead()) {
+            const items = [left, parsePrimaryExpression()];
+            while (isPrimaryExpressionHead()) {
+                items.push(parsePrimaryExpression());
+            }
+            return items;
+        }
+        return left;
+    }
+    // variable :=
+    //     | "$" name
+    //     | "$" string-literal
+    //
+    // primary-expression :=
+    //     | "(" expression ")"
+    //     | literal
+    //     | name
+    //     | variable
+    //     | record-expression
+    function isPrimaryExpressionHead() {
+        switch (currentTokenKind) {
+            case "{":
+            case "Number":
+            case "String":
+            case "Name":
+            case "$":
+            case "(":
+                return true;
+            default:
+                return false;
+        }
+    }
+    function parseVariableTail() {
+        nextToken();
+        const variable = tryParseNameOrString();
+        if (variable === undefined) {
+            reporter === null || reporter === void 0 ? void 0 : reporter(DiagnosticKind.StringLiteralOrNameRequired, currentTokenStart, currentTokenEnd);
+            return recoveryToken;
+        }
+        return variable;
+    }
+    function parsePrimaryExpression() {
+        let result;
+        switch (currentTokenKind) {
+            case "EndOfSource":
+                reporter === null || reporter === void 0 ? void 0 : reporter(DiagnosticKind.AnyTokenRequired, currentTokenStart, currentTokenEnd);
+                return recoveryToken;
+            // リスト
+            case "(":
+                return parseParenthesisExpressionTail();
+            // レコード
+            case "{":
+                return parseRecordTail();
+            // 文字列リテラル: "abc" => ["abc"]
+            case "String":
+                result = [JSON.parse(getCurrentTokenText())];
+                break;
+            // 数値リテラル
+            case "Number":
+                result = JSON.parse(getCurrentTokenText());
+                break;
+            // 名前: xyz => "xyz"
+            case "Name":
+                result = [getCurrentTokenText()];
+                break;
+            // 変数: $abc => abc
+            // $"abc" => abc
+            case "$":
+                return parseVariableTail();
+            default:
+                currentTokenKind;
+                reporter === null || reporter === void 0 ? void 0 : reporter(DiagnosticKind.LeftParenthesesOrLeftCurlyBracketOrLiteralOrNameRequired, currentTokenStart, currentTokenEnd);
+                result = getCurrentTokenText();
+        }
+        nextToken();
+        return result;
+    }
+    function parseParenthesisExpressionTail() {
+        nextToken();
+        const value = parseExpression();
+        skipToken(")", DiagnosticKind.RightParenthesisTokenExpected);
+        return value;
+    }
+    function parseRecordTail() {
+        nextToken();
+        const record = {};
+        do {
+            if (trySkipToken("}"))
+                return record;
+            const key = parseRecordKey();
+            skipToken(":", DiagnosticKind.CommaTokenExpected);
+            record[key] = parseExpression();
+        } while (trySkipToken(","));
+        skipToken("}", DiagnosticKind.RightCurlyBracketTokenExpected);
+        return record;
+    }
+    function parseRecordKey() {
+        const key = tryParseNameOrString();
+        if (key === undefined) {
+            reporter === null || reporter === void 0 ? void 0 : reporter(DiagnosticKind.StringLiteralOrNameRequired, currentTokenStart, currentTokenEnd);
+            return recoveryToken;
+        }
+        return key;
+    }
+    return {
+        parse() {
+            nextToken();
+            const value = parseExpression();
+            if (currentTokenKind !== "EndOfSource")
+                reporter === null || reporter === void 0 ? void 0 : reporter(DiagnosticKind.EndOfSourceOrAtNameExpected, currentTokenStart, currentTokenEnd);
+            return value;
+        },
+    };
+}
+
+;// CONCATENATED MODULE: ./source/query/index.ts
+
+
+
+
+
+
+function eachJsonStrings(json, action) {
+    if (json === null)
+        return;
+    switch (typeof json) {
+        case "boolean":
+            return;
+        case "number":
+        case "string":
+            return action(String(json));
+        default:
+            if (Array.isArray(json)) {
+                for (const e of json) {
+                    if (eachJsonStrings(e, action) === "break") {
+                        return "break";
+                    }
+                }
+                return;
+            }
+            for (const [k, v] of Object.entries(json)) {
+                if (v === undefined)
+                    continue;
+                if (action(k) === "break")
+                    return "break";
+                if (eachJsonStrings(v, action) === "break")
+                    return "break";
+            }
+    }
+}
+function eachRouteStrings(route, action) {
+    if (action(route.routeName) === "break")
+        return "break";
+    if (action(route.description) === "break")
+        return "break";
+    if (action(route.note) === "break")
+        return "break";
+    const tags = getRouteTags(route);
+    if (tags == null)
+        return;
+    return eachJsonStrings(tags, action);
+}
+function normalize(text) {
+    return text.normalize("NFKC").toLowerCase();
+}
+/** ラインタイムの規定ロケールで比較 */
+const { compare: compareString } = new Intl.Collator();
+function compareQueryKey(key1, key2) {
+    if (key1 === null && key2 === null)
+        return 0;
+    if (key1 === null)
+        return -1;
+    if (key2 === null)
+        return 1;
+    if (typeof key1 === "number" && typeof key2 === "number") {
+        const key1IsNaN = key1 !== key1;
+        const key2IsNaN = key2 !== key2;
+        if (key1IsNaN && key2IsNaN)
+            return 0;
+        if (key1IsNaN)
+            return -1;
+        if (key2IsNaN)
+            return 1;
+        return key1 - key2;
+    }
+    if (typeof key1 === "string" && typeof key2 === "string")
+        return compareString(key1, key2);
+    if (isArray(key1) && isArray(key2)) {
+        const length = Math.min(key1.length, key2.length);
+        for (let i = 0; i < length; i++) {
+            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+            const result = compareQueryKey(key1[i], key2[i]);
+            if (result !== 0)
+                return result;
+        }
+        return key1.length - key2.length;
+    }
+    if (typeof key1 === "number")
+        return -1;
+    if (typeof key2 === "number")
+        return 1;
+    if (typeof key1 === "string")
+        return -1;
+    if (typeof key2 === "string")
+        return 1;
+    if (isArray(key1))
+        return -1;
+    if (isArray(key2))
+        return 1;
+    return exhaustive(key1), exhaustive(key2);
+}
+const emptyUnit = {
+    *predicate() {
+        return true;
+    },
+};
+const anyQuery = {
+    *initialize() {
+        return emptyUnit;
+    },
+};
+function includes(word) {
+    return {
+        *initialize() {
+            let tempHasWord = false;
+            word = normalize(word);
+            function finder(text) {
+                if (normalize(text).includes(word)) {
+                    tempHasWord = true;
+                    return "break";
+                }
+            }
+            return Object.assign(Object.assign({}, emptyUnit), { *predicate(route) {
+                    tempHasWord = false;
+                    eachRouteStrings(route, finder);
+                    return tempHasWord;
+                } });
+        },
+    };
+}
+function reachableWithRaw(options) {
+    return {
+        *initialize({ getUserCoordinate, distance }) {
+            var _a;
+            const center = (options === null || options === void 0 ? void 0 : options.center) || getUserCoordinate();
+            if (center == null)
+                return emptyUnit;
+            const radius = (_a = options === null || options === void 0 ? void 0 : options.radius) !== null && _a !== void 0 ? _a : 9800;
+            return Object.assign(Object.assign({}, emptyUnit), { *predicate(route) {
+                    return (getRouteKind(route) === "spot" &&
+                        distance(center, route.coordinates[0]) < radius);
+                } });
+        },
+    };
+}
+const reachable = reachableWithRaw();
+function latLngToBounds(coordinates, sizeInMeters) {
+    const latAccuracy = (180 * sizeInMeters) / 40075017, lngAccuracy = latAccuracy / Math.cos((Math.PI / 180) * coordinates.lat);
+    return L.latLngBounds([coordinates.lat - latAccuracy, coordinates.lng - lngAccuracy], [coordinates.lat + latAccuracy, coordinates.lng + lngAccuracy]);
+}
+function hasPortalInCell17With(options) {
+    return {
+        *initialize(e) {
+            var _a;
+            const duration = (_a = options === null || options === void 0 ? void 0 : options.duration) !== null && _a !== void 0 ? _a : 60 * 60 * 24 * 7; // 一週間
+            const includesNotFetchedCells = !(options === null || options === void 0 ? void 0 : options.fetchedCellsOnly);
+            const minFetchDate = Date.now() - duration * 1000;
+            const cells = yield* buildCells(e.routes);
+            return {
+                *predicate(r) {
+                    var _a;
+                    const coordinates = coordinateToLatLng(r.coordinates[0]);
+                    const cell17 = getCell17(cells, coordinates);
+                    // セル情報が取得されていないなら検索にヒットさせる
+                    if (cell17 == null)
+                        return includesNotFetchedCells;
+                    // セルの取得日時が古いなら検索にヒットさせる
+                    const fetchDate = (_a = getCell14(cells, coordinates)) === null || _a === void 0 ? void 0 : _a.fullFetchDate;
+                    if (typeof fetchDate === "number" &&
+                        fetchDate < minFetchDate) {
+                        return true;
+                    }
+                    // ポータルが存在するか
+                    return 0 < cell17.portals.length;
+                },
+            };
+        },
+    };
+}
+function hasNearbyPortalWith(options) {
+    return {
+        *initialize(e) {
+            var _a, _b, _c;
+            /** [m] */
+            const maxDistance = (_a = options === null || options === void 0 ? void 0 : options.distance) !== null && _a !== void 0 ? _a : 10;
+            /** [s] */
+            const fetchDuration = (_b = options === null || options === void 0 ? void 0 : options.duration) !== null && _b !== void 0 ? _b : 60 * 60 * 24 * 7; // 一週間
+            const fetchedCellsOnly = (_c = options === null || options === void 0 ? void 0 : options.fetchedCellsOnly) !== null && _c !== void 0 ? _c : false;
+            function maybeDuplicatedPortal(routeCoordinates, nearPortal) {
+                const nearPortalCoordinates = L.latLng(nearPortal.lat, nearPortal.lng);
+                if (routeCoordinates.distanceTo(nearPortalCoordinates) <=
+                    maxDistance) {
+                    return true;
+                }
+                return false;
+            }
+            const cells = yield* buildCells(e.routes);
+            return {
+                *predicate(r) {
+                    /** [ms] */
+                    const minFetchDate = Date.now() - fetchDuration * 1000;
+                    const coordinates = coordinateToLatLng(r.coordinates[0]);
+                    const bounds = latLngToBounds(coordinates, maxDistance);
+                    // 指定された領域から近いセル17を列挙
+                    for (const cell17 of getNearCellsForBounds(bounds, 17)) {
+                        const cell17Center = cell17.getLatLng();
+                        const cell17Record = getCell17(cells, cell17Center);
+                        // セル14の記録が取得されていない場合重複とする
+                        const cell14Record = getCell14(cells, cell17Center);
+                        const cell14FetchDate = cell14Record === null || cell14Record === void 0 ? void 0 : cell14Record.fullFetchDate;
+                        if (cell17Record == null) {
+                            if (!fetchedCellsOnly &&
+                                cell14FetchDate === "no-fetched") {
+                                return true;
+                            }
+                            continue;
+                        }
+                        // セル情報取得時間が古い場合重複とする
+                        if (typeof cell14FetchDate === "number" &&
+                            cell14FetchDate < minFetchDate) {
+                            return true;
+                        }
+                        // セル17に含まれるポータルと重複するかチェック
+                        for (const portal of cell17Record.portals) {
+                            if (maybeDuplicatedPortal(coordinates, portal)) {
+                                return true;
+                            }
+                        }
+                    }
+                    return false;
+                },
+            };
+        },
+    };
+}
+function* orderByKey(query, getKey, isAscendent) {
+    return {
+        *initialize(e) {
+            const unit = yield* e.queryAsFactory(query).initialize(e);
+            return Object.assign(Object.assign({}, unit), { *getSorter() {
+                    return {
+                        getKey,
+                        isAscendent,
+                    };
+                } });
+        },
+    };
+}
+function getOrderByKinds() {
+    return ["id", "latitude", "longitude", ...getGymsOrderKinds()];
+}
+function* orderBy(kind, query) {
+    switch (kind) {
+        case "id":
+            return yield* orderByKey(query, function* (r) {
+                return r.routeId;
+            }, false);
+        case "latitude":
+            return yield* orderByKey(query, function* (r) {
+                return r.coordinates[0][0];
+            }, false);
+        case "longitude":
+            return yield* orderByKey(query, function* (r) {
+                return r.coordinates[0][1];
+            }, true);
+        case "potentialGyms":
+        case "potentialStops":
+        case "currentStops":
+        case "currentGyms":
+            return yield* orderByGyms(kind, query);
+        default:
+            throw new Error(`Invalid order kind: ${kind}. Expected ${getOrderByKinds().join(" or ")}.`);
+    }
+}
+function* mapGenerator(array, mapping) {
+    const result = [];
+    let index = 0;
+    for (const item of array) {
+        result.push(yield* mapping(item, index++, array));
+    }
+    return result;
+}
+function* and(...queries) {
+    return {
+        *initialize(e) {
+            const units = yield* mapGenerator(queries, (q) => e.queryAsFactory(q).initialize(e));
+            return Object.assign(Object.assign({}, units.reduce(Object.assign, emptyUnit)), { *predicate(r) {
+                    for (const u of units) {
+                        if (!(yield* u.predicate(r))) {
+                            return false;
+                        }
+                    }
+                    return true;
+                } });
+        },
+    };
+}
+function* or(...queries) {
+    return {
+        *initialize(e) {
+            const units = yield* mapGenerator(queries, (q) => e.queryAsFactory(q).initialize(e));
+            return Object.assign(Object.assign({}, units.reduce(Object.assign, emptyUnit)), { *predicate(r) {
+                    for (const u of units) {
+                        if (yield* u.predicate(r)) {
+                            return true;
+                        }
+                    }
+                    return false;
+                } });
+        },
+    };
+}
+const library = {
+    *_lisq_(xs) {
+        const [head, ...tail] = xs;
+        if (typeof head === "function") {
+            return yield* head(...tail);
+        }
+        else {
+            return yield* and(...xs);
+        }
+    },
+    *["tag?"](route, tagNames) {
+        const tags = getRouteTags(route);
+        if (tags === undefined)
+            return false;
+        for (const name of tagNames) {
+            if (name in tags)
+                return true;
+        }
+        return false;
+    },
+    *concat(strings) {
+        return strings.join("");
+    },
+    *getTitle(route) {
+        return route.routeName;
+    },
+    *getDescription(route) {
+        return route.description;
+    },
+    reachable,
+    *reachableWith(...options) {
+        return reachableWithRaw(...options);
+    },
+    and,
+    ["_and_"]: and,
+    or,
+    ["_or_"]: or,
+    *not(query) {
+        return {
+            *initialize(e) {
+                const { predicate } = yield* e
+                    .queryAsFactory(query)
+                    .initialize(e);
+                return Object.assign(Object.assign({}, emptyUnit), { *predicate(r) {
+                        return !(yield* predicate(r));
+                    } });
+            },
+        };
+    },
+    *withTitle(getTitle, query) {
+        return {
+            initialize(e) {
+                return Object.assign(Object.assign({}, e.queryAsFactory(query).initialize(e)), { getTitle });
+            },
+        };
+    },
+    *withNote(getNote, query) {
+        return {
+            *initialize(e) {
+                return Object.assign(Object.assign({}, (yield* e.queryAsFactory(query).initialize(e))), { getNote });
+            },
+        };
+    },
+    orderBy,
+    ["_orderBy_"](query, kind) {
+        return orderBy(kind, query);
+    },
+    *potentialStops(count) {
+        return countByGyms("potentialStops", count);
+    },
+    *stopsForNextGym(count) {
+        return stopsForNextGym(count);
+    },
+    *cell14Portals(count) {
+        return {
+            *initialize(e) {
+                const cells = yield* buildCells(e.routes);
+                const cache = new WeakMap();
+                function getCell14PortalCount(r) {
+                    const cell14 = getCell14(cells, coordinateToLatLng(r.coordinates[0]));
+                    if (cell14 == null)
+                        return 0;
+                    let count = cache.get(cell14);
+                    if (count != null)
+                        return count;
+                    count = 0;
+                    for (const { portals } of cell14.cell17s.values()) {
+                        count += portals.length;
+                    }
+                    if (count === 0) {
+                        switch (cell14.fullFetchDate) {
+                            case "no-fetched":
+                            case "unknown":
+                                count = NaN;
+                        }
+                    }
+                    cache.set(cell14, count);
+                    return count;
+                }
+                return {
+                    *predicate(r) {
+                        return getCell14PortalCount(r) === count;
+                    },
+                };
+            },
+        };
+    },
+    *cell17Portals(count) {
+        return {
+            *initialize(e) {
+                const cells = yield* buildCells(e.routes);
+                return {
+                    *predicate(r) {
+                        var _a;
+                        const cell17 = getCell17(cells, coordinateToLatLng(r.coordinates[0]));
+                        return ((_a = cell17 === null || cell17 === void 0 ? void 0 : cell17.portals.length) !== null && _a !== void 0 ? _a : 0) === count;
+                    },
+                };
+            },
+        };
+    },
+    *hasPortalInCell17With(...args) {
+        return hasPortalInCell17With(...args);
+    },
+    hasPortalInCell17: hasPortalInCell17With(),
+    *portalNearbyWith(options) {
+        return hasNearbyPortalWith(options);
+    },
+    portalNearby: hasNearbyPortalWith(),
+    *inCell(coordinate, level) {
+        return {
+            *initialize() {
+                const targetCell = getS2Cell(coordinateToLatLng(coordinate), level);
+                return {
+                    *predicate(r) {
+                        if (getRouteKind(r) !== "spot")
+                            return false;
+                        const spotCell = getS2Cell(coordinateToLatLng(r.coordinates[0]), level);
+                        return targetCell.toString() === spotCell.toString();
+                    },
+                };
+            },
+        };
+    },
+    any: anyQuery,
+    *["_add_"](x, y) {
+        return x + y;
+    },
+    *["_sub_"](x, y) {
+        return x - y;
+    },
+    *["_mul_"](x, y) {
+        return x * y;
+    },
+    *["_div_"](x, y) {
+        return x / y;
+    },
+    *["_eq_"](x, y) {
+        return x === y;
+    },
+    *["_ne_"](x, y) {
+        return x !== y;
+    },
+    *["_neg"](x) {
+        return -x;
+    },
+};
+function evaluateWithLibrary(expression) {
+    const getUnresolved = (name) => {
+        if (name in library) {
+            return library[name];
+        }
+        throw new Error(`Unresolved name "${name}"`);
+    };
+    return evaluateExpression(expression, null, getUnresolved);
+}
+const diagnosticsCache = [];
+const tokenizer = createTokenizer(tokenDefinitions);
+const parser = createParser(tokenizer, (d, start, end) => diagnosticsCache.push({
+    message: d,
+    range: { start, end },
+}));
+function routeQueryAsFactory(query) {
+    switch (typeof query) {
+        case "string":
+        case "number":
+            return includes(String(query));
+        default:
+            return query;
+    }
+}
+function createQuery(expression) {
+    diagnosticsCache.length = 0;
+    try {
+        tokenizer.initialize(expression);
+        const json = parser.parse();
+        return {
+            *getQuery() {
+                // TODO: 静的チェックする
+                return routeQueryAsFactory((yield* evaluateWithLibrary(json)));
+            },
+            diagnostics: diagnosticsCache.slice(),
+        };
+    }
+    finally {
+        diagnosticsCache.length = 0;
+    }
+}
+
+;// CONCATENATED MODULE: ./source/template.ts
+function pad2(value) {
+    return ("00" + value).slice(-2);
+}
+function getIsoTodayString(date) {
+    const yyyy = date.getFullYear();
+    const mm = pad2(date.getMonth() + 1);
+    const dd = pad2(date.getDate());
+    return `${yyyy}-${mm}-${dd}`;
+}
+function getIsoTimeString(date) {
+    const hours = pad2(date.getHours());
+    const minutes = pad2(date.getMinutes());
+    const seconds = pad2(date.getSeconds());
+    return `${hours}:${minutes}:${seconds}`;
+}
+function getIsoTimeZoneString(date) {
+    const offset = -date.getTimezoneOffset();
+    const sign = offset >= 0 ? "+" : "-";
+    const hours = pad2(offset / 60);
+    const minutes = pad2(offset % 60);
+    return `${sign}${hours}:${minutes}`;
+}
+function getIsoDateTimeString(date, withTimeZone = false) {
+    return `${getIsoTodayString(date)}T${getIsoTimeString(date)}${withTimeZone ? getIsoTimeZoneString(date) : ""}`;
+}
+function resolveStandardVariable(name) {
+    switch (name) {
+        case "today":
+            return getIsoTodayString(new Date());
+        case "now":
+            return getIsoDateTimeString(new Date());
+        case "nowWithTimeZone":
+            return getIsoDateTimeString(new Date(), true);
+    }
+}
+const interpolationPattern = /\\\(\s*([a-zA-Z_$][a-zA-Z_$0-9]*)\s*\)/g;
+function applyTemplate(template, resolve) {
+    return template.replace(interpolationPattern, (interpolation, variableName) => {
+        var _a, _b;
+        return (_b = (_a = resolve === null || resolve === void 0 ? void 0 : resolve(variableName)) !== null && _a !== void 0 ? _a : resolveStandardVariable(variableName)) !== null && _b !== void 0 ? _b : interpolation;
+    });
+}
+
+;// CONCATENATED MODULE: ./source/virtual-list.module.css
+const virtual_list_module_cssText = ".list-window-fa44536a00000bc94d5a8c93920ad1cc83984c7a {\r\n    height: 100%;\r\n    overflow: auto;\r\n}\r\n\r\n.list-spacer-fc5e745fab3c036590666435ca183dc2a10acc80 {\r\n    box-sizing: border-box;\r\n    height: var(--list-height-f4cca63d8469bdbdb120b4545f5737e1fdda5ccb);\r\n    padding-top: var(--list-offset-top-664e5c8c0f474417951560e477448228bc0d0010);\r\n}\r\n\r\n.list-7a74ec9dca00230268b66bb6b0c8a280c21d8ed7 {\r\n    list-style-type: none;\r\n    margin: 0;\r\n    padding: 0;\r\n}\r\n\r\n.item-86f6dd1a96ae3101d37959a2657f6cd30cc664a1 {\r\n    height: var(--item-height-7cd20aa44890c813959dbadc4c040020c01be1ab);\r\n}\r\n";
+const virtual_list_module_variables = {
+    "--list-height": "--list-height-f4cca63d8469bdbdb120b4545f5737e1fdda5ccb",
+    "--list-offset-top": "--list-offset-top-664e5c8c0f474417951560e477448228bc0d0010",
+    "--item-height": "--item-height-7cd20aa44890c813959dbadc4c040020c01be1ab",
+};
+/* harmony default export */ const virtual_list_module = ({
+    "list-window": "list-window-fa44536a00000bc94d5a8c93920ad1cc83984c7a",
+    "list-spacer": "list-spacer-fc5e745fab3c036590666435ca183dc2a10acc80",
+    list: "list-7a74ec9dca00230268b66bb6b0c8a280c21d8ed7",
+    item: "item-86f6dd1a96ae3101d37959a2657f6cd30cc664a1",
+});
+
+;// CONCATENATED MODULE: ./source/virtual-list.tsx
+
+
+
+function createEmptyElements() {
+    return {
+        itemHeight: 0,
+        count: 0,
+        get() {
+            return undefined;
+        },
+    };
+}
+let css = virtual_list_module_cssText;
+function createVirtualList() {
+    if (css != null) {
+        addStyle(css);
+        css = null;
+    }
+    const list = jsx("ul", { class: virtual_list_module["list"] });
+    const listSpacer = jsx("div", { class: virtual_list_module["list-spacer"], children: list });
+    const listWindow = (jsx("div", { class: virtual_list_module["list-window"], children: listSpacer }));
+    let items = createEmptyElements();
+    let redrawRequested = true;
+    let lastStart = null;
+    let lastCount = null;
+    function update() {
+        const { scrollTop, offsetHeight: windowHeight } = listWindow;
+        const { itemHeight, count: itemCount } = items;
+        const start = Math.floor(scrollTop / itemHeight);
+        const count = Math.min(itemCount, Math.ceil((scrollTop + windowHeight) / itemHeight)) - start;
+        redrawRequested =
+            redrawRequested || lastStart !== start || lastCount !== count;
+        lastStart = start;
+        lastCount = count;
+        if (!redrawRequested)
+            return;
+        redrawRequested = false;
+        list.innerHTML = "";
+        for (let i = 0; i < count; i++) {
+            list.append(jsx("li", { class: virtual_list_module.item, children: items.get(start + i) }));
+        }
+        listWindow.style.setProperty(virtual_list_module_variables["--item-height"], itemHeight + "px");
+        listWindow.style.setProperty(virtual_list_module_variables["--list-height"], itemHeight * itemCount + "px");
+        listWindow.style.setProperty(virtual_list_module_variables["--list-offset-top"], start * itemHeight + "px");
+    }
+    function setItems(newItems) {
+        items = newItems;
+        redrawRequested = true;
+        return update();
+    }
+    listWindow.addEventListener("scroll", update);
+    new ResizeObserver((entries) => {
+        for (const _ of entries)
+            void update();
+    }).observe(listWindow);
+    return {
+        element: listWindow,
+        setItems,
+    };
+}
+
+;// CONCATENATED MODULE: ./source/dialog.module.css
+const dialog_module_cssText = ".dialog-f5a8a421c93884f3cc491257a7df2045e1400b9d {\r\n    --initial-height-d70f4aa89aeb288f7c37c554c44bfcba77460eb6: min(300px, 50%);\r\n    --initial-width-b48d6f7c854203fdb9472a5956aa4bb3c2f3c96a: min(400px, 80%);\r\n\r\n    position: fixed;\r\n    top: var(--drag-top-cfd7a9ebe3a128bd1063ee9f7d63befc76197955, calc(100% - var(--initial-height-d70f4aa89aeb288f7c37c554c44bfcba77460eb6)));\r\n    left: var(--drag-left-c4b5a320e1f3a5fcbb678b9edb8dec38c2914592, calc(100% - var(--initial-width-b48d6f7c854203fdb9472a5956aa4bb3c2f3c96a)));\r\n    height: var(--initial-height-d70f4aa89aeb288f7c37c554c44bfcba77460eb6);\r\n    width: var(--initial-width-b48d6f7c854203fdb9472a5956aa4bb3c2f3c96a);\r\n\r\n    --foreground-color-2ef02938f4d428e3f496543716eef36dddaa365a: var(--external-foreground-color-035fd489b8ef66bf7be2e541a55a578626cea3ed, darkgray);\r\n    --background-color-02474067cb7e4e72e354e521b09f398829276e15: var(--external-background-color-0a770a51b03fa7949d4c3681bfbe2b1c8c0e4944, aliceblue);\r\n\r\n    color: var(--foreground-color-2ef02938f4d428e3f496543716eef36dddaa365a);\r\n    background: var(--background-color-02474067cb7e4e72e354e521b09f398829276e15);\r\n    box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);\r\n    z-index: 10000;\r\n\r\n    overflow: auto;\r\n    resize: both;\r\n    display: flex;\r\n    flex-direction: column;\r\n}\r\n.dialog-f5a8a421c93884f3cc491257a7df2045e1400b9d.maximized-83f4bdd8131b200a9c6ffafe14eec1298ed74e55 {\r\n    /* resize: both によってブラウザによって設定されたインラインスタイルを上書きするため */\r\n    width: 100% !important;\r\n    height: 100% !important;\r\n    left: 0;\r\n    top: 0;\r\n    resize: none;\r\n}\r\n.dialog-f5a8a421c93884f3cc491257a7df2045e1400b9d.minimized-18ef04fed3604e28041591dab09c4b0f97c62db0 {\r\n    resize: none;\r\n\r\n    /* resize: both によってブラウザによって設定されたインラインスタイルを上書きするため */\r\n    width: auto !important;\r\n    height: auto !important;\r\n}\r\n\r\n.titlebar-f0e8f4f607877e2db2cd9463b3f9a1b093cca602 {\r\n    display: flex;\r\n    justify-content: space-between;\r\n    align-items: center;\r\n    align-content: center;\r\n    user-select: none;\r\n    touch-action: none;\r\n\r\n    padding: 0.3em;\r\n}\r\n.titlebar-icon-8c212486d87ad803541508fa27f1b2a64ea2021d {\r\n    width: 16px;\r\n    height: 16px;\r\n    margin-right: 8px;\r\n}\r\n.titlebar-title-f118a152a62cb315773413141a6f21d8029ce811 {\r\n    display: flex;\r\n    justify-content: center;\r\n    flex-grow: 1;\r\n\r\n    cursor: move;\r\n}\r\n.titlebar-right-controls-2f9936bbda9f3e1a2dfced6820dfc03201662486 {\r\n    display: flex;\r\n    align-items: center;\r\n}\r\n.titlebar-button-19249541dae9835bc54fa2dce7fe04f353582a11 {\r\n    color: var(--foreground-color-2ef02938f4d428e3f496543716eef36dddaa365a);\r\n    background: none;\r\n    border: none;\r\n    cursor: pointer;\r\n    padding: 0 12px;\r\n}\r\n.titlebar-button-19249541dae9835bc54fa2dce7fe04f353582a11::before {\r\n    background-color: var(--background-color-02474067cb7e4e72e354e521b09f398829276e15);\r\n    color: var(--foreground-color-2ef02938f4d428e3f496543716eef36dddaa365a);\r\n}\r\n.maximize-toggle-button-5973e77f16fcf90f39a55bbd1fa54c732bfea153::before {\r\n    content: \"□\";\r\n}\r\n.maximized-83f4bdd8131b200a9c6ffafe14eec1298ed74e55 .maximize-toggle-button-5973e77f16fcf90f39a55bbd1fa54c732bfea153::before {\r\n    content: \"❐\";\r\n}\r\n.minimize-toggle-button-c36dd0202f62c749148adfec76106bb982adc929::before {\r\n    content: \"＿\";\r\n}\r\n.minimized-18ef04fed3604e28041591dab09c4b0f97c62db0 .minimize-toggle-button-c36dd0202f62c749148adfec76106bb982adc929::before {\r\n    content: \"❐\";\r\n}\r\n\r\n.minimized-18ef04fed3604e28041591dab09c4b0f97c62db0 .titlebar-button-19249541dae9835bc54fa2dce7fe04f353582a11:not(.minimize-toggle-button-c36dd0202f62c749148adfec76106bb982adc929) {\r\n    display: none;\r\n}\r\n\r\n.inner-container-bd3c3d93bc3573faad020976a2a0fcb95c9b1644 {\r\n    flex-grow: 1;\r\n    overflow: auto;\r\n}\r\n.minimized-18ef04fed3604e28041591dab09c4b0f97c62db0 .inner-container-bd3c3d93bc3573faad020976a2a0fcb95c9b1644 {\r\n    display: none;\r\n}\r\n";
+const dialog_module_variables = {
+    "--initial-height": "--initial-height-d70f4aa89aeb288f7c37c554c44bfcba77460eb6",
+    "--initial-width": "--initial-width-b48d6f7c854203fdb9472a5956aa4bb3c2f3c96a",
+    "--drag-top": "--drag-top-cfd7a9ebe3a128bd1063ee9f7d63befc76197955",
+    "--drag-left": "--drag-left-c4b5a320e1f3a5fcbb678b9edb8dec38c2914592",
+    "--foreground-color": "--foreground-color-2ef02938f4d428e3f496543716eef36dddaa365a",
+    "--external-foreground-color": "--external-foreground-color-035fd489b8ef66bf7be2e541a55a578626cea3ed",
+    "--background-color": "--background-color-02474067cb7e4e72e354e521b09f398829276e15",
+    "--external-background-color": "--external-background-color-0a770a51b03fa7949d4c3681bfbe2b1c8c0e4944",
+};
+/* harmony default export */ const dialog_module = ({
+    dialog: "dialog-f5a8a421c93884f3cc491257a7df2045e1400b9d",
+    maximized: "maximized-83f4bdd8131b200a9c6ffafe14eec1298ed74e55",
+    minimized: "minimized-18ef04fed3604e28041591dab09c4b0f97c62db0",
+    titlebar: "titlebar-f0e8f4f607877e2db2cd9463b3f9a1b093cca602",
+    "titlebar-icon": "titlebar-icon-8c212486d87ad803541508fa27f1b2a64ea2021d",
+    "titlebar-title": "titlebar-title-f118a152a62cb315773413141a6f21d8029ce811",
+    "titlebar-right-controls": "titlebar-right-controls-2f9936bbda9f3e1a2dfced6820dfc03201662486",
+    "titlebar-button": "titlebar-button-19249541dae9835bc54fa2dce7fe04f353582a11",
+    "maximize-toggle-button": "maximize-toggle-button-5973e77f16fcf90f39a55bbd1fa54c732bfea153",
+    "minimize-toggle-button": "minimize-toggle-button-c36dd0202f62c749148adfec76106bb982adc929",
+    "inner-container": "inner-container-bd3c3d93bc3573faad020976a2a0fcb95c9b1644",
+});
+
+;// CONCATENATED MODULE: ./source/dialog.tsx
+
+
+
+function makeDraggable(element, handleElement = element, options) {
+    let offsetX = 0, offsetY = 0;
+    function setPosition(left, top) {
+        const rect = element.getBoundingClientRect();
+        const windowWidth = window.innerWidth;
+        const windowHeight = window.innerHeight;
+        // ウインドウ内に収まるようにする
+        left = Math.max(0, Math.min(left, windowWidth - rect.width));
+        top = Math.max(0, Math.min(top, windowHeight - rect.height));
+        if (options === null || options === void 0 ? void 0 : options.propertyNames) {
+            const { left: leftName, top: topName } = options.propertyNames;
+            element.style.setProperty(leftName, `${left}px`);
+            element.style.setProperty(topName, `${top}px`);
+        }
+        else {
+            element.style.left = `${left}px`;
+            element.style.top = `${top}px`;
+        }
+    }
+    const onPointerMove = (e) => {
+        setPosition(e.clientX - offsetX, e.clientY - offsetY);
+    };
+    handleElement.addEventListener("pointerdown", (e) => {
+        handleElement.addEventListener("pointermove", onPointerMove);
+        handleElement.setPointerCapture(e.pointerId);
+        offsetX = e.clientX - element.offsetLeft;
+        offsetY = e.clientY - element.offsetTop;
+    });
+    handleElement.addEventListener("pointerup", (e) => {
+        handleElement.removeEventListener("pointermove", onPointerMove);
+        handleElement.releasePointerCapture(e.pointerId);
+    });
+    // ウインドウサイズに合わせてサイズを変更する
+    function adjustSize() {
+        const rect = element.getBoundingClientRect();
+        const windowWidth = window.innerWidth;
+        const windowHeight = window.innerHeight;
+        if (rect.width > windowWidth) {
+            element.style.width = `${windowWidth}px`;
+        }
+        if (rect.height > windowHeight) {
+            element.style.height = `${windowHeight}px`;
+        }
+        setPosition(rect.left, rect.top);
+    }
+    window.addEventListener("resize", adjustSize);
+    adjustSize();
+}
+let applyCss = () => {
+    addStyle(dialog_module_cssText);
+    applyCss = null;
+};
+function createDialog(innerElement, options) {
+    var _a;
+    applyCss === null || applyCss === void 0 ? void 0 : applyCss();
+    const minimizeToggleButton = (jsx("button", { class: dialog_module["titlebar-button"] +
+            " " +
+            dialog_module["minimize-toggle-button"], title: "minimize" }));
+    const maximizeToggleButton = (jsx("button", { class: dialog_module["titlebar-button"] +
+            " " +
+            dialog_module["maximize-toggle-button"], title: "maximize" }));
+    const closeButton = (jsx("button", { class: dialog_module["titlebar-button"], title: "close", children: "\u00D7" }));
+    const titleSpan = (jsx("div", { class: dialog_module["titlebar-title"], children: (_a = options === null || options === void 0 ? void 0 : options.title) !== null && _a !== void 0 ? _a : "" }));
+    const titleBar = (jsxs("div", { class: dialog_module["titlebar"], children: [titleSpan, jsxs("div", { class: dialog_module["titlebar-right-controls"], children: [minimizeToggleButton, maximizeToggleButton, closeButton] })] }));
+    const dialogElement = (jsxs("div", { class: dialog_module["dialog"], children: [titleBar, jsx("div", { class: dialog_module["inner-container"], children: innerElement })] }));
+    titleBar.addEventListener("dblclick", toggleMaximizedState);
+    minimizeToggleButton.addEventListener("click", toggleMinimizedState);
+    maximizeToggleButton.addEventListener("click", toggleMaximizedState);
+    closeButton.addEventListener("click", hide);
+    makeDraggable(dialogElement, titleSpan, {
+        propertyNames: {
+            left: dialog_module_variables["--drag-left"],
+            top: dialog_module_variables["--drag-top"],
+        },
+    });
+    function show() {
+        document.body.appendChild(dialogElement);
+    }
+    function hide() {
+        document.body.removeChild(dialogElement);
+    }
+    function toggleMaximizedState() {
+        dialogElement.classList.remove(dialog_module["minimized"]);
+        dialogElement.classList.toggle(dialog_module["maximized"]);
+    }
+    function toggleMinimizedState() {
+        dialogElement.classList.remove(dialog_module["maximized"]);
+        dialogElement.classList.toggle(dialog_module["minimized"]);
+    }
+    return {
+        show,
+        hide,
+        element: dialogElement,
+        setTitle(title) {
+            titleSpan.innerHTML = "";
+            titleSpan.append(title);
+        },
+        setForegroundColor(cssColorText) {
+            dialogElement.style.setProperty(dialog_module_variables["--external-foreground-color"], cssColorText);
+        },
+        setBackgroundColor(cssColorText) {
+            dialogElement.style.setProperty(dialog_module_variables["--external-background-color"], cssColorText);
+        },
+    };
+}
+
+;// CONCATENATED MODULE: ./images/pin.svg
+const pin_namespaceObject = "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 100 100\">\r\n  <path d=\"M50 5\r\n           A20 20 0 0 1 70 25\r\n           C70 40 50 70 50 70\r\n           C50 70 30 40 30 25\r\n           A20 20 0 0 1 50 5Z\"\r\n        fill=\"#FF4444\"\r\n        stroke=\"#D40000\"\r\n        stroke-width=\"2\"/>\r\n  <circle cx=\"50\" cy=\"25\" r=\"8\"\r\n          fill=\"#FFFFFF\"/>\r\n</svg>\r\n";
+;// CONCATENATED MODULE: ./source/search-routes.ts
+var search_routes_awaiter = (undefined && undefined.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+
+
+
+
+
+function truncateText(text, maxLength, ellipsis) {
+    return maxLength < text.length ? text.slice(0, maxLength) + ellipsis : text;
+}
+function createSearchEventHandler(options) {
+    const { progress, defaultEnvironment, getCurrentRoutes, onSelected } = options;
+    function protectedCall(action, signal) {
+        return search_routes_awaiter(this, void 0, void 0, function* () {
+            try {
+                return yield handleAwaitOrError(action(), signal);
+            }
+            catch (error) {
+                progress({ type: "query-evaluation-error", error });
+                return null;
+            }
+        });
+    }
+    const emptyUnitQuery = {
+        // eslint-disable-next-line require-yield
+        *predicate() {
+            return false;
+        },
+    };
+    const emptyQuery = {
+        // eslint-disable-next-line require-yield
+        *initialize() {
+            return emptyUnitQuery;
+        },
+    };
+    let pinIconCache;
+    function handleQuery(query, signal) {
+        var _a, _b, _c;
+        return search_routes_awaiter(this, void 0, void 0, function* () {
+            const { getQuery, diagnostics } = createQuery(query.term);
+            progress({
+                type: "search-query-errors-occurred",
+                diagnostics,
+            });
+            const queryFactory = (_a = (yield protectedCall(getQuery, signal))) !== null && _a !== void 0 ? _a : emptyQuery;
+            const routes = [...getCurrentRoutes()];
+            const queryEnvironment = Object.assign(Object.assign({}, defaultEnvironment), { routes });
+            const unitQuery = (_b = (yield protectedCall(() => queryFactory.initialize(queryEnvironment), signal))) !== null && _b !== void 0 ? _b : emptyUnitQuery;
+            const { getNote, predicate, getTitle } = unitQuery;
+            for (const route of routes) {
+                if (getRouteKind(route) !== "spot")
+                    continue;
+                const hit = yield protectedCall(() => predicate(route), signal);
+                if (!hit)
+                    continue;
+                const title = (_c = (getTitle &&
+                    (yield protectedCall(() => getTitle(route), signal)))) !== null && _c !== void 0 ? _c : route.routeName;
+                const note = getNote
+                    ? yield protectedCall(() => getNote(route), signal)
+                    : null;
+                const position = coordinateToLatLng(route.coordinates[0]);
+                const description = truncateText(`${note == null ? "" : note + " "}${route.description}`, 40, "…");
+                const icon = (pinIconCache !== null && pinIconCache !== void 0 ? pinIconCache : (pinIconCache = `data:image/svg+xml;base64,` + btoa(pin_namespaceObject)));
+                query.addResult({
+                    title,
+                    position,
+                    description,
+                    icon,
+                    onSelected(_result, _clickEvent) {
+                        onSelected(route.routeId);
+                    },
+                });
+            }
+        });
+    }
+    const cancelScope = createAsyncCancelScope(options.handleAsyncError);
+    return (query) => cancelScope((signal) => search_routes_awaiter(this, void 0, void 0, function* () { return handleQuery(query, signal); }));
+}
+
+;// CONCATENATED MODULE: ./source/query-editor.module.css
+const query_editor_module_cssText = "\r\n.highlighting-eb1bdb9ef1ff8ad9f5382501d53fd07c69b329a0.invalid-a9b8c142de1ecbf0628f905169f747e43e9fa09a {\r\n    background-color: lightgoldenrodyellow;\r\n}\r\n.input-container-a055e2bbdf088977f2cd7bd39b0f9af72f444075 {\r\n    position: relative;\r\n    width: auto;\r\n    height: auto;\r\n}\r\n.input-7a4263bdf0d43219e5cebd4956b85f64e1b1020e {\r\n    color: transparent;\r\n    background-color: transparent;\r\n    caret-color: gray;\r\n}\r\n.highlighting-eb1bdb9ef1ff8ad9f5382501d53fd07c69b329a0 {\r\n    background: white;\r\n    color: rgb(54, 54, 54)\r\n}\r\n.input-7a4263bdf0d43219e5cebd4956b85f64e1b1020e, .highlighting-eb1bdb9ef1ff8ad9f5382501d53fd07c69b329a0 {\r\n    --input-line-height-ratio-6e32f6633f95524076f6971ff716a61a9e2d22c5: 1.5;\r\n\r\n    margin: 0;\r\n    padding: 1px;\r\n    border: 0;\r\n    width: calc(100% - 32px);\r\n    height: calc(1em * var(--input-line-height-ratio-6e32f6633f95524076f6971ff716a61a9e2d22c5) + 1px);\r\n}\r\n.input-7a4263bdf0d43219e5cebd4956b85f64e1b1020e, .highlighting-eb1bdb9ef1ff8ad9f5382501d53fd07c69b329a0 * {\r\n    font-size: 9pt;\r\n    font-family: 'fira code', Consolas, Menlo, Monaco, 'Courier New', Courier, monospace;\r\n    line-height: var(--input-line-height-ratio-6e32f6633f95524076f6971ff716a61a9e2d22c5);\r\n    tab-size: 2;\r\n}\r\n.input-7a4263bdf0d43219e5cebd4956b85f64e1b1020e {\r\n    position: relative;\r\n    overflow: auto;\r\n}\r\n.highlighting-eb1bdb9ef1ff8ad9f5382501d53fd07c69b329a0 {\r\n    position: absolute;\r\n    top: 0;\r\n    left: 0;\r\n    overflow: hidden;\r\n}\r\n.input-7a4263bdf0d43219e5cebd4956b85f64e1b1020e, .highlighting-eb1bdb9ef1ff8ad9f5382501d53fd07c69b329a0 {\r\n    white-space: pre;\r\n    text-wrap: wrap;\r\n    word-break: break-all;\r\n    hyphens: none;\r\n}\r\n.input-7a4263bdf0d43219e5cebd4956b85f64e1b1020e {\r\n    z-index: 1;\r\n}\r\n.highlighting-eb1bdb9ef1ff8ad9f5382501d53fd07c69b329a0 {\r\n    z-index: 0;\r\n}\r\n\r\n.token-5298f0aed99f259a64648db7e712ad470f49185a {\r\n    border-radius: 1em;\r\n    background: hsl(var(--token-hue-642cdf41128196f80b17fc44b845d211ea645127), 29%, 90%);\r\n}\r\n.token-5298f0aed99f259a64648db7e712ad470f49185a[class~=space] {\r\n    border-radius: 0;\r\n    background: radial-gradient(circle farthest-side, lightgray, lightgray 1px, transparent 1px, transparent);\r\n    background-size: 4px 100%;\r\n}\r\n.token-5298f0aed99f259a64648db7e712ad470f49185a[class~=undefined-type], .token-5298f0aed99f259a64648db7e712ad470f49185a[class~=keyword] {\r\n    background: none;\r\n}\r\n.token-5298f0aed99f259a64648db7e712ad470f49185a[class~=comment] {\r\n    --token-hue-642cdf41128196f80b17fc44b845d211ea645127: 120;\r\n}\r\n.token-5298f0aed99f259a64648db7e712ad470f49185a[class~=string] {\r\n    --token-hue-642cdf41128196f80b17fc44b845d211ea645127: 0;\r\n}\r\n.token-5298f0aed99f259a64648db7e712ad470f49185a[class~=number] {\r\n    --token-hue-642cdf41128196f80b17fc44b845d211ea645127: 182;\r\n}\r\n.token-5298f0aed99f259a64648db7e712ad470f49185a[class~=operator] {\r\n    --token-hue-642cdf41128196f80b17fc44b845d211ea645127: 43;\r\n}\r\n.token-5298f0aed99f259a64648db7e712ad470f49185a.invalid-a9b8c142de1ecbf0628f905169f747e43e9fa09a {\r\n    text-decoration: underline wavy red;\r\n}\r\n";
+const query_editor_module_variables = {
+    "--input-line-height-ratio": "--input-line-height-ratio-6e32f6633f95524076f6971ff716a61a9e2d22c5",
+    "--token-hue": "--token-hue-642cdf41128196f80b17fc44b845d211ea645127",
+};
+/* harmony default export */ const query_editor_module = ({
+    highlighting: "highlighting-eb1bdb9ef1ff8ad9f5382501d53fd07c69b329a0",
+    invalid: "invalid-a9b8c142de1ecbf0628f905169f747e43e9fa09a",
+    "input-container": "input-container-a055e2bbdf088977f2cd7bd39b0f9af72f444075",
+    input: "input-7a4263bdf0d43219e5cebd4956b85f64e1b1020e",
+    token: "token-5298f0aed99f259a64648db7e712ad470f49185a",
+});
+
+;// CONCATENATED MODULE: ./source/query-editor.tsx
+
+
+
+
+function getMonospaceWidth(text) {
+    // TODO:
+    return text.length;
+}
+function addClassName(element, className) {
+    if (className != null) {
+        element.classList.add(className);
+    }
+}
+function createQueryEditor(options) {
+    var _a, _b, _c, _d, _e, _f;
+    const invalidClassNames = [
+        query_editor_module.invalid,
+        (_a = options === null || options === void 0 ? void 0 : options.classNames) === null || _a === void 0 ? void 0 : _a.invalid,
+    ].filter((x) => x != null);
+    const highlightingContent = jsx("code", {});
+    const highlightingContainer = (jsx("pre", { "aria-hidden": "true", class: query_editor_module.highlighting, children: highlightingContent }));
+    addClassName(highlightingContainer, (_b = options === null || options === void 0 ? void 0 : options.classNames) === null || _b === void 0 ? void 0 : _b.highlighting);
+    const startSymbol = Symbol("start");
+    const endSymbol = Symbol("end");
+    const tokens = [];
+    function getTokenElementIndex(position) {
+        let low = 0;
+        let high = tokens.length - 1;
+        while (low <= high) {
+            const mid = Math.floor((low + high) / 2);
+            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+            const tokenElement = tokens[mid];
+            if (position < tokenElement[startSymbol]) {
+                high = mid - 1;
+            }
+            else if (position > tokenElement[endSymbol]) {
+                low = mid + 1;
+            }
+            else {
+                return mid;
+            }
+        }
+        return;
+    }
+    const tokenClassName = (_c = options === null || options === void 0 ? void 0 : options.classNames) === null || _c === void 0 ? void 0 : _c.token;
+    function createSpan(source, start, end, tokenType, tokenModifier) {
+        const span = (jsx("span", { children: source.slice(start, end) }));
+        span.classList.add(query_editor_module.token);
+        addClassName(span, tokenClassName);
+        span.classList.add(tokenType !== null && tokenType !== void 0 ? tokenType : "undefined-type");
+        span.classList.add(tokenModifier !== null && tokenModifier !== void 0 ? tokenModifier : "undefined-modifier");
+        span[startSymbol] = start;
+        span[endSymbol] = end;
+        return span;
+    }
+    function updateScroll(input) {
+        highlightingContainer.scrollTop = input.scrollTop;
+        highlightingContainer.scrollLeft = input.scrollLeft;
+    }
+    const tokenDefinitions = options === null || options === void 0 ? void 0 : options.tokenDefinitions;
+    const tokenizer = tokenDefinitions
+        ? createTokenizer(tokenDefinitions)
+        : null;
+    function updateHighlightedElement(source) {
+        if (tokenizer == null) {
+            tokens.length = 0;
+            highlightingContent.innerText = source;
+            return;
+        }
+        tokenizer.initialize(source);
+        tokens.length = 0;
+        highlightingContent.innerHTML = "";
+        const fragment = document.createDocumentFragment();
+        let next = 0;
+        // eslint-disable-next-line no-constant-condition
+        while (true) {
+            const tokenStart = tokenizer.getPosition();
+            const token = tokenizer.next();
+            if (token === undefined)
+                break;
+            const tokenEnd = tokenizer.getPosition();
+            if (next < tokenStart) {
+                const span = createSpan(source, next, tokenStart, undefined, undefined);
+                tokens.push(span);
+                fragment.append(span);
+            }
+            const span = createSpan(source, tokenStart, tokenEnd, token === null || token === void 0 ? void 0 : token[0], token === null || token === void 0 ? void 0 : token[1]);
+            tokens.push(span);
+            fragment.append(span);
+            next = tokenEnd;
+        }
+        if (next < source.length) {
+            fragment.append(source.slice(next));
+        }
+        highlightingContent.append(fragment);
+    }
+    function onValueChange(element) {
+        var _a;
+        updateScroll(element);
+        (_a = options === null || options === void 0 ? void 0 : options.onValueChange) === null || _a === void 0 ? void 0 : _a.call(options, element);
+        updateHighlightedElement(element.value);
+    }
+    function insertText(element, createText) {
+        const code = element.value;
+        const beforeSelection = code.slice(0, element.selectionStart);
+        const afterSelection = code.slice(element.selectionEnd, code.length);
+        const text = createText(beforeSelection, afterSelection);
+        const nextCursorPosition = element.selectionEnd + text.length;
+        element.value = beforeSelection + text + afterSelection;
+        element.selectionStart = nextCursorPosition;
+        element.selectionEnd = nextCursorPosition;
+    }
+    function detectIndent(text) {
+        var _a, _b;
+        let minIndent;
+        for (const [, headSpaces] of text.matchAll(/(?:^|\n)( +)/g)) {
+            if (((_a = headSpaces === null || headSpaces === void 0 ? void 0 : headSpaces.length) !== null && _a !== void 0 ? _a : Infinity) <
+                ((_b = minIndent === null || minIndent === void 0 ? void 0 : minIndent.length) !== null && _b !== void 0 ? _b : Infinity)) {
+                minIndent = headSpaces;
+            }
+        }
+        return minIndent;
+    }
+    function getNextWidth(lineWidth, indentSize) {
+        return (Math.floor(lineWidth / indentSize) + 1) * indentSize;
+    }
+    function getPreviousWidth(lineWidth, indentSize) {
+        return (Math.ceil(lineWidth / indentSize) - 1) * indentSize;
+    }
+    const errorMessageKey = "errorMessage";
+    function clearDiagnostics() {
+        highlightingContainer.classList.remove(...invalidClassNames);
+        for (const t of tokens) {
+            t.classList.remove(...invalidClassNames);
+            t.dataset[errorMessageKey] = undefined;
+        }
+    }
+    function addDiagnostic(diagnostic) {
+        var _a;
+        highlightingContainer.classList.add(...invalidClassNames);
+        // diagnostic.message;
+        const startIndex = getTokenElementIndex(diagnostic.range.start);
+        if (startIndex) {
+            const endIndex = (_a = getTokenElementIndex(diagnostic.range.end)) !== null && _a !== void 0 ? _a : startIndex;
+            for (let i = startIndex; i < endIndex + 1; i++) {
+                const token = tokens[i];
+                if (!token)
+                    continue;
+                token.classList.add(...invalidClassNames);
+                const dataset = token.dataset;
+                dataset[errorMessageKey] = diagnostic.message;
+                token.title = diagnostic.message;
+            }
+        }
+    }
+    const defaultIndent = "  ";
+    const inputField = addListeners((jsx("textarea", { spellcheck: false, class: query_editor_module.input, placeholder: (_d = options === null || options === void 0 ? void 0 : options.placeholder) !== null && _d !== void 0 ? _d : "", children: (_e = options === null || options === void 0 ? void 0 : options.initialText) !== null && _e !== void 0 ? _e : "" })), {
+        input() {
+            onValueChange(this);
+        },
+        scroll() {
+            updateScroll(this);
+        },
+        keydown(e) {
+            var _a, _b, _c, _d;
+            if (e.key === "Tab") {
+                e.preventDefault();
+                insertText(this, (beforeSelection) => {
+                    var _a, _b, _c;
+                    const indent = (_a = detectIndent(this.value)) !== null && _a !== void 0 ? _a : defaultIndent;
+                    const line = (_c = (_b = /(?:^|\n)(.*)$/.exec(beforeSelection)) === null || _b === void 0 ? void 0 : _b[1]) !== null && _c !== void 0 ? _c : "";
+                    const lineWidth = getMonospaceWidth(line);
+                    const insertionSpaceCount = getNextWidth(lineWidth, indent.length) - lineWidth;
+                    return " ".repeat(insertionSpaceCount);
+                });
+                onValueChange(this);
+            }
+            if (e.key === "Enter") {
+                e.preventDefault();
+                insertText(this, (beforeSelection) => {
+                    var _a, _b;
+                    const indent = (_b = (_a = /([\t ]*).*$/.exec(beforeSelection)) === null || _a === void 0 ? void 0 : _a[1]) !== null && _b !== void 0 ? _b : "";
+                    return "\n" + indent;
+                });
+                onValueChange(this);
+            }
+            if (e.key === "Backspace") {
+                // eslint-disable-next-line @typescript-eslint/no-this-alias
+                const element = this;
+                if (element.selectionStart === element.selectionEnd) {
+                    const code = element.value;
+                    const beforeSelection = code.slice(0, element.selectionStart);
+                    const afterSelection = code.slice(element.selectionEnd, code.length);
+                    const m = /(?:^|\n)( +)$/.exec(beforeSelection);
+                    if (m) {
+                        e.preventDefault();
+                        const lineWidth = (_b = (_a = m[1]) === null || _a === void 0 ? void 0 : _a.length) !== null && _b !== void 0 ? _b : 0;
+                        const indentWidth = (_d = (_c = detectIndent(this.value)) === null || _c === void 0 ? void 0 : _c.length) !== null && _d !== void 0 ? _d : defaultIndent.length;
+                        const deleteCount = lineWidth -
+                            getPreviousWidth(lineWidth, indentWidth);
+                        const nextCursorPosition = element.selectionStart - deleteCount;
+                        element.value =
+                            beforeSelection.slice(0, beforeSelection.length - deleteCount) + afterSelection;
+                        element.selectionStart = nextCursorPosition;
+                        element.selectionEnd = nextCursorPosition;
+                        onValueChange(this);
+                    }
+                }
+            }
+        },
+    });
+    addClassName(inputField, (_f = options === null || options === void 0 ? void 0 : options.classNames) === null || _f === void 0 ? void 0 : _f.inputField);
+    new ResizeObserver((entries) => {
+        for (const entry of entries) {
+            if (entry.target !== inputField)
+                continue;
+            const { contentRect } = entry;
+            highlightingContainer.style.width = contentRect.width + "px";
+            highlightingContainer.style.height = contentRect.height + "px";
+        }
+    }).observe(inputField);
+    onValueChange(inputField);
+    return {
+        cssText: query_editor_module_cssText,
+        element: (jsxs("div", { class: query_editor_module["input-container"], children: [inputField, highlightingContainer] })),
+        setValue(value) {
+            inputField.value = value;
+            onValueChange(inputField);
+        },
+        clearDiagnostics,
+        addDiagnostic,
+    };
+}
+
+;// CONCATENATED MODULE: ./source/query-launcher.module.css
+const query_launcher_module_cssText = ".ellipsis-text-40fbd5804d99bd182b115deab6fe915e21558d05 {\r\n    overflow: hidden;\r\n    white-space: nowrap;\r\n    text-overflow: ellipsis;\r\n}\r\n\r\n/* スクロールバー非表示 */\r\n.select-list-3e5c759360e91a17da6a5d97a40cbbfdda014328::-webkit-scrollbar {\r\n    display: none;\r\n}\r\n.select-list-3e5c759360e91a17da6a5d97a40cbbfdda014328 {\r\n    scrollbar-width: none;\r\n}\r\n\r\n/* クエリリスト */\r\n.select-list-3e5c759360e91a17da6a5d97a40cbbfdda014328 {\r\n    display: flex;\r\n    flex-direction: row;\r\n    flex-wrap: nowrap;\r\n    overflow-x: auto;\r\n    padding: 0;\r\n    margin: 0;\r\n    width: calc(100% - 2em);\r\n}\r\n\r\n.select-list-item-83fbd92442eada5fe9e0d784bee614737cb35e1c {\r\n    display: inline-block;\r\n    position: relative;\r\n}\r\n\r\n.select-button-ea06e3663dcdc2ad58cd87011cb35cbbc6bf9747 {\r\n    max-width: 10em;\r\n    min-height: 2em;\r\n\r\n    border: none;\r\n    border-top: solid 3px gray;\r\n    background-color: #ffffffaa;\r\n}\r\n\r\n.selected-19c0763b0c571a21d0be6f52880fa00d13f2235b.select-list-item-83fbd92442eada5fe9e0d784bee614737cb35e1c > .select-button-ea06e3663dcdc2ad58cd87011cb35cbbc6bf9747 {\r\n    border-top-color: lightblue;\r\n    background-color: white;\r\n}\r\n\r\n.select-list-item-83fbd92442eada5fe9e0d784bee614737cb35e1c:not(.selected-19c0763b0c571a21d0be6f52880fa00d13f2235b) + .select-list-item-83fbd92442eada5fe9e0d784bee614737cb35e1c:not(.selected-19c0763b0c571a21d0be6f52880fa00d13f2235b)::before {\r\n    content: \"\";\r\n    height: 1.2em;\r\n    border-left: 1px solid darkgray;\r\n    position: absolute;\r\n    top: 3px;\r\n    bottom: 0;\r\n    margin: auto;\r\n}\r\n\r\n/* タブコントロールっぽい見た目にする */\r\ndetails.tab-1cea9f2986bebd225eb4c8d033382a78812ed910 > summary {\r\n    border-bottom-width: 0;\r\n    padding-bottom: 0;\r\n}\r\ndetails.tab-1cea9f2986bebd225eb4c8d033382a78812ed910 > .tab-contents-34d9b4f7df5479ce9840c81f28adfac37623e217:not(summary) {\r\n    padding-top: 0;\r\n    border-top-width: 0;\r\n}\r\n\r\n\r\n/* ドラッグ中の見た目を変更 */\r\n.draggable-c94e3846acbcbef7883424ca6cae1676786b5c1d {\r\n    cursor: grab;\r\n}\r\n\r\n.dragging-1bf8cb20e42acc29f3d83300d1cbf24f538313e3 {\r\n    opacity: 0.5;\r\n}\r\n\r\n.drag-over-c5674c76c58af7ba4abc7b7387a769aeea013f74 {\r\n    border: 2px dashed #000;\r\n}\r\n\r\n/* コマンドボタンの整列用 */\r\n.commands-container-c6674b7cd3c9dac7a00aa73c6101288592afab75 {\r\n    display: flex;\r\n    flex-direction: row;\r\n    flex-wrap: wrap;\r\n}\r\n.name-input-a0604ec61a77120ae2d97754393645af4b4e89cc {\r\n    flex: 0 0 content;\r\n}\r\n\r\n.source-title-icon-9c459a3fe8357e4d199e7f1986e2e389bbb01687 {\r\n    padding-right: 0.3em;\r\n    margin-right: 0.3em;\r\n    border-right: dashed 1px #c5c5c5;\r\n}\r\n";
+const query_launcher_module_variables = {};
+/* harmony default export */ const query_launcher_module = ({
+    "ellipsis-text": "ellipsis-text-40fbd5804d99bd182b115deab6fe915e21558d05",
+    "select-list": "select-list-3e5c759360e91a17da6a5d97a40cbbfdda014328",
+    "select-list-item": "select-list-item-83fbd92442eada5fe9e0d784bee614737cb35e1c",
+    "select-button": "select-button-ea06e3663dcdc2ad58cd87011cb35cbbc6bf9747",
+    selected: "selected-19c0763b0c571a21d0be6f52880fa00d13f2235b",
+    tab: "tab-1cea9f2986bebd225eb4c8d033382a78812ed910",
+    "tab-contents": "tab-contents-34d9b4f7df5479ce9840c81f28adfac37623e217",
+    draggable: "draggable-c94e3846acbcbef7883424ca6cae1676786b5c1d",
+    dragging: "dragging-1bf8cb20e42acc29f3d83300d1cbf24f538313e3",
+    "drag-over": "drag-over-c5674c76c58af7ba4abc7b7387a769aeea013f74",
+    "commands-container": "commands-container-c6674b7cd3c9dac7a00aa73c6101288592afab75",
+    "name-input": "name-input-a0604ec61a77120ae2d97754393645af4b4e89cc",
+    "source-title-icon": "source-title-icon-9c459a3fe8357e4d199e7f1986e2e389bbb01687",
+});
+
+;// CONCATENATED MODULE: ./source/query/service.ts
+
+var SemanticTokenTypes;
+(function (SemanticTokenTypes) {
+    SemanticTokenTypes["variable"] = "variable";
+    SemanticTokenTypes["keyword"] = "keyword";
+    SemanticTokenTypes["number"] = "number";
+    SemanticTokenTypes["string"] = "string";
+    SemanticTokenTypes["comment"] = "comment";
+    SemanticTokenTypes["operator"] = "operator";
+    SemanticTokenTypes["space"] = "space";
+})(SemanticTokenTypes || (SemanticTokenTypes = {}));
+var SemanticTokenModifiers;
+(function (SemanticTokenModifiers) {
+    SemanticTokenModifiers["declaration"] = "declaration";
+    SemanticTokenModifiers["static"] = "static";
+    SemanticTokenModifiers["definition"] = "definition";
+    SemanticTokenModifiers["defaultLibrary"] = "defaultLibrary";
+})(SemanticTokenModifiers || (SemanticTokenModifiers = {}));
+function getTokenCategory(tokenKind) {
+    switch (tokenKind) {
+        case "Unknown":
+            return null;
+        case "$":
+        case "@":
+        case "(":
+        case ")":
+        case "{":
+        case "}":
+        case ",":
+        case ":":
+            return [SemanticTokenTypes.keyword, SemanticTokenModifiers.static];
+        case "Number":
+            return [
+                SemanticTokenTypes.number,
+                SemanticTokenModifiers.definition,
+            ];
+        case "Name":
+        case "String":
+            return [
+                SemanticTokenTypes.string,
+                SemanticTokenModifiers.defaultLibrary,
+            ];
+        case "Comment":
+            return [SemanticTokenTypes.comment, SemanticTokenModifiers.static];
+        case "WhiteSpace":
+            return [
+                SemanticTokenTypes.space,
+                SemanticTokenModifiers.defaultLibrary,
+            ];
+        case "EndOfSource":
+            return;
+        default:
+            return standard_extensions_error `Invalid token kind: "${tokenKind}"`;
+    }
+}
+function mapTokenDefinitions({ tokens, getEos, getDefault, getTokenKind }, mapping) {
+    return {
+        tokens,
+        getEos() {
+            return mapping(getEos());
+        },
+        getDefault() {
+            return mapping(getDefault());
+        },
+        getTokenKind(token, start, end) {
+            return mapping(getTokenKind(token, start, end));
+        },
+    };
+}
+
+;// CONCATENATED MODULE: ./source/query-launcher.tsx
+var query_launcher_awaiter = (undefined && undefined.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+
+
+
+
+
+
+
+
+
+
+function createQueryLauncher({ signal, handleAsyncError, progress, onCurrentQueryChanged, onPortalQueryChanged, loadSources, saveSources, }) {
+    var _a, _b, _c;
+    return query_launcher_awaiter(this, void 0, void 0, function* () {
+        const checkDelayMilliseconds = 500;
+        const saveDelayMilliseconds = 5000;
+        function createState() {
+            return query_launcher_awaiter(this, void 0, void 0, function* () {
+                const { sources, selectedSourceIndex } = yield loadSources({ signal });
+                return {
+                    sources: sources.slice(),
+                    selectedSourceIndex,
+                };
+            });
+        }
+        const state = yield createState();
+        notifyPortalQueryChanged();
+        function setQueryExpression(signal) {
+            return query_launcher_awaiter(this, void 0, void 0, function* () {
+                yield sleep(checkDelayMilliseconds, { signal });
+                const currentSource = getCurrentSource();
+                if (currentSource == null)
+                    return;
+                const queryText = currentSource.text;
+                progress === null || progress === void 0 ? void 0 : progress({
+                    type: "query-parse-starting",
+                    queryText,
+                });
+                if (queryText.trim() === "") {
+                    const source = Object.assign(Object.assign({}, currentSource), { text: queryText, summary: queryText });
+                    setCurrentSource(source);
+                    updateQueryList();
+                    progress === null || progress === void 0 ? void 0 : progress({
+                        type: "query-parse-completed",
+                        hasFilter: false,
+                    });
+                    onCurrentQueryChanged === null || onCurrentQueryChanged === void 0 ? void 0 : onCurrentQueryChanged(Object.assign({}, source), "simple-query");
+                }
+                else {
+                    queryEditor.clearDiagnostics();
+                    const { getQuery, diagnostics } = createQuery(queryText);
+                    for (const diagnostic of diagnostics) {
+                        queryEditor.addDiagnostic(diagnostic);
+                    }
+                    if (0 !== diagnostics.length) {
+                        progress === null || progress === void 0 ? void 0 : progress({
+                            type: "query-parse-error-occurred",
+                            messages: diagnostics.map((d) => d.message),
+                        });
+                    }
+                    else {
+                        progress === null || progress === void 0 ? void 0 : progress({
+                            type: "query-parse-completed",
+                            hasFilter: true,
+                        });
+                    }
+                    const source = Object.assign(Object.assign({}, currentSource), { text: queryText, summary: queryText });
+                    setCurrentSource(source);
+                    updateQueryList();
+                    onCurrentQueryChanged === null || onCurrentQueryChanged === void 0 ? void 0 : onCurrentQueryChanged(source, getQuery);
+                }
+            });
+        }
+        function saveQueries(signal) {
+            return query_launcher_awaiter(this, void 0, void 0, function* () {
+                progress === null || progress === void 0 ? void 0 : progress({
+                    type: "queries-save-waited",
+                    delayMilliseconds: saveDelayMilliseconds,
+                });
+                yield sleep(saveDelayMilliseconds, { signal });
+                progress === null || progress === void 0 ? void 0 : progress({
+                    type: "queries-save-started",
+                });
+                yield saveSources({
+                    sources: state.sources,
+                    selectedSourceIndex: state.selectedSourceIndex,
+                }, { signal });
+                progress === null || progress === void 0 ? void 0 : progress({
+                    type: "queries-save-completed",
+                });
+            });
+        }
+        const setQueryExpressionCancelScope = createAsyncCancelScope(handleAsyncError);
+        function setQueryExpressionDelayed() {
+            setQueryExpressionCancelScope((signal) => query_launcher_awaiter(this, void 0, void 0, function* () {
+                yield Promise.all([
+                    setQueryExpression(signal),
+                    saveQueries(signal),
+                ]);
+            }));
+        }
+        const saveButtonElement = addListeners(jsx("button", { children: "\u2795\u8FFD\u52A0" }), {
+            click: saveQuery,
+        });
+        const deleteButtonElement = addListeners(jsx("button", { children: "\uD83D\uDDD1\uFE0F\u524A\u9664" }), {
+            click: deleteQuery,
+        });
+        const moveLeftButtonElement = addListeners(jsx("button", { children: "\u2B05\uFE0F" }), {
+            click: moveQueryLeft,
+        });
+        const moveRightButtonElement = addListeners(jsx("button", { children: "\u27A1\uFE0F" }), {
+            click: moveQueryRight,
+        });
+        const queryListElement = jsx("ul", { class: query_launcher_module["select-list"] });
+        const nameInputElement = addListeners((jsx("input", { type: "text", placeholder: "\u30AF\u30A8\u30EA\u540D", value: (_b = (_a = getCurrentSource()) === null || _a === void 0 ? void 0 : _a.name) !== null && _b !== void 0 ? _b : "", class: query_launcher_module["name-input"] })), {
+            input(e) {
+                const currentSource = getCurrentSource();
+                if (currentSource == null)
+                    return;
+                const newName = e.target.value;
+                if (currentSource.name === newName)
+                    return;
+                if (newName.trim() === "")
+                    return;
+                if (getSourceOfName(newName)) {
+                    progress === null || progress === void 0 ? void 0 : progress({
+                        type: "query-name-duplicated",
+                        name: newName,
+                    });
+                    return;
+                }
+                setCurrentSource(Object.assign(Object.assign({}, currentSource), { name: newName }));
+                updateQueryList();
+            },
+        });
+        const portalQueryButtonOffText = "⭐ポータル指定";
+        const portalQueryButtonOnText = "⭐ポータル指定解除";
+        const portalQueryButtonElement = addListeners(jsx("button", { children: portalQueryButtonOffText }), {
+            click: togglePortalQuery,
+        });
+        const queryEditor = createQueryEditor({
+            initialText: (_c = getCurrentSource()) === null || _c === void 0 ? void 0 : _c.text,
+            placeholder: "🔍ルート検索",
+            tokenDefinitions: mapTokenDefinitions(tokenDefinitions, getTokenCategory),
+            onValueChange(e) {
+                var _a;
+                setCurrentSourceText(e.value);
+                setQueryExpressionDelayed();
+                if ((_a = getCurrentSource()) === null || _a === void 0 ? void 0 : _a.isPortalQuery) {
+                    notifyPortalQueryChanged();
+                }
+            },
+        });
+        function setCurrentSourceText(text) {
+            const currentSource = getCurrentSource();
+            if (currentSource == null) {
+                insertNewQuery("", text, 0);
+                return;
+            }
+            setCurrentSource(Object.assign(Object.assign({}, currentSource), { text }));
+        }
+        function getSourceOfName(name) {
+            return state.sources.find((source) => source.name === name);
+        }
+        function getCurrentSource() {
+            var _a;
+            return state.sources[(_a = state.selectedSourceIndex) !== null && _a !== void 0 ? _a : -1];
+        }
+        function setCurrentSource(source) {
+            const { sources, selectedSourceIndex: index } = state;
+            if (index == null || index < 0 || sources.length <= index)
+                return;
+            state.sources.splice(index, 1, source);
+            nameInputElement.value = source.name;
+        }
+        function uniqueName(baseName, startIndex = 2, naming = (n, i) => `${n}${i}`) {
+            if (!getSourceOfName(baseName))
+                return baseName;
+            for (let i = Math.floor(Math.max(startIndex, 0));; i++) {
+                const newName = naming(baseName, i);
+                if (!getSourceOfName(newName))
+                    return newName;
+            }
+        }
+        function insertNewQuery(summary, text, index) {
+            const newSource = {
+                name: uniqueName("module"),
+                summary,
+                text,
+            };
+            index = Math.min(Math.max(index, 0), state.sources.length);
+            state.sources.splice(index, 0, newSource);
+            state.selectedSourceIndex = index;
+        }
+        function saveQuery() {
+            var _a;
+            const currentSource = getCurrentSource();
+            if (currentSource == null)
+                return;
+            insertNewQuery(currentSource.summary, currentSource.text, Math.min(((_a = state.selectedSourceIndex) !== null && _a !== void 0 ? _a : 0) + 1, state.sources.length));
+            updateQueryList();
+            notifyPortalQueryChanged();
+        }
+        function deleteQuery() {
+            const index = state.selectedSourceIndex;
+            if (index == null || index < 0 || state.sources.length <= index)
+                return;
+            state.sources.splice(index, 1);
+            state.selectedSourceIndex =
+                state.sources.length <= index ? state.sources.length - 1 : index;
+            updateQueryList();
+            notifyPortalQueryChanged();
+        }
+        function moveQueryLeft() {
+            const index = state.selectedSourceIndex;
+            if (index == null || index < 1 || state.sources.length <= index)
+                return;
+            const [movedSource] = state.sources.splice(index, 1);
+            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+            state.sources.splice(index - 1, 0, movedSource);
+            state.selectedSourceIndex = index - 1;
+            updateQueryList();
+            notifyPortalQueryChanged();
+        }
+        function moveQueryRight() {
+            const index = state.selectedSourceIndex;
+            if (index == null || index < 0 || state.sources.length - 1 <= index)
+                return;
+            const [movedSource] = state.sources.splice(index, 1);
+            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+            state.sources.splice(index + 1, 0, movedSource);
+            state.selectedSourceIndex = index + 1;
+            updateQueryList();
+            notifyPortalQueryChanged();
+        }
+        function togglePortalQuery() {
+            const currentSource = getCurrentSource();
+            if (!currentSource)
+                return;
+            const isCurrentlyPortal = !!currentSource.isPortalQuery;
+            for (let idx = 0; idx < state.sources.length; idx++) {
+                // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+                const src = state.sources[idx];
+                if (src.isPortalQuery) {
+                    state.sources[idx] = Object.assign(Object.assign({}, src), { isPortalQuery: false });
+                }
+            }
+            if (!isCurrentlyPortal) {
+                setCurrentSource(Object.assign(Object.assign({}, currentSource), { isPortalQuery: true }));
+            }
+            else {
+                setCurrentSource(Object.assign(Object.assign({}, currentSource), { isPortalQuery: false }));
+            }
+            updateQueryList();
+            notifyPortalQueryChanged();
+        }
+        function notifyPortalQueryChanged() {
+            const portalSource = state.sources.find((src) => src.isPortalQuery);
+            if (!onPortalQueryChanged)
+                return;
+            if (!portalSource) {
+                onPortalQueryChanged(undefined);
+                return;
+            }
+            if (portalSource.text.trim() === "") {
+                onPortalQueryChanged(undefined);
+            }
+            else {
+                const { getQuery, diagnostics } = createQuery(portalSource.text);
+                if (diagnostics.length === 0) {
+                    onPortalQueryChanged(getQuery);
+                }
+                else {
+                    onPortalQueryChanged(undefined);
+                }
+            }
+        }
+        function updateQueryList() {
+            var _a, _b;
+            queryListElement.innerHTML = "";
+            state.sources.map((source, index) => {
+                const listButton = addListeners(jsxs("button", { class: `${query_launcher_module["ellipsis-text"]} ${query_launcher_module["select-button"]} ${query_launcher_module["draggable"]}`, draggable: true, children: [source.isPortalQuery ? (jsx("span", { class: query_launcher_module["source-title-icon"], children: "\u2B50" })) : (jsx(Fragment, {})), source.summary] }), {
+                    click() {
+                        selectQuery(index);
+                    },
+                    dragstart(e) {
+                        var _a;
+                        (_a = e.dataTransfer) === null || _a === void 0 ? void 0 : _a.setData("text/plain", index.toString());
+                        e.currentTarget.classList.add(query_launcher_module["dragging"]);
+                    },
+                    dragend(e) {
+                        e.currentTarget.classList.remove(query_launcher_module["dragging"]);
+                    },
+                    dragover(e) {
+                        e.preventDefault();
+                        e.currentTarget.classList.add(query_launcher_module["drag-over"]);
+                    },
+                    dragleave(e) {
+                        e.currentTarget.classList.remove(query_launcher_module["drag-over"]);
+                    },
+                    drop(e) {
+                        var _a, _b;
+                        e.preventDefault();
+                        const fromIndex = parseInt((_b = (_a = e.dataTransfer) === null || _a === void 0 ? void 0 : _a.getData("text/plain")) !== null && _b !== void 0 ? _b : "-1", 10);
+                        const toIndex = index;
+                        if (fromIndex >= 0 &&
+                            toIndex >= 0 &&
+                            fromIndex !== toIndex) {
+                            const [movedSource] = state.sources.splice(fromIndex, 1);
+                            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+                            state.sources.splice(toIndex, 0, movedSource);
+                            updateQueryList();
+                        }
+                        e.currentTarget.classList.remove(query_launcher_module["drag-over"]);
+                    },
+                });
+                const listItem = (jsx("li", { class: `${query_launcher_module["select-list-item"]} ${index === state.selectedSourceIndex
+                        ? query_launcher_module.selected
+                        : ""}`, children: listButton }));
+                queryListElement.appendChild(listItem);
+            });
+            nameInputElement.value = (_b = (_a = getCurrentSource()) === null || _a === void 0 ? void 0 : _a.name) !== null && _b !== void 0 ? _b : "";
+            const currentSource = getCurrentSource();
+            portalQueryButtonElement.textContent = (currentSource === null || currentSource === void 0 ? void 0 : currentSource.isPortalQuery)
+                ? portalQueryButtonOnText
+                : portalQueryButtonOffText;
+        }
+        function selectQuery(index) {
+            const selectedSource = state.sources[index];
+            if (selectedSource == null)
+                return;
+            state.selectedSourceIndex = index;
+            queryEditor.setValue(selectedSource.text);
+            nameInputElement.value = selectedSource.name;
+            updateQueryList();
+        }
+        const element = (jsxs("details", { open: true, class: `${accordion_module.accordion} ${query_launcher_module.tab}`, children: [jsx("summary", { children: queryListElement }), jsxs("div", { class: query_launcher_module["tab-contents"], children: [queryEditor.element, jsxs("div", { class: query_launcher_module["commands-container"], children: [saveButtonElement, deleteButtonElement, moveLeftButtonElement, moveRightButtonElement, portalQueryButtonElement, nameInputElement] })] })] }));
+        updateQueryList();
+        return {
+            element,
+            cssText: [query_launcher_module_cssText, accordion_module_cssText, queryEditor.cssText].join("\n"),
+            addDiagnostic(d) {
+                queryEditor.addDiagnostic(d);
+            },
+        };
+    });
+}
+
+;// CONCATENATED MODULE: ./source/config.ts
+// spell-checker: ignore drivetunnel
+
+const storageConfigKey = "pgo-route-helper-config";
+function getConfigureSchemas() {
+    const configV1Properties = {
+        version: literal("1"),
+        userId: string().optional(),
+    };
+    const configV1Schema = strictObject(configV1Properties);
+    const configV2Properties = Object.assign(Object.assign({}, configV1Properties), { version: literal("2"), apiRoot: string().optional() });
+    const configV2Schema = strictObject(configV2Properties);
+    const configV3Properties = Object.assign(Object.assign({}, configV2Properties), { version: literal("3"), routeQueries: array(string()).optional() });
+    const configV3Schema = strictObject(configV3Properties);
+    const sourceSchema = strictObject({
+        name: string(),
+        summary: string(),
+        text: string(),
+    });
+    const sourcesSchema = strictObject({
+        sources: array(sourceSchema),
+        selectedSourceIndex: union([number(), null_()]),
+    });
+    const configV4Properties = Object.assign(Object.assign({}, configV3Properties), { routeQueries: null_().optional(), version: literal("4"), querySources: sourcesSchema.optional() });
+    const configV4Schema = strictObject(configV4Properties);
+    return [
+        configV1Schema,
+        configV2Schema,
+        configV3Schema,
+        configV4Schema,
+    ];
+}
+const configSchemas = getConfigureSchemas();
+const configVAnySchema = union(configSchemas);
+function upgradeConfig(config) {
+    var _a;
+    switch (config.version) {
+        case "1":
+            return upgradeConfig(Object.assign(Object.assign({}, config), { version: "2", apiRoot: undefined }));
+        case "2":
+            return upgradeConfig(Object.assign(Object.assign({}, config), { version: "3", routeQueries: undefined }));
+        case "3": {
+            const sourceText = (_a = config.routeQueries) === null || _a === void 0 ? void 0 : _a.at(-1);
+            const sources = sourceText
+                ? [{ name: "source1", summary: sourceText, text: sourceText }]
+                : [];
+            return upgradeConfig(Object.assign(Object.assign({}, config), { version: "4", routeQueries: null, querySources: { sources, selectedSourceIndex: null } }));
+        }
+        case "4":
+            return config;
+    }
+}
+function loadConfig() {
+    const json = localStorage.getItem(storageConfigKey);
+    try {
+        if (json != null) {
+            return upgradeConfig(configVAnySchema.parse(JSON.parse(json)));
+        }
+    }
+    catch (e) {
+        console.error(e);
+    }
+    return {
+        version: "4",
+    };
+}
+function saveConfig(config) {
+    localStorage.setItem(storageConfigKey, JSON.stringify(config));
+}
+
+;// CONCATENATED MODULE: ./source/progress-element.module.css
+const progress_element_module_cssText = ".ellipsis-text-51fedbac495cced9d9273fabb00e447b92b94828 {\r\n    overflow: hidden;\r\n    white-space: nowrap;\r\n    text-overflow: ellipsis;\r\n}\r\n\r\n.container-97af6396291d5e1904c8c36841dfb3fa9459be37 {\r\n    display: flex;\r\n    flex-direction: row;\r\n    border-top: hidden 1px;\r\n    padding: 3px;\r\n\r\n    > :is(* + *) {\r\n        margin-left: 0.3em;\r\n    }\r\n}\r\n\r\n.generic-message-bc92b4096193b965ccc878adb0fdf6c5c92cbae8 {\r\n    flex-grow: 1;\r\n}\r\n\r\n.query-error-message-d6f5ea2ffa84ed3b7f2d27125993a35adb6bbc14 {\r\n    color: lightpink;\r\n}\r\n\r\n.upload-indicator-01ab42f7f257f15ae4a7de15faaa5580c937d874,\r\n.save-indicator-cd6559c8872b33172c914b183eedf785e86c8325,\r\n.search-indicator-a15516228132acb8a3c7c095b8ce3f07df63fece {\r\n    border-top: solid 3px rgba(255, 255, 255, 0.253);\r\n    height: auto;\r\n    width: 3px;\r\n    color: transparent;\r\n}\r\n\r\n.search-indicator-a15516228132acb8a3c7c095b8ce3f07df63fece {\r\n    background: blue;\r\n\r\n    &.waiting-28931fd23457cbdf8c6ff076aa1bb007bb47b294,\r\n    &.processing-2b331cc4b5e01521f17ab424ca2b83384e62c7c6 {\r\n        background: yellow;\r\n    }\r\n}\r\n\r\n.upload-indicator-01ab42f7f257f15ae4a7de15faaa5580c937d874 {\r\n    background: green;\r\n\r\n    &.waiting-28931fd23457cbdf8c6ff076aa1bb007bb47b294,\r\n    &.processing-2b331cc4b5e01521f17ab424ca2b83384e62c7c6 {\r\n        background: blueviolet;\r\n    }\r\n}\r\n\r\n.save-indicator-cd6559c8872b33172c914b183eedf785e86c8325 {\r\n    background: lightgray;\r\n\r\n    &.waiting-28931fd23457cbdf8c6ff076aa1bb007bb47b294,\r\n    &.processing-2b331cc4b5e01521f17ab424ca2b83384e62c7c6 {\r\n        background: black;\r\n    }\r\n}\r\n\r\n.waiting-28931fd23457cbdf8c6ff076aa1bb007bb47b294 {\r\n    animation: --waiting-fc39d63c480fec60b5802b34fca97d3d09197fd5 var(--wait-interval-388556bd63ff04d03186eebdb49da69e92041915) ease-in forwards;\r\n}\r\n\r\n@keyframes --waiting-fc39d63c480fec60b5802b34fca97d3d09197fd5 {\r\n    0% {\r\n        opacity: 1;\r\n    }\r\n\r\n    5% {\r\n        opacity: 0.1;\r\n    }\r\n\r\n    100% {\r\n        opacity: 0.5;\r\n    }\r\n}\r\n\r\n.processing-2b331cc4b5e01521f17ab424ca2b83384e62c7c6 {\r\n    animation: --blinking-b1068e2d7835ca5e1b2d9549148b77b2020be912 1s ease-in-out infinite alternate;\r\n}\r\n\r\n@keyframes --blinking-b1068e2d7835ca5e1b2d9549148b77b2020be912 {\r\n    0% {\r\n        opacity: 0;\r\n    }\r\n\r\n    100% {\r\n        opacity: 1;\r\n    }\r\n}\r\n";
+const progress_element_module_variables = {
+    "--waiting": "--waiting-fc39d63c480fec60b5802b34fca97d3d09197fd5",
+    "--wait-interval": "--wait-interval-388556bd63ff04d03186eebdb49da69e92041915",
+    "--blinking": "--blinking-b1068e2d7835ca5e1b2d9549148b77b2020be912",
+};
+/* harmony default export */ const progress_element_module = ({
+    "ellipsis-text": "ellipsis-text-51fedbac495cced9d9273fabb00e447b92b94828",
+    container: "container-97af6396291d5e1904c8c36841dfb3fa9459be37",
+    "generic-message": "generic-message-bc92b4096193b965ccc878adb0fdf6c5c92cbae8",
+    "query-error-message": "query-error-message-d6f5ea2ffa84ed3b7f2d27125993a35adb6bbc14",
+    "upload-indicator": "upload-indicator-01ab42f7f257f15ae4a7de15faaa5580c937d874",
+    "save-indicator": "save-indicator-cd6559c8872b33172c914b183eedf785e86c8325",
+    "search-indicator": "search-indicator-a15516228132acb8a3c7c095b8ce3f07df63fece",
+    waiting: "waiting-28931fd23457cbdf8c6ff076aa1bb007bb47b294",
+    processing: "processing-2b331cc4b5e01521f17ab424ca2b83384e62c7c6",
+});
+
+;// CONCATENATED MODULE: ./source/progress-element.tsx
+var progress_element_awaiter = (undefined && undefined.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+
+
+
+function createProcessQueue(process, { handleAsyncError, }) {
+    const queue = [];
+    let isProcessing = false;
+    function processQueue() {
+        return progress_element_awaiter(this, void 0, void 0, function* () {
+            if (isProcessing)
+                return;
+            isProcessing = true;
+            try {
+                for (;;) {
+                    const message = queue.shift();
+                    if (message == null)
+                        break;
+                    yield process(message);
+                }
+            }
+            finally {
+                isProcessing = false;
+            }
+        });
+    }
+    function enqueue(message) {
+        queue.push(message);
+        handleAsyncError(processQueue());
+    }
+    return { enqueue };
+}
+function createProgress({ routeLayerGroupName, handleAsyncError, }) {
+    const genericMessageElement = (jsx("div", { class: `${progress_element_module["ellipsis-text"]} ${progress_element_module["generic-message"]}` }));
+    const genericProcessQueue = createProcessQueue(({ message, waitMilliseconds }) => progress_element_awaiter(this, void 0, void 0, function* () {
+        genericMessageElement.innerText = message;
+        yield sleep(waitMilliseconds);
+    }), { handleAsyncError });
+    function putMessage(message, waitMilliseconds = 2000) {
+        genericProcessQueue.enqueue({
+            message,
+            waitMilliseconds,
+        });
+    }
+    function put(template, ...substitutions) {
+        putMessage(String.raw(template, ...substitutions));
+    }
+    const searchModeElement = jsx("div", { class: progress_element_module["ellipsis-text"] });
+    const searchIndicatorElement = (jsx("div", { class: progress_element_module["search-indicator"] }));
+    const searchResultElement = jsx("div", { class: progress_element_module["ellipsis-text"] });
+    const queryErrorElement = (jsx("div", { class: `${progress_element_module["ellipsis-text"]} ${progress_element_module["query-error-message"]}` }));
+    const saveIndicatorElement = (jsx("div", { class: `${progress_element_module["save-indicator"]} ${progress_element_module["ellipsis-text"]}` }));
+    const uploadIndicatorElement = (jsx("div", { class: `${progress_element_module["upload-indicator"]} ${progress_element_module["ellipsis-text"]}` }));
+    const containerElement = (jsxs("div", { class: progress_element_module.container, children: [genericMessageElement, searchModeElement, searchIndicatorElement, searchResultElement, queryErrorElement, saveIndicatorElement, uploadIndicatorElement] }));
+    function setStatusClassName(element, className) {
+        element.classList.remove(progress_element_module.waiting);
+        element.classList.remove(progress_element_module.processing);
+        if (className != null) {
+            // NOTE: アニメーションをリセットするため再計算する
+            void element.offsetWidth;
+            element.classList.add(className);
+        }
+    }
+    function setUploadStatusClassName(className) {
+        setStatusClassName(uploadIndicatorElement, className);
+    }
+    function setSaveStatusClassName(className) {
+        setStatusClassName(saveIndicatorElement, className);
+    }
+    function dispatchProgressMessage(message) {
+        return progress_element_awaiter(this, void 0, void 0, function* () {
+            const { type } = message;
+            switch (type) {
+                case "waiting-until-routes-layer-loading": {
+                    put `${routeLayerGroupName} レイヤーを有効にするとルート一覧が表示されます。`;
+                    break;
+                }
+                case "upload-waiting": {
+                    uploadIndicatorElement.style.setProperty(progress_element_module_variables["--wait-interval"], `${message.milliseconds}ms`);
+                    setUploadStatusClassName(progress_element_module.waiting);
+                    const remainingMessage = message.queueCount <= 1
+                        ? ""
+                        : `, 残り${message.queueCount}個`;
+                    uploadIndicatorElement.innerText = `ルート ${JSON.stringify(message.routeName)} の送信待機中 ( ${message.milliseconds} ms${remainingMessage} )`;
+                    break;
+                }
+                case "uploading": {
+                    setUploadStatusClassName(progress_element_module.processing);
+                    uploadIndicatorElement.innerText = `ルート ${JSON.stringify(message.routeName)} の変更を送信中。`;
+                    break;
+                }
+                case "uploaded": {
+                    setUploadStatusClassName(null);
+                    const remainingMessage = message.queueCount <= 1
+                        ? ""
+                        : `( 残り ${message.queueCount}個 )`;
+                    uploadIndicatorElement.innerText = `ルート ${JSON.stringify(message.routeName)} の変更を送信しました。${remainingMessage}`;
+                    break;
+                }
+                case "downloading": {
+                    put `ルートを受信中`;
+                    break;
+                }
+                case "downloaded": {
+                    put `${message.routeCount} 個のルートを受信しました。`;
+                    break;
+                }
+                case "adding":
+                    break;
+                case "routes-added": {
+                    put `${message.count} 個のルートを追加しました ( ${Math.floor(message.durationMilliseconds)}ミリ秒 )`;
+                    break;
+                }
+                case "query-parse-starting": {
+                    searchModeElement.innerText = "";
+                    queryErrorElement.innerText = "";
+                    break;
+                }
+                case "query-parse-completed": {
+                    if (message.hasFilter) {
+                        searchModeElement.innerText = "式モード";
+                    }
+                    else {
+                        searchModeElement.innerText = "全件";
+                    }
+                    break;
+                }
+                case "query-evaluation-starting": {
+                    setStatusClassName(searchIndicatorElement, progress_element_module.processing);
+                    break;
+                }
+                case "query-evaluation-completed": {
+                    setStatusClassName(searchIndicatorElement, null);
+                    searchResultElement.innerText = `表示 ${message.hitCount} 件 / 全体 ${message.allCount} 件`;
+                    break;
+                }
+                case "query-parse-error-occurred": {
+                    queryErrorElement.innerText = `クエリ構文エラー: ${(message.messages).join(", ")}`;
+                    break;
+                }
+                case "query-evaluation-error": {
+                    queryErrorElement.innerText = String(message.error);
+                    reportError(message.error);
+                    break;
+                }
+                case "user-location-fetched":
+                    break;
+                case "search-query-errors-occurred": {
+                    const { diagnostics } = message;
+                    const [diagnostic, ...tail] = diagnostics;
+                    if (!diagnostic)
+                        break;
+                    queryErrorElement.innerText = `クエリ構文エラー: (${diagnostic.range.start}, ${diagnostic.range.end}): ${diagnostic.message} と 他${tail.length}件のエラー`;
+                    break;
+                }
+                case "queries-save-waited": {
+                    setSaveStatusClassName(progress_element_module.waiting);
+                    saveIndicatorElement.style.setProperty(progress_element_module_variables["--wait-interval"], `${message.delayMilliseconds}ms`);
+                    saveIndicatorElement.innerText = "クエリの保存を待機中。";
+                    break;
+                }
+                case "queries-save-started": {
+                    setSaveStatusClassName(progress_element_module.processing);
+                    saveIndicatorElement.innerText = "クエリを保存しています。";
+                    break;
+                }
+                case "queries-save-completed": {
+                    setSaveStatusClassName(null);
+                    saveIndicatorElement.innerText = "クエリを保存しました。";
+                    break;
+                }
+                case "query-name-duplicated": {
+                    put `クエリ '${message.name}' は既に存在します。別の名前を指定してください。`;
+                    break;
+                }
+                default:
+                    throw new Error(`Unknown message type ${type}`);
+            }
+        });
+    }
+    const progressQueue = createProcessQueue(dispatchProgressMessage, {
+        handleAsyncError,
+    });
+    return {
+        element: containerElement,
+        progress(message) {
+            progressQueue.enqueue(message);
+        },
+        cssText: progress_element_module_cssText,
+    };
+}
+
+;// CONCATENATED MODULE: ./source/selected-route-layer.module.css
+const selected_route_layer_module_cssText = "path.selected-cell17-2a08b843193a6b4e08fbb35a5c19b15e1262d9d0 {\r\n    transition-property: d;\r\n    transition-timing-function: ease-out;\r\n    transition-duration: 0.1s;\r\n}\r\n\r\n.drag-handle-d45be27314f6944c10839eabc447c265595ecae4 {\r\n    background-color: #FFFFFF01;\r\n    border-radius: 100%;\r\n}\r\n";
+const selected_route_layer_module_variables = {};
+/* harmony default export */ const selected_route_layer_module = ({
+    "selected-cell17": "selected-cell17-2a08b843193a6b4e08fbb35a5c19b15e1262d9d0",
+    "drag-handle": "drag-handle-d45be27314f6944c10839eabc447c265595ecae4",
+});
+
+;// CONCATENATED MODULE: ./source/selected-route-layer.ts
+//spell-checker: ignore Lngs
+
+
+function createSelectedRouteLayer(options) {
+    const { onDrag, onDragEnd } = options;
+    const circleSize = 20;
+    const dragHandle = L.marker({ lat: 0, lng: 0 }, {
+        icon: L.divIcon({
+            className: selected_route_layer_module["drag-handle"],
+            iconSize: [circleSize, circleSize],
+            iconAnchor: [circleSize * 0.5, circleSize * 0.5],
+        }),
+        draggable: true,
+    });
+    const tooCloseCircle = L.circle([0, 0], 20, {
+        className: "iitc-plugin-pgo-route-helper-too-close-circle",
+        stroke: true,
+        color: "rgb(240, 252, 249)",
+        opacity: 1,
+        weight: 2,
+        dashArray: "12 6",
+        fill: false,
+        clickable: false,
+    });
+    const cellOptions = {
+        stroke: true,
+        color: "rgb(240, 252, 249)",
+        opacity: 0.5,
+        weight: 5,
+        dashArray: "20 10",
+        fill: false,
+        clickable: false,
+    };
+    const polyline14 = L.polyline([], Object.assign({}, cellOptions));
+    const polyline16 = L.polygon([], Object.assign(Object.assign({}, cellOptions), { 
+        // className: classNames["selected-cell16"],
+        fillOpacity: 0.2 }));
+    const polyline17 = L.polygon([], Object.assign(Object.assign({}, cellOptions), { className: selected_route_layer_module["selected-cell17"], stroke: false, fill: true, fillColor: "rgb(240, 252, 249)", fillOpacity: 0.3 }));
+    const layer = L.featureGroup([
+        dragHandle,
+        tooCloseCircle,
+        polyline14,
+        polyline16,
+        polyline17,
+    ]);
+    dragHandle.on("drag", () => onDrag(dragHandle.getLatLng()));
+    dragHandle.on("dragend", () => onDragEnd(dragHandle.getLatLng()));
+    function setLatLng(center) {
+        dragHandle.setLatLng(center);
+        tooCloseCircle.setLatLng(center);
+        if (typeof S2 !== "undefined") {
+            const cell14 = getS2Cell(center, 14);
+            const corners14 = cell14.getCornerLatLngs();
+            polyline14.setLatLngs([...corners14, corners14[0]]);
+            const cell16 = getS2Cell(center, 16);
+            polyline16.setLatLngs(cell16.getCornerLatLngs());
+            const cell17 = getS2Cell(center, 17);
+            polyline17.setLatLngs(cell17.getCornerLatLngs());
+        }
+    }
+    return {
+        layer,
+        setLatLng,
+        cssText: selected_route_layer_module_cssText,
+    };
+}
+
+;// CONCATENATED MODULE: ./source/editor-title.module.css
+const editor_title_module_cssText = "\r\n.container-476d919aafa7c59422a20b804b7f9b18be2ebb20 {\r\n    text-align: center;\r\n    width: 100%;\r\n    position: relative;\r\n\r\n    border-top: solid 2px transparent;\r\n\r\n    &:has(.busy-52bc31ec3f51defb55ac2603d1ae9b5268a00cf9) {\r\n        border-top-color: #ecd8ff4f;\r\n        transition: border-top-color 0.2s ease-in-out;\r\n    }\r\n\r\n    .busy-indicator-6c02bee705dcc0d339e9c1d5e6a4db65cb54314b {\r\n        position: absolute;\r\n        top: 0;\r\n        width: 100%;\r\n        height: 100%;\r\n\r\n        opacity: 0;\r\n        background-color: #ecd8ff4f;\r\n\r\n        &.busy-52bc31ec3f51defb55ac2603d1ae9b5268a00cf9 {\r\n            animation: --background-blinking-a1d6a197d96e61b0ac0996bbdceedd71383e67c7 2s ease-in-out infinite;\r\n        }\r\n    }\r\n}\r\n\r\n@keyframes --background-blinking-a1d6a197d96e61b0ac0996bbdceedd71383e67c7 {\r\n    0% {\r\n        opacity: 0;\r\n    }\r\n    10% {\r\n        opacity: 1;\r\n    }\r\n    20% {\r\n        opacity: 0.4;\r\n    }\r\n    60% {\r\n        opacity: 0.2;\r\n    }\r\n    100% {\r\n        opacity: 0;\r\n    }\r\n}\r\n";
+const editor_title_module_variables = {
+    "--background-blinking": "--background-blinking-a1d6a197d96e61b0ac0996bbdceedd71383e67c7",
+};
+/* harmony default export */ const editor_title_module = ({
+    container: "container-476d919aafa7c59422a20b804b7f9b18be2ebb20",
+    busy: "busy-52bc31ec3f51defb55ac2603d1ae9b5268a00cf9",
+    "busy-indicator": "busy-indicator-6c02bee705dcc0d339e9c1d5e6a4db65cb54314b",
+});
+
+;// CONCATENATED MODULE: ./source/editor-title.tsx
+
+
+function createEditorTitle() {
+    const busyIndicator = jsx("div", { class: editor_title_module["busy-indicator"] });
+    const root = jsxs("div", { class: editor_title_module.container, children: ["Routes", busyIndicator] });
+    const busyProcessCategories = new Set();
+    function tryGetCategory(leaveType) {
+        switch (leaveType) {
+            case "upload-waiting":
+            case "uploading":
+            case "uploaded":
+                return "upload-waiting";
+            case "queries-save-waited":
+            case "queries-save-started":
+            case "queries-save-completed":
+                return "queries-save-waited";
+            case "downloading":
+            case "downloaded":
+                return "downloading";
+        }
+    }
+    function enterBusyProcess(type) {
+        const category = tryGetCategory(type);
+        if (category === undefined)
+            return;
+        busyProcessCategories.add(category);
+        busyIndicator.classList.add(editor_title_module.busy);
+    }
+    function leaveBusyProcess(type) {
+        const category = tryGetCategory(type);
+        if (category === undefined)
+            return;
+        busyProcessCategories.delete(category);
+        if (busyProcessCategories.size === 0) {
+            busyIndicator.classList.remove(editor_title_module.busy);
+        }
+    }
+    function progress(message) {
+        const { type } = message;
+        switch (type) {
+            case "upload-waiting": {
+                enterBusyProcess(type);
+                break;
+            }
+            case "uploading":
+                break;
+            case "uploaded": {
+                leaveBusyProcess(type);
+                break;
+            }
+            case "queries-save-waited": {
+                enterBusyProcess(type);
+                break;
+            }
+            case "queries-save-started":
+                break;
+            case "queries-save-completed": {
+                leaveBusyProcess(type);
+                break;
+            }
+            case "downloading": {
+                enterBusyProcess(type);
+                break;
+            }
+            case "downloaded": {
+                leaveBusyProcess(type);
+                break;
+            }
+            case "waiting-until-routes-layer-loading":
+            case "adding":
+            case "routes-added":
+            case "query-parse-starting":
+            case "query-parse-completed":
+            case "query-parse-error-occurred":
+            case "query-evaluation-starting":
+            case "query-evaluation-error":
+            case "query-evaluation-completed":
+            case "search-query-errors-occurred":
+            case "user-location-fetched":
+            case "query-name-duplicated":
+                break;
+            default:
+                throw new Error(`Unknown message type ${type}`);
+        }
+    }
+    return { element: root, cssText: editor_title_module_cssText, progress };
+}
+
+;// CONCATENATED MODULE: ./source/portals-modifier.ts
+var portals_modifier_awaiter = (undefined && undefined.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+
+
+
+
+function protectedCallQueryFunction(action, defaultValue, signal) {
+    return portals_modifier_awaiter(this, void 0, void 0, function* () {
+        try {
+            return yield handleAwaitOrError(action(), signal);
+        }
+        catch (error) {
+            return yield handleAwaitOrError(defaultValue(), signal);
+        }
+    });
+}
+function isPortalByQuery(route, predicate, signal) {
+    return portals_modifier_awaiter(this, void 0, void 0, function* () {
+        return protectedCallQueryFunction(() => predicate(route), 
+        // eslint-disable-next-line require-yield
+        function* () {
+            return false;
+        }, signal);
+    });
+}
+const modifierId = Symbol("pgo-route-helper-modifier");
+function setupPortalsModifier({ getCurrentRoutes, getCurrentPortalQuery, }) {
+    return portals_modifier_awaiter(this, void 0, void 0, function* () {
+        const PortalRecords = yield waitForNonNullable(() => portal_records_cef3ad7e_0804_420c_8c44_ef4e08dbcdc2);
+        const version = PortalRecords.version;
+        switch (version) {
+            case undefined:
+                return;
+            case "0.8.0":
+                break;
+            default:
+                exhaustive(version);
+                return;
+        }
+        function getCurrentPredicate(signal) {
+            return portals_modifier_awaiter(this, void 0, void 0, function* () {
+                const result = getCurrentPortalQuery();
+                if (!result)
+                    return undefined;
+                const { getQuery, createEnvironment } = result;
+                const query = yield protectedCallQueryFunction(function* () {
+                    const query = yield* getQuery();
+                    const environment = createEnvironment();
+                    return yield* query.initialize(environment);
+                }, 
+                // eslint-disable-next-line require-yield
+                function* () {
+                    return undefined;
+                }, signal);
+                return query === null || query === void 0 ? void 0 : query.predicate;
+            });
+        }
+        PortalRecords.registerModifier({
+            id: modifierId,
+            getPortals(bounds, result, signal = getSharedAbortSignal()) {
+                return portals_modifier_awaiter(this, void 0, void 0, function* () {
+                    const predicate = yield getCurrentPredicate(signal);
+                    if (predicate == null)
+                        return;
+                    for (const { route } of getCurrentRoutes()) {
+                        const coordinate = getSpotLatLng(route);
+                        if (coordinate == null)
+                            continue;
+                        if (!bounds.contains(coordinate))
+                            continue;
+                        if (!(yield isPortalByQuery(route, predicate, signal))) {
+                            continue;
+                        }
+                        result.push(PortalRecords.createNewFakePortal(coordinate.lat, coordinate.lng, route.routeName));
+                    }
+                });
+            },
+        });
+    });
+}
+
+;// CONCATENATED MODULE: ./source/iitc-plugin-pgo-route-helper.tsx
+var iitc_plugin_pgo_route_helper_awaiter = (undefined && undefined.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+
+/* eslint-disable require-yield */
+// spell-checker: ignore layeradd latlngschanged lngs latlng buttonset moveend zoomend
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function iitc_plugin_pgo_route_helper_reportError(error) {
+    console.error(error);
+    if (error != null &&
+        typeof error === "object" &&
+        "stack" in error &&
+        typeof error.stack === "string") {
+        console.error(error.stack);
+    }
+}
+function handleAsyncError(promise) {
+    promise.catch(iitc_plugin_pgo_route_helper_reportError);
+}
+function main() {
+    handleAsyncError(asyncMain());
+}
+const apiRoot = "https://script.google.com/macros/s/AKfycbx-BeayFoyAro3uwYbuG9C12M3ODyuZ6GDwbhW3ifq76DWBAvzMskn9tc4dTuvLmohW/exec";
+function waitLayerAdded(map, layer) {
+    if (map.hasLayer(layer)) {
+        return Promise.resolve();
+    }
+    return new Promise((resolve) => {
+        const onLayerAdd = (e) => {
+            if (e.layer === layer) {
+                map.off("layeradd", onLayerAdd);
+                resolve();
+            }
+        };
+        map.on("layeradd", onLayerAdd);
+    });
+}
+function getMiddleCoordinate(p1, p2) {
+    return L.latLngBounds(p1, p2).getCenter();
+}
+function createScheduler() {
+    const yieldInterval = (1000 / 60) * 2;
+    let lastYieldEnd = -Infinity;
+    return {
+        yieldRequested() {
+            return lastYieldEnd + yieldInterval < performance.now();
+        },
+        yield(options) {
+            return iitc_plugin_pgo_route_helper_awaiter(this, void 0, void 0, function* () {
+                yield sleepUntilNextAnimationFrame(options);
+                lastYieldEnd = performance.now();
+            });
+        },
+    };
+}
+function asyncMain() {
+    var _a, _b;
+    return iitc_plugin_pgo_route_helper_awaiter(this, void 0, void 0, function* () {
+        const window = (isIITCMobile ? globalThis : unsafeWindow);
+        const { L = standard_extensions_error `leaflet を先に読み込んでください`, map = standard_extensions_error `デフォルトマップがありません`, document, $ = standard_extensions_error `JQuery を先に読み込んでください`, } = window;
+        polyfill($);
+        const { polylineEditor } = createPolylineEditorPlugin({ L });
+        yield waitElementLoaded();
+        // TODO:
+        if (!isIITCMobile) {
+            L.Icon.Default.imagePath = `https://unpkg.com/leaflet@${L.version}/dist/images/`;
+        }
+        addStyle(cssText);
+        addStyle(accordion_module_cssText);
+        const config = loadConfig();
+        if (config.userId == null) {
+            config.userId = `user${Math.floor(Math.random() * 999999) + 1}`;
+            saveConfig(config);
+        }
+        console.debug(`'${config.userId}' としてログインしています。`);
+        const state = {
+            selectedRouteId: null,
+            deleteRouteId: null,
+            templateCandidateRouteId: null,
+            routes: "routes-unloaded",
+            routeListQuery: { query: undefined },
+            currentPortalQuery: undefined,
+        };
+        const selectedRouteLayer = createSelectedRouteLayer({
+            onDrag(coordinate) {
+                const view = getSelectedRoute();
+                if (view == null)
+                    return;
+                const { route } = view;
+                route.coordinates = [latLngToCoordinate(coordinate)];
+                updateSelectedRouteInfo();
+            },
+            onDragEnd(coordinate) {
+                const view = getSelectedRoute();
+                if (view == null)
+                    return;
+                const { route } = view;
+                route.coordinates = [latLngToCoordinate(coordinate)];
+                updateSelectedRouteInfo();
+                queueSetRouteCommandDelayed(3000, route);
+            },
+        });
+        addStyle(selectedRouteLayer.cssText);
+        const remoteCommandCancelScope = createAsyncCancelScope(handleAsyncError);
+        let nextCommandId = 0;
+        const routeIdToCommand = new Map();
+        function queueRemoteCommandDelayed(waitMilliseconds, command) {
+            remoteCommandCancelScope((signal) => iitc_plugin_pgo_route_helper_awaiter(this, void 0, void 0, function* () {
+                var _a;
+                const { routeName, routeId } = command;
+                routeIdToCommand.set(routeId, {
+                    commandId: nextCommandId++,
+                    command,
+                });
+                progress({
+                    type: "upload-waiting",
+                    routeName,
+                    milliseconds: waitMilliseconds,
+                    queueCount: routeIdToCommand.size,
+                });
+                yield sleep(waitMilliseconds, { signal });
+                for (const [routeId, { commandId, command }] of [
+                    ...routeIdToCommand.entries(),
+                ]) {
+                    progress({
+                        type: "uploading",
+                        routeName,
+                    });
+                    yield command.process(signal);
+                    if (((_a = routeIdToCommand.get(routeId)) === null || _a === void 0 ? void 0 : _a.commandId) === commandId) {
+                        routeIdToCommand.delete(routeId);
+                    }
+                    progress({
+                        type: "uploaded",
+                        routeName,
+                        queueCount: routeIdToCommand.size,
+                    });
+                }
+            }));
+        }
+        function queueSetRouteCommandDelayed(waitMilliseconds, route) {
+            queueRemoteCommandDelayed(waitMilliseconds, {
+                routeName: route.routeName,
+                routeId: route.routeId,
+                process(signal) {
+                    var _a;
+                    return iitc_plugin_pgo_route_helper_awaiter(this, void 0, void 0, function* () {
+                        const { type, userId, routeId, routeName, coordinates, description, note, data, } = route;
+                        yield setRoute({
+                            type,
+                            "user-id": userId,
+                            "route-id": routeId,
+                            "route-name": routeName,
+                            coordinates: stringifyCoordinates(coordinates),
+                            description,
+                            note,
+                            data: JSON.stringify(data),
+                        }, {
+                            signal,
+                            rootUrl: (_a = config.apiRoot) !== null && _a !== void 0 ? _a : apiRoot,
+                        });
+                    });
+                },
+            });
+        }
+        function mergeSelectedRoute(difference) {
+            const view = getSelectedRoute();
+            if (view == null) {
+                return;
+            }
+            const { route } = view;
+            let changed = false;
+            for (const [k, value] of Object.entries(difference)) {
+                const key = k;
+                if (route[key] !== value) {
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    route[key] = value;
+                    changed = true;
+                }
+            }
+            if (changed) {
+                updateSelectedRouteInfo();
+                queueSetRouteCommandDelayed(3000, route);
+            }
+        }
+        const titleElement = addListeners((jsx("input", { class: styles_module.title, type: "text", placeholder: "\u30BF\u30A4\u30C8\u30EB", readOnly: true })), {
+            input() {
+                mergeSelectedRoute({ routeName: this.value });
+            },
+        });
+        const descriptionElement = addListeners((jsx("textarea", { placeholder: "\u8AAC\u660E", readOnly: true })), {
+            input() {
+                mergeSelectedRoute({ description: this.value });
+            },
+        });
+        const notesElement = addListeners((jsx("textarea", { type: "text", placeholder: "\u88DC\u8DB3", readOnly: true })), {
+            input() {
+                mergeSelectedRoute({ note: this.value });
+            },
+        });
+        const p = coordinatesPattern;
+        const coordinatesElement = addListeners((jsx("input", { type: "text", placeholder: "\u5EA7\u6A19\u5217 (\u4F8B: 12.34,56.78,90.12,34.56)", pattern: p.source })), {
+            input() {
+                if (!this.checkValidity()) {
+                    return;
+                }
+                mergeSelectedRoute({
+                    coordinates: parseCoordinates(this.value),
+                });
+            },
+        });
+        const lengthElement = jsx("div", {});
+        function calculateRouteLengthMeters({ coordinates }) {
+            let point0 = coordinates[0];
+            let lengthMeters = 0;
+            for (let i = 1; i < coordinates.length; i++) {
+                // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+                const point = coordinates[i];
+                lengthMeters += L.latLng({
+                    lat: point0[0],
+                    lng: point0[1],
+                }).distanceTo(L.latLng({ lat: point[0], lng: point[1] }));
+                point0 = point;
+            }
+            return lengthMeters;
+        }
+        function setEditorElements(route) {
+            if (route == null) {
+                titleElement.readOnly = true;
+                titleElement.value = "";
+                descriptionElement.readOnly = true;
+                descriptionElement.value = "";
+                notesElement.readOnly = true;
+                notesElement.value = "";
+                coordinatesElement.readOnly = true;
+                coordinatesElement.value = "";
+                lengthElement.innerText = "";
+            }
+            else {
+                titleElement.readOnly = false;
+                titleElement.value = route.routeName;
+                descriptionElement.readOnly = false;
+                descriptionElement.value = route.description;
+                notesElement.readOnly = false;
+                notesElement.value = route.note;
+                coordinatesElement.readOnly = false;
+                coordinatesElement.value = stringifyCoordinates(route.coordinates);
+                const lengthMeters = calculateRouteLengthMeters(route);
+                lengthElement.innerText = `${Math.round(lengthMeters * 100) / 100}m`;
+            }
+        }
+        setEditorElements(undefined);
+        const routeLayerGroupName = "Routes";
+        const { progress: progressBarProgress, element: reportElement, cssText: reportCssText, } = createProgress({
+            routeLayerGroupName,
+            handleAsyncError,
+        });
+        function progress(message) {
+            editorTitleProgress(message);
+            progressBarProgress(message);
+        }
+        addStyle(reportCssText);
+        function onAddRouteButtonClick(kind) {
+            const { routes } = state;
+            if (config.userId == null || routes == "routes-unloaded")
+                return;
+            let coordinates;
+            let routeName;
+            switch (kind) {
+                case "route": {
+                    const bound = map.getBounds();
+                    const c1 = getMiddleCoordinate(bound.getCenter(), bound.getNorthEast());
+                    const c2 = getMiddleCoordinate(bound.getCenter(), bound.getSouthWest());
+                    coordinates = [
+                        latLngToCoordinate(c1),
+                        latLngToCoordinate(c2),
+                    ];
+                    routeName = "新しいルート";
+                    break;
+                }
+                case "spot": {
+                    coordinates = [latLngToCoordinate(map.getCenter())];
+                    routeName = "新しいスポット";
+                    break;
+                }
+                default:
+                    return exhaustive(kind);
+            }
+            const newRoute = {
+                type: "route",
+                userId: config.userId,
+                routeId: `route-${Date.now()}-${Math.floor(Math.random() * 1000000)}`,
+                routeName,
+                coordinates,
+                data: {},
+                description: "",
+                note: "",
+            };
+            setRouteKind(newRoute, kind);
+            // テンプレートから各種データをコピー
+            let templateRoute;
+            routes.forEach((route) => {
+                if (getRouteIsTemplate(route.route)) {
+                    templateRoute = route;
+                }
+            });
+            if (templateRoute && getRouteKind(templateRoute.route) === kind) {
+                const r = templateRoute.route;
+                newRoute.routeName = applyTemplate(r.routeName);
+                newRoute.data = structuredClone(r.data);
+                newRoute.description = applyTemplate(r.description);
+                newRoute.note = applyTemplate(r.note);
+                setRouteIsTemplate(newRoute, false);
+            }
+            addRouteView(routes, newRoute);
+            state.selectedRouteId = newRoute.routeId;
+            updateSelectedRouteInfo();
+            queueSetRouteCommandDelayed(3000, newRoute);
+        }
+        const addRouteElement = addListeners(jsx("button", { children: "\uD83D\uDEB6\uD83C\uDFFD\u30EB\u30FC\u30C8\u4F5C\u6210" }), {
+            click() {
+                onAddRouteButtonClick("route");
+            },
+        });
+        const addSpotElement = addListeners(jsx("button", { children: "\uD83D\uDCCD\u30B9\u30DD\u30C3\u30C8\u4F5C\u6210" }), {
+            click() {
+                onAddRouteButtonClick("spot");
+            },
+        });
+        const deleteConfirmationElement = jsx("div", {});
+        const deleteConfirmation = $(deleteConfirmationElement).dialog({
+            autoOpen: false,
+            modal: true,
+            buttons: {
+                ok() {
+                    deleteConfirmation.dialog("close");
+                    const { deleteRouteId, routes } = state;
+                    if (deleteRouteId == null || routes === "routes-unloaded")
+                        return;
+                    state.deleteRouteId = null;
+                    if (state.selectedRouteId === deleteRouteId) {
+                        state.selectedRouteId = null;
+                        updateSelectedRouteInfo();
+                    }
+                    const view = routes.get(deleteRouteId);
+                    if (view == null)
+                        return;
+                    routes.delete(deleteRouteId);
+                    view.listView.listItem.remove();
+                    updateRoutesListElement();
+                    map.removeLayer(view.coordinatesEditor.layer);
+                    routeLayerGroup.removeLayer(view.coordinatesEditor.layer);
+                    queueRemoteCommandDelayed(1000, {
+                        routeName: view.route.routeName,
+                        routeId: deleteRouteId,
+                        process(signal) {
+                            var _a;
+                            return iitc_plugin_pgo_route_helper_awaiter(this, void 0, void 0, function* () {
+                                yield deleteRoute({ "route-id": deleteRouteId }, { signal, rootUrl: (_a = config.apiRoot) !== null && _a !== void 0 ? _a : apiRoot });
+                            });
+                        },
+                    });
+                },
+                cancel() {
+                    deleteConfirmation.dialog("close");
+                    state.deleteRouteId = null;
+                },
+            },
+        });
+        const deleteSelectedRouteElement = addListeners(jsx("button", { children: "\uD83D\uDDD1\uFE0F\u524A\u9664" }), {
+            click() {
+                const routeId = (state.deleteRouteId = state.selectedRouteId);
+                if (state.routes === "routes-unloaded" || routeId == null)
+                    return;
+                const view = state.routes.get(routeId);
+                if (view == null)
+                    return;
+                deleteConfirmationElement.innerText = `${view.route.routeName} を削除しますか？`;
+                deleteConfirmation.dialog("open");
+            },
+        });
+        function onMoveToSelectedElement(showListItem) {
+            const view = getSelectedRoute();
+            if (view == null)
+                return;
+            const { listView: { listItem }, route, } = view;
+            if (showListItem) {
+                listItem.scrollIntoView();
+            }
+            onListItemClicked(listItem);
+            const bounds = L.latLngBounds(route.coordinates.map(coordinateToLatLng));
+            map.panInsideBounds(bounds);
+        }
+        const moveToRouteElement = addListeners(jsx("button", { children: "\uD83C\uDFAF\u5730\u56F3\u3067\u8868\u793A" }), {
+            click() {
+                onMoveToSelectedElement(true);
+            },
+        });
+        const setTemplateConfirmationElement = jsx("div", {});
+        const setTemplateConfirmation = $(setTemplateConfirmationElement).dialog({
+            autoOpen: false,
+            modal: true,
+            buttons: {
+                ok() {
+                    setTemplateConfirmation.dialog("close");
+                    const { templateCandidateRouteId } = state;
+                    if (templateCandidateRouteId == null)
+                        return;
+                    const routes = state.routes !== "routes-unloaded" && state.routes;
+                    if (!routes)
+                        return;
+                    const templateCandidateRoute = routes.get(templateCandidateRouteId);
+                    if (!templateCandidateRoute)
+                        return;
+                    const templateRouteKind = getRouteKind(templateCandidateRoute.route);
+                    for (const { route } of routes.values()) {
+                        if (getRouteIsTemplate(route) &&
+                            getRouteKind(route) === templateRouteKind) {
+                            setRouteIsTemplate(route, false);
+                            queueSetRouteCommandDelayed(3000, route);
+                            updateRouteView(route.routeId);
+                        }
+                    }
+                    setRouteIsTemplate(templateCandidateRoute.route, true);
+                    queueSetRouteCommandDelayed(3000, templateCandidateRoute.route);
+                    updateSelectedRouteInfo();
+                },
+                cancel() {
+                    setTemplateConfirmation.dialog("close");
+                    state.templateCandidateRouteId = null;
+                },
+            },
+        });
+        const setAsTemplateElement = addListeners(jsx("button", { children: "\uD83D\uDCD1\u30C6\u30F3\u30D7\u30EC\u30FC\u30C8\u3068\u3057\u3066\u8A2D\u5B9A" }), {
+            click() {
+                const selectedRoute = getSelectedRoute();
+                if (selectedRoute == null)
+                    return;
+                state.templateCandidateRouteId = selectedRoute.route.routeId;
+                setTemplateConfirmationElement.innerText = `'${selectedRoute.route.routeName}' をテンプレートに設定しますか？`;
+                setTemplateConfirmation.dialog("open");
+            },
+        });
+        function selectedRouteListItemUpdated(selectedRouteIds) {
+            var _a;
+            if (state.routes === "routes-unloaded") {
+                return;
+            }
+            state.selectedRouteId = (_a = selectedRouteIds[0]) !== null && _a !== void 0 ? _a : null;
+            updateSelectedRouteInfo();
+        }
+        const tempLatLng1 = L.latLng(0, 0);
+        const tempLatLng2 = L.latLng(0, 0);
+        const defaultEnvironment = {
+            queryAsFactory: routeQueryAsFactory,
+            routes: [],
+            distance(c1, c2) {
+                tempLatLng1.lat = c1[0];
+                tempLatLng1.lng = c1[1];
+                tempLatLng2.lat = c2[0];
+                tempLatLng2.lng = c2[1];
+                return tempLatLng1.distanceTo(tempLatLng2);
+            },
+            getUserCoordinate() {
+                let center;
+                try {
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    const v = globalThis.plugin.userLocation.user.latlng;
+                    center = v instanceof L.LatLng ? v : null;
+                }
+                catch (_a) {
+                    center = null;
+                }
+                progress({ type: "user-location-fetched", center });
+                return latLngToCoordinate(center !== null && center !== void 0 ? center : map.getCenter());
+            },
+        };
+        function protectedCallQueryFunction(action, defaultValue, signal) {
+            return iitc_plugin_pgo_route_helper_awaiter(this, void 0, void 0, function* () {
+                try {
+                    return yield handleAwaitOrError(action(), signal);
+                }
+                catch (error) {
+                    progress({ type: "query-evaluation-error", error });
+                    queryLauncher.addDiagnostic({
+                        message: String(error),
+                        range: {
+                            start: 1,
+                            end: 1,
+                        },
+                    });
+                    return yield handleAwaitOrError(defaultValue(), signal);
+                }
+            });
+        }
+        const asyncUpdateRouteListElementScope = createAsyncCancelScope(handleAsyncError);
+        function updateRouteListElementAsync(signal) {
+            return iitc_plugin_pgo_route_helper_awaiter(this, void 0, void 0, function* () {
+                if (state.routes === "routes-unloaded")
+                    return;
+                progress({
+                    type: "query-evaluation-starting",
+                });
+                const { query } = state.routeListQuery;
+                const views = [...state.routes.values()];
+                const routes = views.map((r) => r.route);
+                const isQueryUndefined = query === undefined;
+                const getQuery = query !== null && query !== void 0 ? query : function* () {
+                    return anyQuery;
+                };
+                const environment = Object.assign(Object.assign({}, defaultEnvironment), { routes });
+                const { predicate, getTitle, getNote, getSorter } = yield protectedCallQueryFunction(function* () {
+                    return yield* (yield* getQuery()).initialize(environment);
+                }, () => anyQuery.initialize(environment), signal);
+                const sorter = yield protectedCallQueryFunction(function* () {
+                    return getSorter ? yield* getSorter() : null;
+                }, function* () {
+                    return null;
+                }, signal);
+                // 検索クエリを実行し結果を得る
+                // DOM要素へ反映はしない
+                let visibleListItemCount = 0;
+                for (const view of views) {
+                    if (scheduler.yieldRequested()) {
+                        yield scheduler.yield({ signal });
+                    }
+                    const { route, listView, coordinatesEditor } = view;
+                    if (sorter != null) {
+                        view.sortKey = yield protectedCallQueryFunction(function () {
+                            return sorter.getKey(route);
+                        }, function* () {
+                            return null;
+                        }, signal);
+                    }
+                    else {
+                        view.sortKey = null;
+                    }
+                    listView.visible = yield protectedCallQueryFunction(() => predicate(route), function* () {
+                        return false;
+                    }, signal);
+                    listView.title = yield protectedCallQueryFunction(function* () {
+                        return getTitle ? yield* getTitle(route) : null;
+                    }, function* () {
+                        return null;
+                    }, signal);
+                    listView.note = yield protectedCallQueryFunction(function* () {
+                        return getNote ? yield* getNote(route) : null;
+                    }, function* () {
+                        return null;
+                    }, signal);
+                    if (listView.visible)
+                        visibleListItemCount++;
+                    if (!isQueryUndefined)
+                        coordinatesEditor.highlight(listView.visible);
+                }
+                if (sorter != null) {
+                    const bias = sorter.isAscendent ? 1 : -1;
+                    views.sort((r1, r2) => bias * compareQueryKey(r1.sortKey, r2.sortKey));
+                }
+                // クエリ結果をDOMに反映する
+                function createScrollPositionRestorer(e) {
+                    if (!e)
+                        return;
+                    const { scrollTop, scrollLeft } = e;
+                    return () => {
+                        e.scrollTop = scrollTop;
+                        e.scrollLeft = scrollLeft;
+                    };
+                }
+                const restoreScrollPosition = createScrollPositionRestorer(routeListElement.element);
+                for (const { listView, route } of views) {
+                    if (scheduler.yieldRequested()) {
+                        yield scheduler.yield({ signal });
+                    }
+                    updateRouteListView(route, listView);
+                }
+                const visibleViews = views.filter((v) => v.listView.visible);
+                routeListElement.setItems({
+                    itemHeight: routeListItemMargin * 2 +
+                        routeListItemPadding * 2 +
+                        routeListItemHeight,
+                    count: visibleViews.length,
+                    get(i) {
+                        var _a;
+                        return (_a = visibleViews[i]) === null || _a === void 0 ? void 0 : _a.listView.listItem;
+                    },
+                });
+                restoreScrollPosition === null || restoreScrollPosition === void 0 ? void 0 : restoreScrollPosition();
+                progress({
+                    type: "query-evaluation-completed",
+                    hitCount: visibleListItemCount,
+                    allCount: views.length,
+                });
+            });
+        }
+        function updateRoutesListElement() {
+            asyncUpdateRouteListElementScope(updateRouteListElementAsync);
+        }
+        const elementToRouteId = new WeakMap();
+        function onListItemClicked(element) {
+            if (state.routes === "routes-unloaded")
+                return;
+            for (const { listView } of state.routes.values()) {
+                listView.listItem.classList.remove(styles_module.selected);
+            }
+            element.classList.add(styles_module.selected);
+            const routeId = elementToRouteId.get(element);
+            if (routeId == null)
+                return;
+            selectedRouteListItemUpdated([routeId]);
+        }
+        function createRouteListView(route) {
+            const titleElement = jsx("span", { children: route.routeName });
+            const noteElement = jsx("span", { class: styles_module.note, children: route.note });
+            const listItem = addListeners((jsxs("div", { classList: [
+                    "ui-widget-content",
+                    styles_module["route-list-item"],
+                    styles_module["ellipsis-text"],
+                ], children: [titleElement, noteElement] })), {
+                click() {
+                    onListItemClicked(this);
+                },
+                dblclick() {
+                    onMoveToSelectedElement(false);
+                },
+            });
+            elementToRouteId.set(listItem, route.routeId);
+            return {
+                listItem,
+                titleElement,
+                noteElement,
+                note: null,
+                title: null,
+                visible: true,
+            };
+        }
+        function updateRouteListView(route, { listItem, titleElement, noteElement, title, visible, note, }) {
+            titleElement.innerText = title !== null && title !== void 0 ? title : route.routeName;
+            noteElement.innerText = note !== null && note !== void 0 ? note : route.note;
+            if (visible) {
+                listItem.classList.remove(styles_module.hidden);
+            }
+            else {
+                listItem.classList.add(styles_module.hidden);
+            }
+        }
+        const routeListItemPadding = 5;
+        const routeListItemMargin = 3;
+        const routeListItemHeight = 18;
+        const routeListElement = createVirtualList();
+        routeListElement.element.style.setProperty(variables["--route-list-item-padding"], routeListItemPadding + "px");
+        routeListElement.element.style.setProperty(variables["--route-list-item-margin"], routeListItemMargin + "px");
+        routeListElement.element.classList.add(styles_module["route-list"]);
+        const queryLauncher = yield createQueryLauncher({
+            handleAsyncError,
+            onCurrentQueryChanged(source, query) {
+                state.routeListQuery = {
+                    query: query === "simple-query" ? undefined : query,
+                };
+                updateRoutesListElement();
+            },
+            onPortalQueryChanged(query) {
+                state.currentPortalQuery = query;
+            },
+            loadSources() {
+                var _a;
+                return iitc_plugin_pgo_route_helper_awaiter(this, void 0, void 0, function* () {
+                    return ((_a = config.querySources) !== null && _a !== void 0 ? _a : {
+                        sources: [],
+                        selectedSourceIndex: null,
+                    });
+                });
+            },
+            saveSources(sources) {
+                return iitc_plugin_pgo_route_helper_awaiter(this, void 0, void 0, function* () {
+                    config.querySources = Object.assign(Object.assign({}, sources), { sources: sources.sources.slice() });
+                    saveConfig(config);
+                });
+            },
+            progress,
+            signal: new AbortController().signal,
+        });
+        addStyle(queryLauncher.cssText);
+        const selectedRouteButtonContainer = (jsxs("span", { children: [addRouteElement, addSpotElement, deleteSelectedRouteElement, moveToRouteElement, setAsTemplateElement] }));
+        const selectedRouteEditorContainer = (jsxs("details", { open: true, class: accordion_module.accordion, children: [jsx("summary", { children: titleElement }), jsxs("div", { children: [jsx("div", { children: descriptionElement }), jsx("div", { children: notesElement }), jsx("div", { children: coordinatesElement }), jsx("div", { children: lengthElement }), jsx("div", { children: addListeners(jsx("input", { class: styles_module["editable-text"], type: "text", placeholder: "\u30E6\u30FC\u30B6\u30FC\u540D", value: config.userId }), {
+                                change() {
+                                    // TODO:
+                                    console.log("user name changed");
+                                },
+                            }) }), selectedRouteButtonContainer] })] }));
+        const editorElement = (jsxs("div", { id: "pgo-route-helper-editor", class: styles_module["properties-editor"], children: [jsxs("div", { class: styles_module["without-report-container"], children: [selectedRouteEditorContainer, queryLauncher.element, routeListElement.element] }), jsx("div", { class: styles_module["report-container"], children: reportElement })] }));
+        document.body.append(editorElement);
+        $(selectedRouteButtonContainer).buttonset();
+        const { element: editorTitleElement, cssText: editorTitleCssText, progress: editorTitleProgress, } = createEditorTitle();
+        addStyle(editorTitleCssText);
+        const editor = createDialog(editorElement, { title: editorTitleElement });
+        editor.setForegroundColor("#FFCE00");
+        editor.setBackgroundColor("rgba(8, 48, 78, 0.9)");
+        (_a = document.querySelector("#toolbox")) === null || _a === void 0 ? void 0 : _a.append(addListeners(jsx("a", { children: "Route Helper" }), {
+            click() {
+                editor.show();
+                return false;
+            },
+        }));
+        function getSelectedRoute() {
+            var _a;
+            if (state.routes === "routes-unloaded" ||
+                state.selectedRouteId == null) {
+                return;
+            }
+            return (_a = state.routes.get(state.selectedRouteId)) !== null && _a !== void 0 ? _a : standard_extensions_error `internal error`;
+        }
+        function updateRouteView(routeId) {
+            var _a, _b;
+            const route = state.routes !== "routes-unloaded" && state.routes.get(routeId);
+            if (!route)
+                return;
+            route.coordinatesEditor.update(route.route);
+            updateRouteListView(route.route, route.listView);
+            if (((_b = (_a = getSelectedRoute()) === null || _a === void 0 ? void 0 : _a.route) === null || _b === void 0 ? void 0 : _b.routeId) === routeId) {
+                setEditorElements(route.route);
+                if (getRouteKind(route.route) === "spot") {
+                    selectedRouteLayer.setLatLng(coordinateToLatLng(route.route.coordinates[0]));
+                    routeLayerGroup.addLayer(selectedRouteLayer.layer);
+                }
+                else {
+                    routeLayerGroup.removeLayer(selectedRouteLayer.layer);
+                }
+            }
+        }
+        function updateSelectedRouteInfo() {
+            const routeId = state.selectedRouteId;
+            if (routeId == null) {
+                setEditorElements(undefined);
+                routeLayerGroup.removeLayer(selectedRouteLayer.layer);
+                return;
+            }
+            updateRouteView(routeId);
+        }
+        function createRouteView({ routeId, coordinates }, routeMap) {
+            const layer = polylineEditor(coordinates.map(coordinateToLatLng), {
+                clickable: true,
+                color: "#5fd6ff",
+            });
+            layer.on("click", () => {
+                state.selectedRouteId = routeId;
+                updateSelectedRouteInfo();
+            });
+            layer.on("latlngschanged", () => {
+                var _a;
+                const { route } = (_a = routeMap.get(routeId)) !== null && _a !== void 0 ? _a : standard_extensions_error `internal error`;
+                route.coordinates = pipe(layer.getLatLngs(), stringifyCoordinates);
+                updateSelectedRouteInfo();
+                queueSetRouteCommandDelayed(3000, route);
+            });
+            return { layer, update: ignore, updateZoom: ignore, highlight: ignore };
+        }
+        const maxTitleWidth = 160;
+        const maxTitleHeight = 46;
+        function createSpotLabel(text) {
+            return L.divIcon({
+                className: styles_module["spot-label"],
+                html: escapeHtml(text),
+                iconAnchor: [maxTitleWidth / 2, maxTitleHeight / -4],
+                iconSize: [maxTitleWidth, maxTitleHeight],
+            });
+        }
+        const minNamedZoom = 15;
+        const circleSize = 16;
+        const circleSizeNonNamed = 8;
+        function setSpotViewCircleStyle(options) {
+            options.radius = circleSize * 0.5;
+            // border
+            options.opacity = 1;
+            options.color = "hsla(56, 0%, 39%, 80%)";
+            options.weight = 2;
+            // background
+            options.fillOpacity = 1;
+            options.fillColor = "hsla(152deg, 84%, 56%, 40%)";
+            return options;
+        }
+        function inMap(path) {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            return path._map != null;
+        }
+        function createSpotView(route, _routeMap) {
+            const { routeId } = route;
+            const initialCoordinate = coordinateToLatLng(route.coordinates[0]);
+            const style = setSpotViewCircleStyle({});
+            const circle = L.circleMarker(initialCoordinate, style);
+            let highlighted = false;
+            function changeStyle(zoom) {
+                const showName = minNamedZoom <= zoom;
+                setSpotViewCircleStyle(style);
+                if (highlighted) {
+                    // border
+                    style.weight = 4;
+                    style.color = "hsla(56, 100%, 39%, 80%)";
+                }
+                if (!showName) {
+                    style.radius = circleSizeNonNamed * 0.5;
+                }
+                circle.setStyle(style);
+            }
+            circle.on("add", () => changeStyle(map.getZoom()));
+            const labelOptions = {
+                icon: createSpotLabel(route.routeName),
+                pane: routePane,
+            };
+            const label = L.marker(circle.getLatLng(), labelOptions);
+            const group = L.featureGroup([circle, label]);
+            group.on("click", () => {
+                state.selectedRouteId = routeId;
+                updateSelectedRouteInfo();
+            });
+            let lastZoom = null;
+            function updateZoom(zoom) {
+                if (inMap(circle))
+                    circle.bringToFront();
+                if (lastZoom !== zoom) {
+                    changeStyle(zoom);
+                    if (minNamedZoom <= zoom) {
+                        group.addLayer(label);
+                    }
+                    else {
+                        group.removeLayer(label);
+                    }
+                    lastZoom = zoom;
+                }
+            }
+            function update(route) {
+                label.setIcon(createSpotLabel(route.routeName));
+                const coordinate0 = coordinateToLatLng(route.coordinates[0]);
+                circle.setLatLng(coordinate0);
+                label.setLatLng(coordinate0);
+            }
+            function highlight(enabled) {
+                highlighted = enabled;
+                changeStyle(map.getZoom());
+            }
+            return { layer: group, update, updateZoom, highlight };
+        }
+        function addRouteView(routeMap, route) {
+            const { routeId } = route;
+            const kind = getRouteKind(route);
+            let view;
+            switch (kind) {
+                case "route": {
+                    view = createRouteView(route, routeMap);
+                    break;
+                }
+                case "spot":
+                    view = createSpotView(route, routeMap);
+                    break;
+                default:
+                    return exhaustive(kind);
+            }
+            const listView = createRouteListView(route);
+            routeMap.set(routeId, {
+                route,
+                coordinatesEditor: view,
+                listView,
+                sortKey: null,
+            });
+            updateRoutesListElement();
+        }
+        const scheduler = createScheduler();
+        function syncVisibleRoutesInMap(signal) {
+            return iitc_plugin_pgo_route_helper_awaiter(this, void 0, void 0, function* () {
+                const { routes } = state;
+                if (routes === "routes-unloaded")
+                    return;
+                // 範囲内のスポットを計算する
+                const layerToRoutesRequiringAddition = new Map();
+                // 範囲外のスポットがはみ出してしまい見える場合があるのでマップの可視範囲を広めに取る
+                const visibleBounds = map.getBounds().pad(0.2);
+                for (const view of routes.values()) {
+                    if (includesIn(visibleBounds, view.route)) {
+                        layerToRoutesRequiringAddition.set(view.coordinatesEditor.layer, view);
+                    }
+                }
+                // 範囲内のスポットの表示を更新する
+                const zoom = map.getZoom();
+                for (const view of layerToRoutesRequiringAddition.values()) {
+                    if (scheduler.yieldRequested()) {
+                        yield scheduler.yield({ signal });
+                    }
+                    view.coordinatesEditor.updateZoom(zoom, map);
+                }
+                // 現在追加されているレイヤーが範囲外なら削除する
+                for (const oldLayer of routeLayerGroup.getLayers()) {
+                    if (!isRouteLayer(oldLayer))
+                        continue;
+                    if (scheduler.yieldRequested())
+                        yield scheduler.yield({ signal });
+                    const route = layerToRoutesRequiringAddition.get(oldLayer);
+                    if (route != null) {
+                        layerToRoutesRequiringAddition.delete(oldLayer);
+                    }
+                    else {
+                        routeLayerGroup.removeLayer(oldLayer);
+                    }
+                }
+                // 範囲内レイヤーのうち追加されていないものを追加する
+                for (const layer of layerToRoutesRequiringAddition.keys()) {
+                    if (scheduler.yieldRequested())
+                        yield scheduler.yield({ signal });
+                    routeLayerGroup.addLayer(layer);
+                }
+            });
+        }
+        const syncVisibleRoutesInMapScope = createAsyncCancelScope(handleAsyncError);
+        function updateVisibleRoutesInMap() {
+            syncVisibleRoutesInMapScope(syncVisibleRoutesInMap);
+        }
+        // routeLayerGroup.addLayer(view.layer);
+        function isRouteLayer(layer) {
+            return layer !== selectedRouteLayer.layer;
+        }
+        const routeLayerGroup = L.layerGroup();
+        const routePane = map.getPanes().popupPane;
+        window.addLayerGroup(routeLayerGroupName, routeLayerGroup, true);
+        // Routes レイヤーが表示されるまで読み込みを中止
+        progress({ type: "waiting-until-routes-layer-loading" });
+        yield waitLayerAdded(map, routeLayerGroup);
+        if (state.routes === "routes-unloaded") {
+            const routeMap = new Map();
+            progress({
+                type: "downloading",
+            });
+            const { routes: routeList } = yield getRoutes({
+                "user-id": config.userId,
+            }, { rootUrl: (_b = config.apiRoot) !== null && _b !== void 0 ? _b : apiRoot });
+            progress({
+                type: "downloaded",
+                routeCount: routeList.length,
+            });
+            const beforeTime = performance.now();
+            for (const route of routeList) {
+                if (scheduler.yieldRequested())
+                    yield scheduler.yield();
+                addRouteView(routeMap, Object.assign(Object.assign({}, route), { coordinates: parseCoordinates(route.coordinates) }));
+                progress({
+                    type: "adding",
+                    routeName: route.routeName,
+                    routeId: route.routeId,
+                });
+            }
+            const afterTime = performance.now();
+            state.routes = routeMap;
+            updateRoutesListElement();
+            progress({
+                type: "routes-added",
+                count: state.routes.size,
+                durationMilliseconds: afterTime - beforeTime,
+            });
+            updateVisibleRoutesInMap();
+            map.on("moveend", updateVisibleRoutesInMap);
+            map.on("zoomend", updateVisibleRoutesInMap);
+            addHook("search", createSearchEventHandler({
+                defaultEnvironment,
+                *getCurrentRoutes() {
+                    if (state.routes === "routes-unloaded")
+                        return;
+                    for (const { route } of state.routes.values())
+                        yield route;
+                },
+                progress,
+                handleAsyncError,
+                onSelected(routeId) {
+                    state.selectedRouteId = routeId;
+                    updateSelectedRouteInfo();
+                    onMoveToSelectedElement(true);
+                },
+            }));
+            yield setupPortalsModifier({
+                getCurrentRoutes() {
+                    return state.routes === "routes-unloaded"
+                        ? []
+                        : state.routes.values();
+                },
+                getCurrentPortalQuery() {
+                    const { currentPortalQuery: getQuery, routes } = state;
+                    if (routes === "routes-unloaded" || getQuery == null) {
+                        return undefined;
+                    }
+                    return {
+                        getQuery,
+                        createEnvironment() {
+                            return Object.assign(Object.assign({}, defaultEnvironment), { routes: [...routes.values()].map((r) => r.route) });
+                        },
+                    };
+                },
+            });
+        }
+    });
+}
+
+;// CONCATENATED MODULE: ./source/iitc-plugin-pgo-route-helper.user.ts
+
+(isIITCMobile ? globalThis : unsafeWindow)["_iitc-plugin-pgo-route-helper-3798db47-5fe8-4307-a1e0-8092c04133b1"] = iitc_plugin_pgo_route_helper_namespaceObject;
+// 文字列化され、ドキュメントに注入されるラッパー関数
+// このため、通常のクロージャーのルールはここでは適用されない
+function wrapper(plugin_info) {
+    var _a;
+    const window = globalThis.window;
+    // window.plugin が存在することを確認する
+    if (typeof window.plugin !== "function") {
+        window.plugin = function () {
+            // マーカー関数
+        };
+    }
+    // メタデータを追加する
+    plugin_info.dateTimeVersion = "20221226000000";
+    plugin_info.pluginId = "pgo-route-helper";
+    // setup 内で IITC はロード済みと仮定できる
+    const setup = function setup() {
+        const pluginModule = window["_iitc-plugin-pgo-route-helper-3798db47-5fe8-4307-a1e0-8092c04133b1"];
+        if (pluginModule == null) {
+            console.error(`${plugin_info.pluginId}: メインモジュールが読み込まれていません。`);
+            return;
+        }
+        pluginModule.main();
+    };
+    setup.info = plugin_info;
+    // 起動用フックを追加
+    ((_a = window.bootPlugins) !== null && _a !== void 0 ? _a : (window.bootPlugins = [])).push(setup);
+    // IITC がすでに起動している場合 `setup` 関数を実行する
+    if (window.iitcLoaded && typeof setup === "function")
+        setup();
+}
+// UserScript のヘッダからプラグイン情報を取得する
+const info = {};
+if (typeof GM_info !== "undefined" && GM_info && GM_info.script) {
+    info.script = {
+        version: GM_info.script.version,
+        name: GM_info.script.name,
+        description: GM_info.script.description,
+    };
+}
+// wrapper 関数を文字列化して DOM 内で実行する
+const script = document.createElement("script");
+script.append(`(${wrapper})(${JSON.stringify(info)})`);
+(document.body || document.head || document.documentElement).appendChild(script);
+
+/******/ })()
+;
+//# sourceMappingURL=iitc-plugin-pgo-route-helper.user.js.map
