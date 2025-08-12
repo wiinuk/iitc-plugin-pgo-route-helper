@@ -79,7 +79,7 @@ export function createSearchEventHandler(options: SearchHandlerOptions) {
                 signal
             )) ?? emptyUnitQuery;
 
-        const { getNote, predicate, getSorter, getTitle } = unitQuery;
+        const { getNote, predicate, getTitle } = unitQuery;
         for (const route of routes) {
             if (getRouteKind(route) !== "spot") continue;
 

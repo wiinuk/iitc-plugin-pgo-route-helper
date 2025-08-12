@@ -75,15 +75,6 @@ function normalize(text: string) {
     return text.normalize("NFKC").toLowerCase();
 }
 
-function eachPortalStrings(
-    { image, title }: Readonly<IITCPortalData>,
-    action: (text: string) => "break" | undefined
-) {
-    if (image != null && action(image) === "break") return "break";
-    if (title != null && action(title) === "break") return "break";
-    return;
-}
-
 /** ラインタイムの規定ロケールで比較 */
 const { compare: compareString } = new Intl.Collator();
 export type QueryKey = null | number | string | readonly QueryKey[];

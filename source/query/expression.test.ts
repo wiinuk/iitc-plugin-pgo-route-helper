@@ -1,6 +1,6 @@
 // spell-checker: ignore lisq
 /* eslint-disable require-yield */
-import { describe, it, expect } from "@jest/globals";
+import { it, expect } from "@jest/globals";
 import {
     DiagnosticKind,
     createParser,
