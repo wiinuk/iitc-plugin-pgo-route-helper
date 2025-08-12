@@ -40,6 +40,11 @@ const config = {
     optimization: {
         minimize: false,
     },
+    performance: {
+        // ユーザスクリプトは単一ファイルでの配布が前提なのでサイズ上限を増やす
+        maxAssetSize: 300 * 1024, // 300KiB
+        maxEntrypointSize: 300 * 1024, // 300KiB
+    },
     devtool: "nosources-source-map",
     output: {
         path: __dirname,
