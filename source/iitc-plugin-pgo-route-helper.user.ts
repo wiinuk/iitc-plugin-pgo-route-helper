@@ -3,8 +3,8 @@
 // @name         IITC plugin: Pgo Route Helper
 // @category     Controls
 // @namespace    https://github.com/IITC-CE/ingress-intel-total-conversion
-// @downloadURL  https://github.com/wiinuk/iitc-plugin-pgo-route-helper/raw/master/iitc-plugin-pgo-route-helper.user.js
-// @updateURL    https://github.com/wiinuk/iitc-plugin-pgo-route-helper/raw/master/iitc-plugin-pgo-route-helper.user.js
+// @downloadURL  https://github.com/wiinuk/iitc-plugin-pgo-route-helper/raw/main/iitc-plugin-pgo-route-helper.user.js
+// @updateURL    https://github.com/wiinuk/iitc-plugin-pgo-route-helper/raw/main/iitc-plugin-pgo-route-helper.user.js
 // @homepageURL  https://github.com/wiinuk/iitc-plugin-pgo-route-helper
 // @version      0.14.1
 // @description  IITC plugin to assist in Pokémon GO route creation.
