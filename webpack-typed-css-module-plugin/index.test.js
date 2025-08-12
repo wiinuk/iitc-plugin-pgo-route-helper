@@ -75,7 +75,7 @@ it("test", async () => {
     const outputPath = "main.js";
 
     const tempDirectoryPath = path.resolve(
-        await fs.mkdtemp(path.join(__dirname, "temp/test_"))
+        await fs.mkdtemp(path.join(__dirname, "_temp_test_"))
     );
     try {
         for (const filePath in files) {
@@ -163,6 +163,6 @@ it("test", async () => {
         );
         expect(main.cssText).toContain(main.styles.article);
     } finally {
-        await fs.rmdir(tempDirectoryPath, { recursive: true });
+        await fs.rm(tempDirectoryPath, { recursive: true });
     }
 }, 50000);
