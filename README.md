@@ -2,7 +2,7 @@
 
 ## 使い方
 
-[インストール](../../raw/master/iitc-plugin-pgo-route-helper.user.js)
+[インストール](../../releases/latest/download/iitc-plugin-pgo-route-helper.user.js)
 
 // TODO: 操作説明
 
