@@ -1,11 +1,11 @@
 // spell-checker: ignore drivetunnel
-import type { z } from "../../gas-drivetunnel/source/json-schema";
+import type { z } from "gas-drivetunnel/source/json-schema";
 import {
     type GetApiSchema,
     interfaces,
     jsonResponseSchema,
     type ErrorResponse,
-} from "../../gas-drivetunnel/source/schemas";
+} from "gas-drivetunnel/source/schemas";
 import { newAbortError } from "./standard-extensions";
 
 class RemoteError extends Error {

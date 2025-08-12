@@ -1,4 +1,5 @@
-import { z } from "../../gas-drivetunnel/source/json-schema";
+// spell-checker: ignore drivetunnel
+import { z } from "gas-drivetunnel/source/json-schema";
 import type { LastOfArray } from "./type-level";
 
 const storageConfigKey = "pgo-route-helper-config";

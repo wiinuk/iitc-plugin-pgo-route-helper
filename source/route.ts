@@ -1,6 +1,6 @@
 // spell-checker: ignore drivetunnel
-import type { Json } from "../../gas-drivetunnel/source/json-schema-core";
-import type { Route as RemoteRoute } from "../../gas-drivetunnel/source/schemas";
+import type { Json } from "gas-drivetunnel/source/json-schema-core";
+import type { Route as RemoteRoute } from "gas-drivetunnel/source/schemas";
 import { exhaustive, type SetProperty } from "./standard-extensions";
 export type Route = SetProperty<RemoteRoute, "coordinates", Coordinates1>;
 export type Uuid = string;

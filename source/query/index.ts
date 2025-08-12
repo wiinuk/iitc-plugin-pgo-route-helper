@@ -1,6 +1,6 @@
 /* eslint-disable require-yield */
 // spell-checker: ignore drivetunnel lisq
-import type { Json as MutableJson } from "../../../gas-drivetunnel/source/json-schema-core";
+import type { Json as MutableJson } from "gas-drivetunnel/source/json-schema-core";
 import {
     evaluateExpression,
     type Expression,

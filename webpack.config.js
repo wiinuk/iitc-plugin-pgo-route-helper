@@ -21,7 +21,12 @@ const config = {
         rules: [
             {
                 test: /\.tsx?$/,
-                use: "ts-loader",
+                use: {
+                    loader: "ts-loader",
+                    options: {
+                        allowTsInNodeModules: true,
+                    },
+                },
             },
             {
                 test: /\.svg$/,
