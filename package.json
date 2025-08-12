@@ -45,7 +45,8 @@
     "typescript": "^5.1.6",
     "webpack": "^5.65.0",
     "webpack-cli": "^4.9.1",
-    "iitc-plugin-portal-records": "wiinuk/iitc-plugin-portal-records.git#d7052c515f405c928ea34a2bbfda59795a11214e"
+    "iitc-plugin-portal-records": "wiinuk/iitc-plugin-portal-records.git#d7052c515f405c928ea34a2bbfda59795a11214e",
+    "gas-drivetunnel": "wiinuk/gas-drivetunnel.git#d3c576328adf7cb180c7623893d3ac65f28097d1"
   },
   "optionalDependencies": {
     "fsevents": "^2.3.2"
